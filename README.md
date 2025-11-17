@@ -1,21 +1,9 @@
-<<<<<<< HEAD
-# log_in
+Nombre de la aplicación 
 
-A new Flutter project.
+EZ BAR 
 
-## Getting Started
+Descripción general 
 
-This project is a starting point for a Flutter application.
+EZ BAR es una aplicación móvil orientada a facilitar la gestión de negocios gastronómicos de pequeña y mediada escala, especialmente bares y restaurantes locales.  
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-=======
-# EZBar
-Aplicación que permite la gestión de restaurantes y bares de pequeño y mediano tamaño
->>>>>>> f9d564235de3e93c559d7d56bdd862b98bb25559
+Su objetivo es optimizar las operaciones diarias, como el control de productos, la gestión de cobros y la organización del servicio, ofreciendo una solución accesible y fácil de usar.  
