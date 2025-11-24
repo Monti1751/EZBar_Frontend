@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:log_in/main.dart';
 import 'settings_menu.dart';
+import 'cuenta.dart';
 
 class PantallaPrincipal extends StatelessWidget {
   const PantallaPrincipal({super.key});
@@ -234,38 +235,47 @@ class _ZoneWidgetState extends State<ZoneWidget> {
               child: Column(
                 children: [
                   for (var table in widget.zone.tables)
-                    Container(
-                      margin: const EdgeInsets.symmetric(vertical: 4),
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: table.getColorByEstado(),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: Colors.black45),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  table.name,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                Text(
-                                  "Estado: ${table.estado}",
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                    GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CuentaMesaPage(nombreMesa: table.name),
+        ),
+      );
+    },
+    child: Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: table.getColorByEstado(),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.black45),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  table.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  "Estado: ${table.estado}",
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
                           
                           // Botones para cambiar estado
                           Row(
@@ -336,6 +346,7 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                         ],
                       ),
                     ),
+                  ),
 
                   const SizedBox(height: 10),
 
