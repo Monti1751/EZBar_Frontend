@@ -67,6 +67,8 @@ class _LoginPageState extends State<LoginPage> {
   }
   }
 
+  final RegExp usernameRegex = RegExp(r'^(?=.{3,})([a-zA-Z0-9_]+)$');
+  final RegExp passwordRegex = RegExp(r'^.{8,}$');
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -113,10 +115,9 @@ class _LoginPageState extends State<LoginPage> {
                           prefixIcon: Icon(Icons.person_outlined, color: Color(0xFF4A4025)),
                         ),
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Por favor, ingresa tu usuario';
-                          }
-                          return null;
+                          return (value != null && usernameRegex.hasMatch(value))
+                              ? null
+                              : 'Usuario inválido';
                         },
                       ),
                       const SizedBox(height: 16),
@@ -128,13 +129,9 @@ class _LoginPageState extends State<LoginPage> {
                           prefixIcon: Icon(Icons.lock_outline, color: Color(0xFF4A4025)),
                         ),
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Por favor, ingresa la contraseña';
-                          }
-                          if (value.length < 8) {
-                            return 'Debe tener al menos 8 caracteres';
-                          }
-                          return null;
+                          return (value != null && passwordRegex.hasMatch(value))
+                              ? null
+                              : 'Contraseña inválida';
                         },
                       ),
                       const SizedBox(height: 24),
