@@ -58,6 +58,11 @@ class SettingsMenu extends StatelessWidget {
                     text: "Ajustes visuales",
                     onTap: () {},
                   ),
+                  _menuItem(
+                    icon: Icons.approval,
+                    text: "Acceso Menú Principal",
+                    onTap: () {},
+                  ),
                 ],
               ),
             ),

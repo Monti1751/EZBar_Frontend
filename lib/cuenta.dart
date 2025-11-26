@@ -22,7 +22,8 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
     return Scaffold(
       key: _scaffoldKey,
 
-      endDrawer: const SettingsMenu(),
+      drawer: const SettingsMenu(),
+
 
       body: Column(
         children: [
@@ -37,7 +38,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                 IconButton(
                   icon: const Icon(Icons.menu, color: Colors.black, size: 28),
                   onPressed: () {
-                    _scaffoldKey.currentState?.openEndDrawer();
+                    _scaffoldKey.currentState?.openDrawer();
                   },
                 ),
               ],
@@ -50,7 +51,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
               child: Column(
                 children: [
 
-                  // === NUEVO CUADRO BLANCO PARA EL NOMBRE DE LA MESA ===
+                  // === CUADRO BLANCO PARA EL NOMBRE DE LA MESA ===
                   Card(
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -71,7 +72,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 0),
 
                   // === CONTENEDOR BLANCO MÁS GRANDE PARA LA CARTA ===
                   Expanded(
@@ -81,15 +82,11 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                       ),
                       elevation: 4,
                       child: Padding(
-                        padding: const EdgeInsets.all(32.0), // más grande
+                        padding: const EdgeInsets.all(120.0),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text(
-                              'Acceder a la carta',
-                              style: TextStyle(fontSize: 22),
-                            ),
-                            const SizedBox(height: 30),
+                            const SizedBox(height: 180),
                             ElevatedButton(
                               onPressed: _abrirCarta,
                               style: ElevatedButton.styleFrom(
@@ -119,14 +116,18 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                   const SizedBox(height: 20),
 
                   // === TOTAL ===
-                  Text(
-                    'Total: ${total.toStringAsFixed(2)} \€',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF4A4025),
-                    ),
-                  ),
+                  Row(
+                    children: [
+                      Text(
+                        'Total: ${total.toStringAsFixed(2)} €',
+                        style: const TextStyle(
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF4A4025),
+                        ),
+                      ),
+                    ],
+                  )
                 ],
               ),
             ),
