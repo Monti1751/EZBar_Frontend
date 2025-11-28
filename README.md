@@ -118,7 +118,7 @@ Durante esta etapa se están validando las funcionalidades principales y la corr
 
 - Mejoras en la interfaz de usuario y experiencia de uso.  
 - Optimización del rendimiento en dispositivos de gama baja.  
-- Implementación de nuevas pantallas y flujos (estadísticas, gestión avanzada, etc.).  
+- Implementación de nuevas pantallas y flujos.  
 - Preparación para una futura **versión Beta**, más estable y completa.
 
 > El proyecto está en desarrollo activo, por lo que se esperan cambios frecuentes en la estructura y funcionamiento del Frontend.
