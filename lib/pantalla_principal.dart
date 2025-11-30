@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'settings_menu.dart';
 import 'cuenta.dart';
+import 'visual_settings_provider.dart';
 
 class PantallaPrincipal extends StatelessWidget {
   const PantallaPrincipal({super.key});
@@ -10,9 +12,6 @@ class PantallaPrincipal extends StatelessWidget {
     return const MainMenu();
   }
 }
-
-const Color mainColor = Color(0xFF7BA238);
-
 
 class MainMenu extends StatefulWidget {
   const MainMenu({super.key});
@@ -30,26 +29,34 @@ class _MainMenuState extends State<MainMenu> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = Provider.of<VisualSettingsProvider>(context);
+
+    // Colores y tamaños dinámicos según ajustes
+    final Color fondo = settings.darkMode ? Colors.black : const Color(0xFFECF0D5);
+    final Color barraSuperior = settings.colorBlindMode ? Colors.blue : const Color(0xFF7BA238);
+    final double fontSize = settings.smallFont ? 14 : 18;
+    final Color textoGeneral = settings.darkMode ? Colors.white : Colors.black;
+
     return Scaffold(
       key: _scaffoldKey,
 
-      // === aquí cargamos el menú desde otro archivo ===
+      // Menú lateral
       drawer: const SettingsMenu(),
 
-      backgroundColor: const Color(0xFFECF0D5),
+      backgroundColor: fondo,
 
       body: Column(
         children: [
-          // === barra superior ===
+          // Barra superior
           Container(
             height: 55,
-            color: mainColor,
+            color: barraSuperior,
             padding: const EdgeInsets.only(right: 10),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.menu, color: Colors.black, size: 28),
+                  icon: Icon(Icons.menu, color: textoGeneral, size: 28),
                   onPressed: () {
                     _scaffoldKey.currentState?.openDrawer();
                   },
@@ -73,14 +80,18 @@ class _MainMenuState extends State<MainMenu> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: mainColor,
+                        color: barraSuperior,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: Colors.black54),
                       ),
-                      child: const Text(
+                      child: Text(
                         "Agregar Zona",
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.bold,
+                          color: textoGeneral,
+                        ),
                       ),
                     ),
                   ),
@@ -90,23 +101,27 @@ class _MainMenuState extends State<MainMenu> {
                   if (_showAddZoneField)
                     Row(
                       children: [
-                        Expanded(
+                        Expanded
+                        (
                           child: TextField(
                             controller: _zoneController,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: "Nombre de la zona",
                               filled: true,
-                              fillColor: Colors.white,
+                              fillColor: settings.darkMode ? Colors.grey[800] : Colors.white,
+                              labelStyle: TextStyle(color: textoGeneral),
                             ),
+                            style: TextStyle(color: textoGeneral),
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.check),
+                          icon: Icon(Icons.check, color: barraSuperior),
                           onPressed: () {
                             if (_zoneController.text.isNotEmpty) {
                               setState(() {
                                 zones.add(Zone(name: _zoneController.text));
                                 _zoneController.clear();
+                                _showAddZoneField = false;
                               });
                             }
                           },
@@ -118,7 +133,13 @@ class _MainMenuState extends State<MainMenu> {
 
                   Expanded(
                     child: ListView(
-                      children: zones.map((z) => ZoneWidget(zone: z, onDelete: () {  },)).toList(),
+                      children: zones
+                          .map((z) => ZoneWidget(zone: z, onDelete: () {
+                                setState(() {
+                                  zones.remove(z);
+                                });
+                              }))
+                          .toList(),
                     ),
                   ),
                 ],
@@ -160,7 +181,7 @@ class Table {
     this.activa = true,
   });
 
-  // Método para cambiar el estado basado en código numérico (como en Java)
+  // Método para cambiar el estado basado en código numérico
   void setEstado(int disposicion) {
     switch (disposicion) {
       case 1:
@@ -173,21 +194,36 @@ class Table {
         estado = "ocupado";
         break;
       default:
-        estado = "libre"; // valor por defecto en caso de error
+        estado = "libre";
     }
   }
 
-  // Método para obtener el color según el estado
-  Color getColorByEstado() {
-    switch (estado.toLowerCase()) {
-      case "libre":
-        return Colors.green;
-      case "reservado":
-        return Colors.orange;
-      case "ocupado":
-        return Colors.red;
-      default:
-        return Colors.grey;
+  // Color según estado y daltonismo
+  Color getColorByEstado(BuildContext context) {
+    final settings = Provider.of<VisualSettingsProvider>(context, listen: false);
+
+    if (settings.colorBlindMode) {
+      switch (estado.toLowerCase()) {
+        case "libre":
+          return Colors.blue;     // alternativa al verde
+        case "reservado":
+          return Colors.orange;   // mantenemos naranja
+        case "ocupado":
+          return Colors.purple;   // alternativa al rojo
+        default:
+          return Colors.grey;
+      }
+    } else {
+      switch (estado.toLowerCase()) {
+        case "libre":
+          return Colors.green;
+        case "reservado":
+          return Colors.orange;
+        case "ocupado":
+          return Colors.red;
+        default:
+          return Colors.grey;
+      }
     }
   }
 }
@@ -209,18 +245,37 @@ class _ZoneWidgetState extends State<ZoneWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = Provider.of<VisualSettingsProvider>(context);
+    final double fontSize = settings.smallFont ? 14 : 18;
+    final Color tarjetaZona = settings.colorBlindMode ? Colors.blue : const Color(0xFF7BA238);
+    final Color textoZona = settings.darkMode ? Colors.white : Colors.black;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: mainColor,
+        color: tarjetaZona,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: Colors.black54),
       ),
       child: Column(
         children: [
+          // Cabecera de la zona
           ListTile(
-            title: Text(widget.zone.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-            trailing: Icon(widget.zone.isOpen ? Icons.expand_less : Icons.expand_more),
+            title: Text(
+              widget.zone.name,
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: fontSize, color: textoZona),
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  tooltip: 'Eliminar zona',
+                  icon: Icon(Icons.delete_outline, color: textoZona),
+                  onPressed: widget.onDelete,
+                ),
+                Icon(widget.zone.isOpen ? Icons.expand_less : Icons.expand_more, color: textoZona),
+              ],
+            ),
             onTap: () {
               setState(() {
                 widget.zone.isOpen = !widget.zone.isOpen;
@@ -233,136 +288,139 @@ class _ZoneWidgetState extends State<ZoneWidget> {
               padding: const EdgeInsets.all(10),
               child: Column(
                 children: [
+                  // Lista de mesas
                   for (var table in widget.zone.tables)
                     GestureDetector(
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => CuentaMesaPage(nombreMesa: table.name),
-        ),
-      );
-    },
-    child: Container(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: table.getColorByEstado(),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.black45),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  table.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                Text(
-                  "Estado: ${table.estado}",
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
-                          
-                          // Botones para cambiar estado
-                          Row(
-                            children: [
-                              // Botón para cambiar estado
-                              PopupMenuButton<String>(
-                                icon: const Icon(Icons.more_vert, color: Colors.white),
-                                onSelected: (String value) {
-                                  setState(() {
-                                    switch (value) {
-                                      case 'libre':
-                                        table.setEstado(1);
-                                        break;
-                                      case 'reservado':
-                                        table.setEstado(2);
-                                        break;
-                                      case 'ocupado':
-                                        table.setEstado(3);
-                                        break;
-                                    }
-                                  });
-                                },
-                                itemBuilder: (BuildContext context) => [
-                                  const PopupMenuItem<String>(
-                                    value: 'libre',
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.circle, color: Colors.green),
-                                        SizedBox(width: 8),
-                                        Text('Libre'),
-                                      ],
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CuentaMesaPage(nombreMesa: table.name),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: table.getColorByEstado(context),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: Colors.black45),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Info mesa
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    table.name,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: fontSize,
+                                      color: Colors.white,
                                     ),
                                   ),
-                                  const PopupMenuItem<String>(
-                                    value: 'reservado',
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.circle, color: Colors.orange),
-                                        SizedBox(width: 8),
-                                        Text('Reservado'),
-                                      ],
-                                    ),
-                                  ),
-                                  const PopupMenuItem<String>(
-                                    value: 'ocupado',
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.circle, color: Colors.red),
-                                        SizedBox(width: 8),
-                                        Text('Ocupado'),
-                                      ],
+                                  Text(
+                                    "Estado: ${table.estado}",
+                                    style: TextStyle(
+                                      fontSize: settings.smallFont ? 12 : 14,
+                                      color: Colors.white,
                                     ),
                                   ),
                                 ],
                               ),
-                              
-                              // Botón eliminar
-                              IconButton(
-                                icon: const Icon(Icons.delete_outline, color: Colors.white),
-                                onPressed: () {
-                                  setState(() {
-                                    widget.zone.tables.remove(table);
-                                  });
-                                },
-                              ),
-                            ],
-                          ),
-                        ],
+                            ),
+
+                            // Acciones mesa
+                            Row(
+                              children: [
+                                PopupMenuButton<String>(
+                                  icon: const Icon(Icons.more_vert, color: Colors.white),
+                                  onSelected: (String value) {
+                                    setState(() {
+                                      switch (value) {
+                                        case 'libre':
+                                          table.setEstado(1);
+                                          break;
+                                        case 'reservado':
+                                          table.setEstado(2);
+                                          break;
+                                        case 'ocupado':
+                                          table.setEstado(3);
+                                          break;
+                                      }
+                                    });
+                                  },
+                                  itemBuilder: (BuildContext context) => [
+                                    const PopupMenuItem<String>(
+                                      value: 'libre',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.circle, color: Colors.green),
+                                          SizedBox(width: 8),
+                                          Text('Libre'),
+                                        ],
+                                      ),
+                                    ),
+                                    const PopupMenuItem<String>(
+                                      value: 'reservado',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.circle, color: Colors.orange),
+                                          SizedBox(width: 8),
+                                          Text('Reservado'),
+                                        ],
+                                      ),
+                                    ),
+                                    const PopupMenuItem<String>(
+                                      value: 'ocupado',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.circle, color: Colors.red),
+                                          SizedBox(width: 8),
+                                          Text('Ocupado'),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline, color: Colors.white),
+                                  onPressed: () {
+                                    setState(() {
+                                      widget.zone.tables.remove(table);
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
 
                   const SizedBox(height: 10),
 
+                  // Añadir mesa
                   Row(
                     children: [
                       Expanded(
                         child: TextField(
                           controller: _tableController,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: "Nombre de la mesa",
                             filled: true,
-                            fillColor: Colors.white,
+                            fillColor: settings.darkMode ? Colors.grey[800] : Colors.white,
+                            labelStyle: TextStyle(color: textoZona),
                           ),
+                          style: TextStyle(color: textoZona),
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.add),
+                        icon: Icon(Icons.add, color: textoZona),
                         onPressed: () {
                           if (_tableController.text.isNotEmpty) {
                             setState(() {

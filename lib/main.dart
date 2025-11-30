@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'pantalla_principal.dart';
+import 'package:provider/provider.dart';
+import 'visual_settings_provider.dart';
 
 void main() {
-  runApp(const LogIn());
-  
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => VisualSettingsProvider(),
+      child: const LogIn(),
+    ),
+  );
 }
 
 class LogIn extends StatelessWidget {
@@ -11,10 +17,18 @@ class LogIn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final settings = Provider.of<VisualSettingsProvider>(context);
+
     return MaterialApp(
       title: 'EZBar',
       debugShowCheckedModeBanner: false,
+
+      // 🔥 Aquí aplicamos el modo oscuro/claro
+      themeMode: settings.darkMode ? ThemeMode.dark : ThemeMode.light,
+
+      // Tema claro
       theme: ThemeData(
+        brightness: Brightness.light,
         primarySwatch: Colors.green,
         scaffoldBackgroundColor: const Color(0xFFECF0D5),
         inputDecorationTheme: InputDecorationTheme(
@@ -29,7 +43,45 @@ class LogIn extends StatelessWidget {
             borderSide: const BorderSide(color: Color(0xFF7BA238), width: 2),
           ),
         ),
+        textTheme: settings.smallFont
+            ? const TextTheme(
+                bodyMedium: TextStyle(fontSize: 14),
+                titleLarge: TextStyle(fontSize: 18),
+              )
+            : const TextTheme(
+                bodyMedium: TextStyle(fontSize: 18),
+                titleLarge: TextStyle(fontSize: 24),
+              ),
       ),
+
+      // Tema oscuro
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        primarySwatch: Colors.green,
+        scaffoldBackgroundColor: Colors.black,
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.black,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFF7BA238)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFF7BA238), width: 2),
+          ),
+        ),
+        textTheme: settings.smallFont
+            ? const TextTheme(
+                bodyMedium: TextStyle(fontSize: 14),
+                titleLarge: TextStyle(fontSize: 18),
+              )
+            : const TextTheme(
+                bodyMedium: TextStyle(fontSize: 18),
+                titleLarge: TextStyle(fontSize: 24),
+              ),
+      ),
+
       home: const LoginPage(),
     );
   }
@@ -49,26 +101,27 @@ class _LoginPageState extends State<LoginPage> {
 
   void _login() {
     if (_formKey.currentState!.validate()) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Conectando...'),
-        backgroundColor: Color(0xFF7BA238),
-        duration: Duration(seconds: 2),
-      ),
-    );
-
-    // Espera 2 segundos para mostrar el mensaje y luego cambia de pantalla
-    Future.delayed(const Duration(seconds: 2), () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const PantallaPrincipal()),
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Conectando...'),
+          backgroundColor: Color(0xFF7BA238),
+          duration: Duration(seconds: 2),
+        ),
       );
-    });
-  }
+
+      // Espera 2 segundos para mostrar el mensaje y luego cambia de pantalla
+      Future.delayed(const Duration(seconds: 2), () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const PantallaPrincipal()),
+        );
+      });
+    }
   }
 
   final RegExp usernameRegex = RegExp(r'^(?=.{3,})([a-zA-Z0-9_]+)$');
   final RegExp passwordRegex = RegExp(r'^.{8,}$');
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
