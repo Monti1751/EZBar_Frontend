@@ -1,11 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'main.dart';
+import 'ajustes_visuales.dart'; 
+import 'visual_settings_provider.dart';
 
 class SettingsMenu extends StatelessWidget {
   const SettingsMenu({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final settings = Provider.of<VisualSettingsProvider>(context);
+
+    // Colores dinámicos según ajustes
+    final Color fondo = settings.darkMode ? Colors.black : Colors.white;
+    final Color encabezado = settings.colorBlindMode ? Colors.blue : const Color(0xFF7BA238);
+    final Color textoGeneral = settings.darkMode ? Colors.white : Colors.black;
+    final double fontSize = settings.smallFont ? 14 : 17;
+
     return Drawer(
       child: SafeArea(
         child: Column(
@@ -14,56 +25,74 @@ class SettingsMenu extends StatelessWidget {
             // Encabezado del menú
             Container(
               padding: const EdgeInsets.all(20),
-              color: const Color(0xFF7BA238),
-              child: const Text(
+              color: encabezado,
+              child: Text(
                 "Ajustes",
                 style: TextStyle(
-                  fontSize: 22,
+                  fontSize: settings.smallFont ? 18 : 22,
                   fontWeight: FontWeight.bold,
+                  color: textoGeneral,
                 ),
               ),
             ),
 
             // Lista de opciones
             Expanded(
-              child: ListView(
-                children: [
-                  _menuItem(
-                    icon: Icons.person_pin,
-                    text: "Administrar roles",
-                    onTap: () {},
-                  ),
-                  _menuItem(
-                    icon: Icons.menu_book,
-                    text: "Editar carta",
-                    onTap: () {},
-                  ),
-                  _menuItem(
-                    icon: Icons.group,
-                    text: "Editar usuarios",
-                    onTap: () {},
-                  ),
-                  _menuItem(
-                    icon: Icons.food_bank_outlined,
-                    text: "Editar platos",
-                    onTap: () {},
-                  ),
-                  _menuItem(
-                    icon: Icons.inventory,
-                    text: "Editar inventario",
-                    onTap: () {},
-                  ),
-                  _menuItem(
-                    icon: Icons.brush,
-                    text: "Ajustes visuales",
-                    onTap: () {},
-                  ),
-                  _menuItem(
-                    icon: Icons.approval,
-                    text: "Acceso Menú Principal",
-                    onTap: () {},
-                  ),
-                ],
+              child: Container(
+                color: fondo,
+                child: ListView(
+                  children: [
+                    _menuItem(
+                      icon: Icons.person_pin,
+                      text: "Administrar roles",
+                      onTap: () {},
+                      textoColor: textoGeneral,
+                      fontSize: fontSize,
+                    ),
+                    _menuItem(
+                      icon: Icons.menu_book,
+                      text: "Editar carta",
+                      onTap: () {},
+                      textoColor: textoGeneral,
+                      fontSize: fontSize,
+                    ),
+                    _menuItem(
+                      icon: Icons.group,
+                      text: "Editar usuarios",
+                      onTap: () {},
+                      textoColor: textoGeneral,
+                      fontSize: fontSize,
+                    ),
+                    _menuItem(
+                      icon: Icons.inventory,
+                      text: "Editar inventario",
+                      onTap: () {},
+                      textoColor: textoGeneral,
+                      fontSize: fontSize,
+                    ),
+                    _menuItem(
+                      icon: Icons.brush,
+                      text: "Ajustes visuales",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const VisualSettingsPage(),
+                          ),
+                        );
+                      },
+                      textoColor: textoGeneral,
+                      fontSize: fontSize,
+                    ),
+                    _menuItem(
+                      icon: Icons.approval,
+                      text: "Acceso Menú Principal",
+                      onTap: () {},
+                      textoColor: textoGeneral,
+                      fontSize: fontSize,
+                    ),
+                  ],
+                ),
               ),
             ),
 
@@ -82,13 +111,13 @@ class SettingsMenu extends StatelessWidget {
                       (route) => false,
                     );
                   },
-                  icon: const Icon(Icons.logout, color: Color(0xFFC63425)),
-                  label: const Text(
+                  icon: Icon(Icons.logout, color: settings.colorBlindMode ? Colors.orange : const Color(0xFFC63425)),
+                  label: Text(
                     "Cerrar sesión",
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: settings.smallFont ? 14 : 16,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFFC63425),
+                      color: settings.colorBlindMode ? Colors.orange : const Color(0xFFC63425),
                     ),
                   ),
                 ),
@@ -105,12 +134,14 @@ class SettingsMenu extends StatelessWidget {
     required IconData icon,
     required String text,
     required VoidCallback onTap,
+    required Color textoColor,
+    required double fontSize,
   }) {
     return ListTile(
-      leading: Icon(icon, size: 26),
-      title: Text(text, style: const TextStyle(fontSize: 17)),
+      leading: Icon(icon, size: 26, color: textoColor),
+      title: Text(text, style: TextStyle(fontSize: fontSize, color: textoColor)),
       onTap: onTap,
-      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+      trailing: Icon(Icons.arrow_forward_ios, size: 16, color: textoColor),
     );
   }
 }

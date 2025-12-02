@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart'; 
+import 'package:provider/provider.dart';
 import 'settings_menu.dart';
+import 'visual_settings_provider.dart';
 
 class CuentaMesaPage extends StatefulWidget {
   final String nombreMesa;
@@ -19,24 +21,31 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = Provider.of<VisualSettingsProvider>(context);
+
+    // Colores dinámicos según ajustes
+    final Color fondo = settings.darkMode ? Colors.black : const Color(0xFFECF0D5);
+    final Color barraSuperior = settings.colorBlindMode ? Colors.blue : const Color(0xFF7BA238);
+    final Color textoGeneral = settings.darkMode ? Colors.white : Colors.black;
+    final double fontSize = settings.smallFont ? 16 : 24;
+
     return Scaffold(
       key: _scaffoldKey,
-
       drawer: const SettingsMenu(),
-
+      backgroundColor: fondo,
 
       body: Column(
         children: [
           // === BARRA SUPERIOR ===
           Container(
             height: 55,
-            color: const Color(0xFF7BA238),
+            color: barraSuperior,
             padding: const EdgeInsets.only(right: 10),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.menu, color: Colors.black, size: 28),
+                  icon: Icon(Icons.menu, color: textoGeneral, size: 28),
                   onPressed: () {
                     _scaffoldKey.currentState?.openDrawer();
                   },
@@ -51,8 +60,9 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
               child: Column(
                 children: [
 
-                  // === CUADRO BLANCO PARA EL NOMBRE DE LA MESA ===
+                  // === CUADRO PARA EL NOMBRE DE LA MESA ===
                   Card(
+                    color: settings.darkMode ? Colors.grey[850] : Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -62,21 +72,22 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                       child: Center(
                         child: Text(
                           widget.nombreMesa,
-                          style: const TextStyle(
-                            fontSize: 24,
+                          style: TextStyle(
+                            fontSize: fontSize,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF4A4025),
+                            color: textoGeneral,
                           ),
                         ),
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: 0),
+                  const SizedBox(height: 10),
 
-                  // === CONTENEDOR BLANCO MÁS GRANDE PARA LA CARTA ===
+                  // === CONTENEDOR PARA LA CARTA ===
                   Expanded(
                     child: Card(
+                      color: settings.darkMode ? Colors.grey[850] : Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -90,7 +101,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                             ElevatedButton(
                               onPressed: _abrirCarta,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF7BA238),
+                                backgroundColor: barraSuperior,
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 18,
                                   horizontal: 40,
@@ -99,10 +110,10 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              child: const Text(
+                              child: Text(
                                 'Carta +',
                                 style: TextStyle(
-                                  fontSize: 18,
+                                  fontSize: settings.smallFont ? 14 : 18,
                                   color: Colors.white,
                                 ),
                               ),
@@ -120,10 +131,10 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                     children: [
                       Text(
                         'Total: ${total.toStringAsFixed(2)} €',
-                        style: const TextStyle(
-                          fontSize: 30,
+                        style: TextStyle(
+                          fontSize: settings.smallFont ? 20 : 30,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF4A4025),
+                          color: textoGeneral,
                         ),
                       ),
                     ],
