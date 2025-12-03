@@ -65,6 +65,9 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  final RegExp usernameRegex = RegExp(r'^(?=.{3,})([a-zA-Z0-9_]+)$');
+  final RegExp passwordRegex = RegExp(r'^.{8,}$');
+
   void _login() {
     if (_formKey.currentState?.validate() ?? false) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -132,6 +135,9 @@ class _LoginPageState extends State<LoginPage> {
                           if (value == null || value.isEmpty) {
                             return 'Por favor, ingresa tu usuario';
                           }
+                          if (!usernameRegex.hasMatch(value)) {
+                            return 'Usuario inválido (mín. 3 caracteres, solo letras, números y _)';
+                          }
                           return null;
                         },
                       ),
@@ -147,8 +153,8 @@ class _LoginPageState extends State<LoginPage> {
                           if (value == null || value.isEmpty) {
                             return 'Por favor, ingresa la contraseña';
                           }
-                          if (value.length < 8) {
-                            return 'Debe tener al menos 8 caracteres';
+                          if (!passwordRegex.hasMatch(value)) {
+                            return 'La contraseña debe tener al menos 8 caracteres';
                           }
                           return null;
                         },
