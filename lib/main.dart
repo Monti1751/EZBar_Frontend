@@ -101,7 +101,7 @@ class _LoginPageState extends State<LoginPage> {
                 padding: const EdgeInsets.fromLTRB(24, 80, 24, 24),
                 decoration: BoxDecoration(
                   color: const Color(0xFF7BA238),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
                       color: const Color(0xFF4A4025).withOpacity(0.2),
@@ -128,8 +128,11 @@ class _LoginPageState extends State<LoginPage> {
                       TextFormField(
                         controller: _usernameController,
                         decoration: const InputDecoration(
-                          labelText: 'Nombre de usuario...',
+                          hintText: 'Nombre de usuario...',
                           prefixIcon: Icon(Icons.person_outlined, color: Color(0xFF4A4025)),
+                          enabledBorder: const OutlineInputBorder(
+                            borderSide: BorderSide(color: Color(0xFF4A4025)),
+                          ),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -146,8 +149,11 @@ class _LoginPageState extends State<LoginPage> {
                         controller: _passwordController,
                         obscureText: true,
                         decoration: const InputDecoration(
-                          labelText: 'Contraseña...',
+                          hintText: 'Contraseña...',
                           prefixIcon: Icon(Icons.lock_outline, color: Color(0xFF4A4025)),
+                          enabledBorder: const OutlineInputBorder(
+                            borderSide: BorderSide(color: Color(0xFF4A4025)),
+                          ),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
