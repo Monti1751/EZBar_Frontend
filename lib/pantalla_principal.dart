@@ -136,6 +136,58 @@ class _ZoneWidgetState extends State<ZoneWidget> {
     );
   }
 
+  // Nuevo método para el widget de añadir mesa (para reutilizarlo y mantener el código limpio)
+  Widget _buildAddTableField(BuildContext context) {
+    final settings = Provider.of<VisualSettingsProvider>(context);
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 12), // Añadir margen inferior para separarlo de la lista
+      decoration: _cardDecoration(context),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _tableController,
+              decoration: InputDecoration(
+                hintText: 'Nombre de la mesa',
+                filled: true,
+                fillColor: settings.darkMode ? Colors.grey[800] : Colors.white,
+                border: const OutlineInputBorder(),
+              ),
+              style: TextStyle(color: settings.darkMode ? Colors.white : Colors.black),
+            ),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: Icon(
+              Icons.add,
+              color: Provider.of<VisualSettingsProvider>(context).colorBlindMode
+                  ? Colors.blue
+                  : const Color(0xFF7BA238),
+            ),
+            onPressed: () {
+              if (_tableController.text.isNotEmpty) {
+                setState(() {
+                  widget.zone.tables.add(
+                    Mesa(
+                      id: DateTime.now().millisecondsSinceEpoch.toString(),
+                      name: _tableController.text,
+                      ubicacion: widget.zone.name,
+                      numeroMesa: _tableCounter++,
+                      capacidad: 4,
+                    ),
+                  );
+                  _tableController.clear();
+                });
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final settings = Provider.of<VisualSettingsProvider>(context);
@@ -201,175 +253,142 @@ class _ZoneWidgetState extends State<ZoneWidget> {
               child: Container(
                 margin: const EdgeInsets.all(10),
                 decoration: _cardDecoration(context),
-                child: ListView(
-                  padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(10),
+                child: Column(
                   children: [
+                    // Campo para añadir nueva mesa (movido aquí para que se quede fijo arriba)
+                    _buildAddTableField(context),
+
                     // Lista de mesas con contenedores sincronizados
-                    for (var table in widget.zone.tables)
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => CuentaMesaPage(nombreMesa: table.name),
-                            ),
-                          );
-                        },
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(vertical: 6),
-                          padding: const EdgeInsets.all(12),
-                          decoration: _cardDecoration(context),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              // Badge a la izquierda y nombre a la derecha (sincronía)
-                              Expanded(
+                    Expanded(
+                      child: ListView(
+                        children: [
+                          for (var table in widget.zone.tables)
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => CuentaMesaPage(nombreMesa: table.name),
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(vertical: 6),
+                                padding: const EdgeInsets.all(12),
+                                decoration: _cardDecoration(context),
                                 child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    table.getEstadoBadge(context),
-                                    const SizedBox(width: 10),
-                                    Flexible(
-                                      child: Text(
-                                        table.name,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: settings.darkMode ? Colors.white : Colors.black,
-                                        ),
+                                    // Badge a la izquierda y nombre a la derecha (sincronía)
+                                    Expanded(
+                                      child: Row(
+                                        children: [
+                                          table.getEstadoBadge(context),
+                                          const SizedBox(width: 10),
+                                          Flexible(
+                                            child: Text(
+                                              table.name,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: settings.darkMode ? Colors.white : Colors.black,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
+                                    ),
+                                    Row(
+                                      children: [
+                                        PopupMenuButton<String>(
+                                          icon: Icon(
+                                            Icons.more_vert,
+                                            color: settings.darkMode ? Colors.white70 : Colors.black54,
+                                          ),
+                                          onSelected: (value) {
+                                            setState(() {
+                                              switch (value) {
+                                                case 'libre':
+                                                  table.setEstado(1);
+                                                  break;
+                                                case 'reservado':
+                                                  table.setEstado(2);
+                                                  break;
+                                                case 'ocupado':
+                                                  table.setEstado(3);
+                                                  break;
+                                              }
+                                            });
+                                          },
+                                          itemBuilder: (_) => const [
+                                            PopupMenuItem(
+                                              value: 'libre',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.circle, color: Colors.green),
+                                                  SizedBox(width: 8),
+                                                  Text('Libre'),
+                                                ],
+                                              ),
+                                            ),
+                                            PopupMenuItem(
+                                              value: 'reservado',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.circle, color: Colors.orange),
+                                                  SizedBox(width: 8),
+                                                  Text('Reservado'),
+                                                ],
+                                              ),
+                                            ),
+                                            PopupMenuItem(
+                                              value: 'ocupado',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.circle, color: Colors.red),
+                                                  SizedBox(width: 8),
+                                                  Text('Ocupado'),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                          onPressed: () {
+                                            showDialog(
+                                              context: context,
+                                              builder: (ctx) => AlertDialog(
+                                                title: const Text("Confirmar eliminación"),
+                                                content:
+                                                    Text("¿Seguro que quieres eliminar la mesa '${table.name}'?"),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () => Navigator.of(ctx).pop(),
+                                                    child: const Text("Cancelar"),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () {
+                                                      setState(() {
+                                                        widget.zone.tables.remove(table);
+                                                      });
+                                                      Navigator.of(ctx).pop();
+                                                    },
+                                                    child:
+                                                        const Text("Eliminar", style: TextStyle(color: Colors.red)),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
                               ),
-                              Row(
-                                children: [
-                                  PopupMenuButton<String>(
-                                    icon: Icon(
-                                      Icons.more_vert,
-                                      color: settings.darkMode ? Colors.white70 : Colors.black54,
-                                    ),
-                                    onSelected: (value) {
-                                      setState(() {
-                                        switch (value) {
-                                          case 'libre':
-                                            table.setEstado(1);
-                                            break;
-                                          case 'reservado':
-                                            table.setEstado(2);
-                                            break;
-                                          case 'ocupado':
-                                            table.setEstado(3);
-                                            break;
-                                        }
-                                      });
-                                    },
-                                    itemBuilder: (_) => const [
-                                      PopupMenuItem(
-                                        value: 'libre',
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.circle, color: Colors.green),
-                                            SizedBox(width: 8),
-                                            Text('Libre'),
-                                          ],
-                                        ),
-                                      ),
-                                      PopupMenuItem(
-                                        value: 'reservado',
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.circle, color: Colors.orange),
-                                            SizedBox(width: 8),
-                                            Text('Reservado'),
-                                          ],
-                                        ),
-                                      ),
-                                      PopupMenuItem(
-                                        value: 'ocupado',
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.circle, color: Colors.red),
-                                            SizedBox(width: 8),
-                                            Text('Ocupado'),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                    onPressed: () {
-                                      showDialog(
-                                        context: context,
-                                        builder: (ctx) => AlertDialog(
-                                          title: const Text("Confirmar eliminación"),
-                                          content: Text("¿Seguro que quieres eliminar la mesa '${table.name}'?"),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Navigator.of(ctx).pop(),
-                                              child: const Text("Cancelar"),
-                                            ),
-                                            TextButton(
-                                              onPressed: () {
-                                                setState(() {
-                                                  widget.zone.tables.remove(table);
-                                                });
-                                                Navigator.of(ctx).pop();
-                                              },
-                                              child: const Text("Eliminar", style: TextStyle(color: Colors.red)),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                    const SizedBox(height: 12),
-
-                    // Campo para añadir nueva mesa (mismo estilo de tarjeta)
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: _cardDecoration(context),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _tableController,
-                              decoration: InputDecoration(
-                                hintText: 'Nombre de la mesa',
-                                filled: true,
-                                fillColor: settings.darkMode ? Colors.grey[800] : Colors.white,
-                                border: const OutlineInputBorder(),
-                              ),
-                              style: TextStyle(color: settings.darkMode ? Colors.white : Colors.black),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            icon: Icon(Icons.add, color: Provider.of<VisualSettingsProvider>(context).colorBlindMode ? Colors.blue : const Color(0xFF7BA238)),
-                            onPressed: () {
-                              if (_tableController.text.isNotEmpty) {
-                                setState(() {
-                                  widget.zone.tables.add(
-                                    Mesa(
-                                      id: DateTime.now().millisecondsSinceEpoch.toString(),
-                                      name: _tableController.text,
-                                      ubicacion: widget.zone.name,
-                                      numeroMesa: _tableCounter++,
-                                      capacidad: 4,
-                                    ),
-                                  );
-                                  _tableController.clear();
-                                });
-                              }
-                            },
-                          ),
                         ],
                       ),
                     ),
@@ -397,9 +416,9 @@ class MainMenu extends StatefulWidget {
 class _MainMenuState extends State<MainMenu> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  bool _showAddZoneField = false;                 // Controla si se muestra el campo para agregar zona
+  bool _showAddZoneField = false; // Controla si se muestra el campo para agregar zona
   final TextEditingController _zoneController = TextEditingController(); // Controlador de texto para la zona
-  List<Zone> zones = [];                          // Lista de zonas creadas
+  List<Zone> zones = []; // Lista de zonas creadas
 
   @override
   Widget build(BuildContext context) {
@@ -457,7 +476,8 @@ class _MainMenuState extends State<MainMenu> {
                       child: Text(
                         "Agregar Zona",
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: textoGeneral),
+                        style:
+                            TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: textoGeneral),
                       ),
                     ),
                   ),

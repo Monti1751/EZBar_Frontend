@@ -33,15 +33,29 @@ class LogIn extends StatelessWidget {
         scaffoldBackgroundColor: const Color(0xFFECF0D5),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: const Color(0xFFECF0D5),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF7BA238)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF7BA238), width: 2),
-          ),
+  fillColor: const Color(0xFFECF0D5),
+
+  // BORDE NORMAL
+  enabledBorder: OutlineInputBorder(
+    borderRadius: BorderRadius.circular(12), // <-- redondeado SUAVE
+    borderSide: const BorderSide(
+      color: Color(0xFF4A4025), // marrón suave
+      width: 1.5,
+    ),
+  ),
+
+  // BORDE AL HACER CLIC
+  focusedBorder: OutlineInputBorder(
+    borderRadius: BorderRadius.circular(12), // <-- MISMO radio siempre
+    borderSide: const BorderSide(
+      color: Color(0xFF7BA238), // verde claro
+      width: 2.2,
+    ),
+  ),
+
+  border: OutlineInputBorder(
+    borderRadius: BorderRadius.circular(12), // <-- idéntico
+  ),
         ),
         textTheme: settings.smallFont
             ? const TextTheme(
@@ -61,15 +75,27 @@ class LogIn extends StatelessWidget {
         scaffoldBackgroundColor: Colors.black,
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Colors.black,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF7BA238)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF7BA238), width: 2),
-          ),
+  fillColor: Colors.black,
+
+  enabledBorder: OutlineInputBorder(
+    borderRadius: BorderRadius.circular(12),
+    borderSide: const BorderSide(
+      color: Color(0xFF4A4025),
+      width: 1.5,
+    ),
+  ),
+
+  focusedBorder: OutlineInputBorder(
+    borderRadius: BorderRadius.circular(12),
+    borderSide: const BorderSide(
+      color: Color(0xFF7BA238),
+      width: 2.2,
+    ),
+  ),
+
+  border: OutlineInputBorder(
+    borderRadius: BorderRadius.circular(12),
+  ),
         ),
         textTheme: settings.smallFont
             ? const TextTheme(
@@ -163,11 +189,19 @@ class _LoginPageState extends State<LoginPage> {
                       const SizedBox(height: 30),
                       TextFormField(
                         controller: _usernameController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           hintText: 'Nombre de usuario...',
                           prefixIcon: Icon(Icons.person_outlined, color: Color(0xFF4A4025)),
-                          enabledBorder: const OutlineInputBorder(
-                            borderSide: BorderSide(color: Color(0xFF4A4025)),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFF4A4025),  width: 1.5,),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFECF0D5),
+                              width: 2.2,
+                            ),
                           ),
                         ),
                         validator: (value) {
@@ -180,11 +214,19 @@ class _LoginPageState extends State<LoginPage> {
                       TextFormField(
                         controller: _passwordController,
                         obscureText: true,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           hintText: 'Contraseña...',
                           prefixIcon: Icon(Icons.lock_outline, color: Color(0xFF4A4025)),
-                          enabledBorder: const OutlineInputBorder(
-                            borderSide: BorderSide(color: Color(0xFF4A4025)),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Color(0xFF4A4025), width: 1.5,),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFECF0D5),
+                              width: 2.2,
+                            ),
                           ),
                         ),
                         validator: (value) {
