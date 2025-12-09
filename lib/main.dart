@@ -22,66 +22,25 @@ class LogIn extends StatelessWidget {
     return MaterialApp(
       title: 'EZBar',
       debugShowCheckedModeBanner: false,
-
-      //  Aquí aplicamos el modo oscuro/claro
       themeMode: settings.darkMode ? ThemeMode.dark : ThemeMode.light,
-
-      // Tema claro
       theme: ThemeData(
         brightness: Brightness.light,
         primarySwatch: Colors.green,
         scaffoldBackgroundColor: const Color(0xFFECF0D5),
-        inputDecorationTheme: InputDecorationTheme(
+        inputDecorationTheme: const InputDecorationTheme(
           filled: true,
-          fillColor: const Color(0xFFECF0D5),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF7BA238)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF7BA238), width: 2),
-          ),
+          fillColor: Color(0xFFECF0D5),
         ),
-        textTheme: settings.smallFont
-            ? const TextTheme(
-                bodyMedium: TextStyle(fontSize: 14),
-                titleLarge: TextStyle(fontSize: 18),
-              )
-            : const TextTheme(
-                bodyMedium: TextStyle(fontSize: 18),
-                titleLarge: TextStyle(fontSize: 24),
-              ),
       ),
-
-      // Tema oscuro
       darkTheme: ThemeData(
         brightness: Brightness.dark,
         primarySwatch: Colors.green,
         scaffoldBackgroundColor: Colors.black,
-        inputDecorationTheme: InputDecorationTheme(
+        inputDecorationTheme: const InputDecorationTheme(
           filled: true,
           fillColor: Colors.black,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF7BA238)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF7BA238), width: 2),
-          ),
         ),
-        textTheme: settings.smallFont
-            ? const TextTheme(
-                bodyMedium: TextStyle(fontSize: 14),
-                titleLarge: TextStyle(fontSize: 18),
-              )
-            : const TextTheme(
-                bodyMedium: TextStyle(fontSize: 18),
-                titleLarge: TextStyle(fontSize: 24),
-              ),
       ),
-
       home: const LoginPage(),
     );
   }
@@ -99,8 +58,18 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  final RegExp usernameRegex = RegExp(r'^(?=.{3,})([a-zA-Z0-9_]+)$');
+  final RegExp passwordRegex = RegExp(r'^.{8,}$');
+
   void _login() {
-    if (_formKey.currentState!.validate()) {
+    if (_formKey.currentState?.validate() ?? false) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Conectando...'),
@@ -109,7 +78,6 @@ class _LoginPageState extends State<LoginPage> {
         ),
       );
 
-      // Espera 2 segundos para mostrar el mensaje y luego cambia de pantalla
       Future.delayed(const Duration(seconds: 2), () {
         Navigator.push(
           context,
@@ -118,9 +86,6 @@ class _LoginPageState extends State<LoginPage> {
       });
     }
   }
-
-  final RegExp usernameRegex = RegExp(r'^(?=.{3,})([a-zA-Z0-9_]+)$');
-  final RegExp passwordRegex = RegExp(r'^.{8,}$');
 
   @override
   Widget build(BuildContext context) {
@@ -131,7 +96,6 @@ class _LoginPageState extends State<LoginPage> {
           child: Stack(
             alignment: Alignment.topCenter,
             children: [
-              // Contenedor del formulario
               Container(
                 margin: const EdgeInsets.only(top: 90),
                 padding: const EdgeInsets.fromLTRB(24, 80, 24, 24),
@@ -153,7 +117,7 @@ class _LoginPageState extends State<LoginPage> {
                     children: [
                       const SizedBox(height: 6),
                       const Text(
-                        "Bienvenido",
+                        'Bienvenido',
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
@@ -171,9 +135,13 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                         validator: (value) {
-                          return (value != null && usernameRegex.hasMatch(value))
-                              ? null
-                              : 'Usuario inválido';
+                          if (value == null || value.isEmpty) {
+                            return 'Por favor, ingresa tu usuario';
+                          }
+                          if (!usernameRegex.hasMatch(value)) {
+                            return 'Usuario inválido (mín. 3 caracteres, solo letras, números y _)';
+                          }
+                          return null;
                         },
                       ),
                       const SizedBox(height: 16),
@@ -188,9 +156,13 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                         validator: (value) {
-                          return (value != null && passwordRegex.hasMatch(value))
-                              ? null
-                              : 'Contraseña inválida';
+                          if (value == null || value.isEmpty) {
+                            return 'Por favor, ingresa la contraseña';
+                          }
+                          if (!passwordRegex.hasMatch(value)) {
+                            return 'La contraseña debe tener al menos 8 caracteres';
+                          }
+                          return null;
                         },
                       ),
                       const SizedBox(height: 24),
@@ -216,7 +188,6 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
 
-              // Logo superpuesto
               Container(
                 decoration: BoxDecoration(
                   color: const Color(0xFFECF0D5),

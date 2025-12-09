@@ -342,7 +342,7 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                             child: TextField(
                               controller: _tableController,
                               decoration: InputDecoration(
-                                hintText: 'Nombre de la mesa',
+                                labelText: 'Nombre de la mesa',
                                 filled: true,
                                 fillColor: settings.darkMode ? Colors.grey[800] : Colors.white,
                                 border: const OutlineInputBorder(),
@@ -471,10 +471,10 @@ class _MainMenuState extends State<MainMenu> {
                           child: TextField(
                             controller: _zoneController,
                             decoration: InputDecoration(
-                              hintText: "Nombre de la zona",
+                              labelText: "Nombre de la zona",
                               filled: true,
                               fillColor: settings.darkMode ? Colors.grey[800] : Colors.white,
-                              hintStyle: TextStyle(color: textoGeneral),
+                              labelStyle: TextStyle(color: textoGeneral),
                               border: const OutlineInputBorder(),
                             ),
                             style: TextStyle(color: textoGeneral),
