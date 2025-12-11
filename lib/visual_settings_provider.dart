@@ -1,13 +1,27 @@
 import 'package:flutter/material.dart';
 
+enum FontSizeOption { small, medium, large }
+
 class VisualSettingsProvider extends ChangeNotifier {
   bool _darkMode = false;
   bool _colorBlindMode = false;
-  bool _smallFont = false;
+  FontSizeOption _fontSize = FontSizeOption.medium; // valor por defecto
 
   bool get darkMode => _darkMode;
   bool get colorBlindMode => _colorBlindMode;
-  bool get smallFont => _smallFont;
+  FontSizeOption get fontSize => _fontSize;
+
+  // 🔥 Getter directo para usar en los widgets
+  double get currentFontSize {
+    switch (_fontSize) {
+      case FontSizeOption.small:
+        return 14;
+      case FontSizeOption.medium:
+        return 18;
+      case FontSizeOption.large:
+        return 22;
+    }
+  }
 
   void toggleDarkMode(bool value) {
     _darkMode = value;
@@ -19,8 +33,8 @@ class VisualSettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleSmallFont(bool value) {
-    _smallFont = value;
+  void setFontSize(FontSizeOption option) {
+    _fontSize = option;
     notifyListeners();
   }
 }
