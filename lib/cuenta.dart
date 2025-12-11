@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart'; 
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'settings_menu.dart';
 import 'visual_settings_provider.dart';
@@ -28,7 +28,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
     final Color barraSuperior = settings.colorBlindMode ? Colors.blue : const Color(0xFF7BA238);
     final Color textoGeneral = settings.darkMode ? Colors.white : Colors.black;
 
-    // 🔥 Nuevo sistema de tamaños (pequeño, mediano, grande)
+    // Nuevo sistema de tamaños (pequeño, mediano, grande)
     final double fontSize = settings.currentFontSize;
 
     return Scaffold(
@@ -66,7 +66,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                   Card(
                     color: settings.darkMode ? Colors.grey[850] : Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 4,
                     child: Padding(
@@ -91,36 +91,36 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                     child: Card(
                       color: settings.darkMode ? Colors.grey[850] : Colors.white,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       elevation: 4,
                       child: Padding(
-                        padding: const EdgeInsets.all(120.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const SizedBox(height: 180),
-                            ElevatedButton(
-                              onPressed: _abrirCarta,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: barraSuperior,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 18,
-                                  horizontal: 40,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
+                        padding: EdgeInsets.symmetric(
+                          vertical: MediaQuery.of(context).size.height * 0.05,
+                          horizontal: MediaQuery.of(context).size.width * 0.05,
+                        ),
+                        child: Align(
+                          alignment: Alignment.bottomCenter,
+                          child: ElevatedButton(
+                            onPressed: _abrirCarta,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: barraSuperior,
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 18,
+                                horizontal: 50,
                               ),
-                              child: Text(
-                                'Carta +',
-                                style: TextStyle(
-                                  fontSize: settings.currentFontSize,
-                                  color: Colors.white,
-                                ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                          ],
+                            child: Text(
+                              'Carta +',
+                              style: TextStyle(
+                                fontSize: settings.currentFontSize,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
