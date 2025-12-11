@@ -299,96 +299,118 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                                         ],
                                       ),
                                     ),
-                                    Row(
-                                      children: [
-                                        PopupMenuButton<String>(
-                                          icon: Icon(
-                                            Icons.more_vert,
-                                            color: settings.darkMode ? Colors.white70 : Colors.black54,
-                                          ),
-                                          onSelected: (value) {
-                                            setState(() {
-                                              switch (value) {
-                                                case 'libre':
-                                                  table.setEstado(1);
-                                                  break;
-                                                case 'reservado':
-                                                  table.setEstado(2);
-                                                  break;
-                                                case 'ocupado':
-                                                  table.setEstado(3);
-                                                  break;
-                                              }
-                                            });
-                                          },
-                                          itemBuilder: (_) => const [
-                                            PopupMenuItem(
-                                              value: 'libre',
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.circle, color: Colors.green),
-                                                  SizedBox(width: 8),
-                                                  Text('Libre'),
-                                                ],
-                                              ),
+                              Row(
+                                children: [
+                                  PopupMenuButton<String>(
+                                    icon: Icon(
+                                      Icons.more_vert,
+                                      color: settings.darkMode ? Colors.white70 : Colors.black54,
+                                    ),
+                                    onSelected: (value) {
+                                      setState(() {
+                                        switch (value) {
+                                          case 'libre':
+                                            table.setEstado(1);
+                                            break;
+                                          case 'reservado':
+                                            table.setEstado(2);
+                                            break;
+                                          case 'ocupado':
+                                            table.setEstado(3);
+                                            break;
+                                        }
+                                      });
+                                    },
+                                    itemBuilder: (_) => const [
+                                      PopupMenuItem(
+                                        value: 'libre',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.circle, color: Colors.green),
+                                            SizedBox(width: 8),
+                                            Text('Libre'),
+                                          ],
+                                        ),
+                                      ),
+                                      PopupMenuItem(
+                                        value: 'reservado',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.circle, color: Colors.orange),
+                                            SizedBox(width: 8),
+                                            Text('Reservado'),
+                                          ],
+                                        ),
+                                      ),
+                                      PopupMenuItem(
+                                        value: 'ocupado',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.circle, color: Colors.red),
+                                            SizedBox(width: 8),
+                                            Text('Ocupado'),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                    onPressed: () {
+                                      showDialog(
+                                        context: context,
+                                        builder: (ctx) => AlertDialog(
+                                          title: const Text("Confirmar eliminación"),
+                                          content: Text("¿Seguro que quieres eliminar la mesa '${table.name}'?"),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Navigator.of(ctx).pop(),
+                                              child: const Text("Cancelar"),
                                             ),
-                                            PopupMenuItem(
-                                              value: 'reservado',
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.circle, color: Colors.orange),
-                                                  SizedBox(width: 8),
-                                                  Text('Reservado'),
-                                                ],
-                                              ),
-                                            ),
-                                            PopupMenuItem(
-                                              value: 'ocupado',
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.circle, color: Colors.red),
-                                                  SizedBox(width: 8),
-                                                  Text('Ocupado'),
-                                                ],
-                                              ),
+                                            TextButton(
+                                              onPressed: () {
+                                                setState(() {
+                                                  widget.zone.tables.remove(table);
+                                                });
+                                                Navigator.of(ctx).pop();
+                                              },
+                                              child: const Text("Eliminar", style: TextStyle(color: Colors.red)),
                                             ),
                                           ],
                                         ),
-                                        IconButton(
-                                          icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                          onPressed: () {
-                                            showDialog(
-                                              context: context,
-                                              builder: (ctx) => AlertDialog(
-                                                title: const Text("Confirmar eliminación"),
-                                                content:
-                                                    Text("¿Seguro que quieres eliminar la mesa '${table.name}'?"),
-                                                actions: [
-                                                  TextButton(
-                                                    onPressed: () => Navigator.of(ctx).pop(),
-                                                    child: const Text("Cancelar"),
-                                                  ),
-                                                  TextButton(
-                                                    onPressed: () {
-                                                      setState(() {
-                                                        widget.zone.tables.remove(table);
-                                                      });
-                                                      Navigator.of(ctx).pop();
-                                                    },
-                                                    child:
-                                                        const Text("Eliminar", style: TextStyle(color: Colors.red)),
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
+                                      );
+                                    },
+                                  ),
+                                ],
                               ),
+                            ],
                             ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                    const SizedBox(height: 12),
+
+                    // Campo para añadir nueva mesa (mismo estilo de tarjeta)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: _cardDecoration(context),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _tableController,
+                              decoration: InputDecoration(
+                                labelText: 'Nombre de la mesa',
+                                filled: true,
+                                fillColor: settings.darkMode ? Colors.grey[800] : Colors.white,
+                                border: const OutlineInputBorder(),
+                              ),
+                              style: TextStyle(color: settings.darkMode ? Colors.white : Colors.black),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -491,10 +513,10 @@ class _MainMenuState extends State<MainMenu> {
                           child: TextField(
                             controller: _zoneController,
                             decoration: InputDecoration(
-                              hintText: "Nombre de la zona",
+                              labelText: "Nombre de la zona",
                               filled: true,
                               fillColor: settings.darkMode ? Colors.grey[800] : Colors.white,
-                              hintStyle: TextStyle(color: textoGeneral),
+                              labelStyle: TextStyle(color: textoGeneral),
                               border: const OutlineInputBorder(),
                             ),
                             style: TextStyle(color: textoGeneral),

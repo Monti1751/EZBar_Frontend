@@ -20,4 +20,5 @@
 ### Añadido
 * Se ha añadido una página de Log in.
 * Se ha añadido una página de Menú principal.
-* Se han añadido los ajustes. 
+* Se han añadido los ajustes.
+
