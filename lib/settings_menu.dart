@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'main.dart';
 import 'ajustes_visuales.dart'; 
 import 'visual_settings_provider.dart';
+import 'pantalla_principal.dart';
 
 class SettingsMenu extends StatelessWidget {
   const SettingsMenu({super.key});
@@ -87,7 +88,12 @@ class SettingsMenu extends StatelessWidget {
                     _menuItem(
                       icon: Icons.approval,
                       text: "Acceso Menú Principal",
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => PantallaPrincipal()),
+                        );
+                      },
                       textoColor: textoGeneral,
                       fontSize: fontSize,
                     ),
