@@ -127,11 +127,19 @@ class _LoginPageState extends State<LoginPage> {
                       const SizedBox(height: 30),
                       TextFormField(
                         controller: _usernameController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           hintText: 'Nombre de usuario...',
                           prefixIcon: Icon(Icons.person_outlined, color: Color(0xFF4A4025)),
-                          enabledBorder: const OutlineInputBorder(
-                            borderSide: BorderSide(color: Color(0xFF4A4025)),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFF4A4025),  width: 1.5,),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFECF0D5),
+                              width: 2.2,
+                            ),
                           ),
                         ),
                         validator: (value) {
@@ -148,11 +156,19 @@ class _LoginPageState extends State<LoginPage> {
                       TextFormField(
                         controller: _passwordController,
                         obscureText: true,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           hintText: 'Contraseña...',
                           prefixIcon: Icon(Icons.lock_outline, color: Color(0xFF4A4025)),
-                          enabledBorder: const OutlineInputBorder(
-                            borderSide: BorderSide(color: Color(0xFF4A4025)),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Color(0xFF4A4025), width: 1.5,),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFECF0D5),
+                              width: 2.2,
+                            ),
                           ),
                         ),
                         validator: (value) {
@@ -187,7 +203,6 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
-
               Container(
                 decoration: BoxDecoration(
                   color: const Color(0xFFECF0D5),

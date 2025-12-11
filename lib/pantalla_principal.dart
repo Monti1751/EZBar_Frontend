@@ -4,6 +4,29 @@ import 'package:provider/provider.dart';
 import 'cuenta.dart';
 import 'visual_settings_provider.dart';
 
+ InputDecoration loginInputDecoration(String hint, IconData icon) {
+  return InputDecoration(
+    hintText: hint,
+    prefixIcon: Icon(icon, color: Color(0xFF4A4025)),
+    filled: true,
+    fillColor: Color(0xFFFFFFFF),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(
+        color: Color(0xFF4A4025),
+        width: 1.5,
+      ),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(
+        color: Color(0xFF7BA238),
+        width: 2.2,
+      ),
+    ),
+  );
+}
+
 /// Pantalla principal que solo devuelve el menú principal
 class PantallaPrincipal extends StatelessWidget {
   const PantallaPrincipal({super.key});
@@ -146,12 +169,9 @@ class _ZoneWidgetState extends State<ZoneWidget> {
           Expanded(
             child: TextField(
               controller: _tableController,
-              decoration: InputDecoration(
-                hintText: 'Nombre de la mesa',
-                filled: true,
-                fillColor: settings.darkMode ? Colors.grey[800] : Colors.white,
-                border: const OutlineInputBorder(),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+              decoration: loginInputDecoration(
+                 "Nombre de la mesa",
+                 Icons.table_restaurant_outlined
               ),
               style: TextStyle(color: settings.darkMode ? Colors.white : Colors.black),
             ),
@@ -480,12 +500,9 @@ class _MainMenuState extends State<MainMenu> {
                         Expanded(
                           child: TextField(
                             controller: _zoneController,
-                            decoration: InputDecoration(
-                              hintText: "Nombre de la zona",
-                              filled: true,
-                              fillColor: settings.darkMode ? Colors.grey[800] : Colors.white,
-                              hintStyle: TextStyle(color: textoGeneral),
-                              border: const OutlineInputBorder(),
+                            decoration: loginInputDecoration(
+                               "Nombre de la zona",
+                              Icons.map_outlined
                             ),
                             style: TextStyle(color: textoGeneral),
                           ),
