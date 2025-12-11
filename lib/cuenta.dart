@@ -27,7 +27,9 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
     final Color fondo = settings.darkMode ? Colors.black : const Color(0xFFECF0D5);
     final Color barraSuperior = settings.colorBlindMode ? Colors.blue : const Color(0xFF7BA238);
     final Color textoGeneral = settings.darkMode ? Colors.white : Colors.black;
-    final double fontSize = settings.smallFont ? 16 : 24;
+
+    // 🔥 Nuevo sistema de tamaños (pequeño, mediano, grande)
+    final double fontSize = settings.currentFontSize;
 
     return Scaffold(
       key: _scaffoldKey,
@@ -113,7 +115,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                               child: Text(
                                 'Carta +',
                                 style: TextStyle(
-                                  fontSize: settings.smallFont ? 14 : 18,
+                                  fontSize: settings.currentFontSize,
                                   color: Colors.white,
                                 ),
                               ),
@@ -132,7 +134,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                       Text(
                         'Total: ${total.toStringAsFixed(2)} €',
                         style: TextStyle(
-                          fontSize: settings.smallFont ? 20 : 30,
+                          fontSize: settings.currentFontSize,
                           fontWeight: FontWeight.bold,
                           color: textoGeneral,
                         ),

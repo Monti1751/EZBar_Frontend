@@ -18,8 +18,19 @@ class VisualSettingsPage extends StatelessWidget {
     final Color colorPrimario = settings.colorBlindMode ? Colors.blue : const Color(0xFF7BA238);
     final Color colorSecundario = settings.colorBlindMode ? Colors.orange : const Color(0xFFC63425);
 
-    // Tamaño de letra dinámico
-    final double fontSize = settings.smallFont ? 14 : 18;
+    // Tamaño de letra dinámico con 3 opciones
+    final double fontSize;
+    switch (settings.fontSize) {
+      case FontSizeOption.small:
+        fontSize = 14;
+        break;
+      case FontSizeOption.medium:
+        fontSize = 18;
+        break;
+      case FontSizeOption.large:
+        fontSize = 22;
+        break;
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -51,16 +62,38 @@ class VisualSettingsPage extends StatelessWidget {
               activeColor: colorPrimario,
             ),
 
-            // 🔥 Switch tamaño letra
-            SwitchListTile(
+            // 🔥 Selector tamaño letra (3 opciones)
+            ListTile(
               title: Text("Tamaño letra", style: TextStyle(fontSize: fontSize, color: texto)),
               subtitle: Text(
-                settings.smallFont ? "Letra pequeña" : "Letra grande",
+                settings.fontSize == FontSizeOption.small
+                    ? "Letra pequeña"
+                    : settings.fontSize == FontSizeOption.medium
+                        ? "Letra mediana"
+                        : "Letra grande",
                 style: TextStyle(color: texto),
               ),
-              value: settings.smallFont,
-              onChanged: settings.toggleSmallFont,
-              activeColor: colorPrimario,
+              trailing: DropdownButton<FontSizeOption>(
+                value: settings.fontSize,
+                dropdownColor: fondo,
+                items: const [
+                  DropdownMenuItem(
+                    value: FontSizeOption.small,
+                    child: Text("Pequeña"),
+                  ),
+                  DropdownMenuItem(
+                    value: FontSizeOption.medium,
+                    child: Text("Mediana"),
+                  ),
+                  DropdownMenuItem(
+                    value: FontSizeOption.large,
+                    child: Text("Grande"),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value != null) settings.setFontSize(value);
+                },
+              ),
             ),
 
             const Spacer(),
