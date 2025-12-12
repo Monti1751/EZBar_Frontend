@@ -47,10 +47,10 @@ class Zone {
 
   Zone({this.id, required this.name});
 
-  // Convertir desde JSON del backend
+  // ✅ Convertir desde JSON del backend (adaptado para el nuevo formato)
   factory Zone.fromJson(Map<String, dynamic> json) {
     return Zone(
-      id: json['id']?.toString(),
+      id: json['nombre']?.toString(), // Usa 'nombre' como ID
       name: json['nombre'] ?? json['name'] ?? '',
     );
   }
@@ -58,7 +58,6 @@ class Zone {
   // Convertir a JSON para enviar al backend
   Map<String, dynamic> toJson() {
     return {
-      if (id != null) 'id': id,
       'nombre': name,
     };
   }
@@ -85,10 +84,10 @@ class Mesa {
   // Convertir desde JSON del backend
   factory Mesa.fromJson(Map<String, dynamic> json) {
     return Mesa(
-      id: json['id']?.toString() ?? '',
-      name: json['nombre'] ?? json['name'] ?? '',
+      id: json['mesa_id']?.toString() ?? json['id']?.toString() ?? '',
+      name: json['nombre'] ?? json['name'] ?? 'Mesa ${json['numero_mesa'] ?? ''}',
       ubicacion: json['ubicacion'] ?? '',
-      numeroMesa: json['numeroMesa'] ?? json['numero'] ?? 0,
+      numeroMesa: json['numero_mesa'] ?? json['numeroMesa'] ?? json['numero'] ?? 0,
       capacidad: json['capacidad'] ?? 4,
       estado: json['estado'] ?? 'libre',
     );
@@ -100,7 +99,7 @@ class Mesa {
       if (int.tryParse(id) != null) 'id': int.parse(id),
       'nombre': name,
       'ubicacion': ubicacion,
-      'numeroMesa': numeroMesa,
+      'numero_mesa': numeroMesa,
       'capacidad': capacidad,
       'estado': estado,
     };
@@ -162,7 +161,6 @@ class Mesa {
       child: Text(
         estado.toUpperCase(),
         style: const TextStyle(
-          // El badge se mantiene en 12 para legibilidad
           fontSize: 12,
           fontWeight: FontWeight.bold,
         ).copyWith(color: color),
@@ -175,7 +173,7 @@ class Mesa {
 class ZoneWidget extends StatefulWidget {
   final Zone zone;
   final VoidCallback onDelete;
-  final Function(Zone) onUpdate; // Para actualizar la zona en el estado padre
+  final Function(Zone) onUpdate;
 
   const ZoneWidget({
     super.key,
@@ -196,7 +194,7 @@ class _ZoneWidgetState extends State<ZoneWidget> {
   @override
   void initState() {
     super.initState();
-    if (widget.zone.id != null) {
+    if (widget.zone.name.isNotEmpty) {
       _cargarMesasDeZona();
     }
   }
@@ -207,16 +205,15 @@ class _ZoneWidgetState extends State<ZoneWidget> {
     super.dispose();
   }
 
-  /// Cargar mesas de la zona desde el backend
-  /// Cargar mesas de la zona desde el backend
+  /// ✅ Cargar mesas de la zona desde el backend (corregido)
   Future<void> _cargarMesasDeZona() async {
-    if (widget.zone.id == null) return;
-
     try {
-      final mesas = await _apiService.obtenerMesasPorZona(int.parse(widget.zone.id!));
-      setState(() {
-        widget.zone.tables = mesas.map((m) => Mesa.fromJson(m)).toList();
-      });
+      final mesas = await _apiService.obtenerMesasPorZona(widget.zone.name);
+      if (mounted) {
+        setState(() {
+          widget.zone.tables = mesas.map((m) => Mesa.fromJson(m)).toList();
+        });
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -366,7 +363,6 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                                 padding: const EdgeInsets.all(12),
                                 decoration: _cardDecoration(context),
                                 child: Row(
-                                  // Corrección aquí: spaceBetween (camelCase)
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Expanded(
@@ -516,7 +512,7 @@ class _MainMenuState extends State<MainMenu> {
     _cargarZonas();
   }
 
-/// Cargar zonas desde el backend
+  /// ✅ Cargar zonas desde el backend (corregido)
   Future<void> _cargarZonas() async {
     setState(() {
       _isLoading = true;
@@ -567,7 +563,6 @@ class _MainMenuState extends State<MainMenu> {
   @override
   Widget build(BuildContext context) {
     final settings = Provider.of<VisualSettingsProvider>(context);
-    // Colores y tamaños dinámicos según ajustes
     final Color fondo = settings.darkMode ? Colors.black : const Color(0xFFECF0D5);
     final Color barraSuperior = settings.colorBlindMode ? Colors.blue : const Color(0xFF7BA238);
     final double fontSize = settings.currentFontSize;
@@ -579,7 +574,6 @@ class _MainMenuState extends State<MainMenu> {
       backgroundColor: fondo,
       body: Column(
         children: [
-          // Barra superior
           Container(
             height: 55,
             color: barraSuperior,
@@ -597,7 +591,6 @@ class _MainMenuState extends State<MainMenu> {
             ),
           ),
 
-          // Contenido principal
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(12),
@@ -654,7 +647,6 @@ class _MainMenuState extends State<MainMenu> {
 
                   const SizedBox(height: 10),
 
-                  // Lista de zonas
                   Expanded(
                     child: _isLoading
                         ? Center(
