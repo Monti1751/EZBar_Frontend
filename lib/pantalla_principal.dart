@@ -3,6 +3,7 @@ import 'settings_menu.dart';
 import 'package:provider/provider.dart';
 import 'cuenta.dart';
 import 'visual_settings_provider.dart';
+import 'services/api_service.dart'; 
 
  InputDecoration loginInputDecoration(String hint, IconData icon) {
   return InputDecoration(
@@ -39,11 +40,28 @@ class PantallaPrincipal extends StatelessWidget {
 
 /// === MODELO DE ZONA ===
 class Zone {
+  String? id;
   String name;
   bool isOpen = false;
   List<Mesa> tables = [];
 
-  Zone({required this.name});
+  Zone({this.id, required this.name});
+
+  // Convertir desde JSON del backend
+  factory Zone.fromJson(Map<String, dynamic> json) {
+    return Zone(
+      id: json['id']?.toString(),
+      name: json['nombre'] ?? json['name'] ?? '',
+    );
+  }
+
+  // Convertir a JSON para enviar al backend
+  Map<String, dynamic> toJson() {
+    return {
+      if (id != null) 'id': id,
+      'nombre': name,
+    };
+  }
 }
 
 /// === MODELO DE MESA ===
@@ -63,6 +81,30 @@ class Mesa {
     required this.capacidad,
     this.estado = "libre",
   });
+
+  // Convertir desde JSON del backend
+  factory Mesa.fromJson(Map<String, dynamic> json) {
+    return Mesa(
+      id: json['id']?.toString() ?? '',
+      name: json['nombre'] ?? json['name'] ?? '',
+      ubicacion: json['ubicacion'] ?? '',
+      numeroMesa: json['numeroMesa'] ?? json['numero'] ?? 0,
+      capacidad: json['capacidad'] ?? 4,
+      estado: json['estado'] ?? 'libre',
+    );
+  }
+
+  // Convertir a JSON para enviar al backend
+  Map<String, dynamic> toJson() {
+    return {
+      if (int.tryParse(id) != null) 'id': int.parse(id),
+      'nombre': name,
+      'ubicacion': ubicacion,
+      'numeroMesa': numeroMesa,
+      'capacidad': capacidad,
+      'estado': estado,
+    };
+  }
 
   void setEstado(int disposicion) {
     switch (disposicion) {
@@ -129,12 +171,18 @@ class Mesa {
   }
 }
 
-/// === WIDGET ZONA ===
+/// === WIDGET ZONA CON API===
 class ZoneWidget extends StatefulWidget {
   final Zone zone;
   final VoidCallback onDelete;
+  final Function(Zone) onUpdate; // Para actualizar la zona en el estado padre
 
-  const ZoneWidget({super.key, required this.zone, required this.onDelete});
+  const ZoneWidget({
+    super.key,
+    required this.zone,
+    required this.onDelete,
+    required this.onUpdate,
+  });
 
   @override
   State<ZoneWidget> createState() => _ZoneWidgetState();
@@ -142,12 +190,40 @@ class ZoneWidget extends StatefulWidget {
 
 class _ZoneWidgetState extends State<ZoneWidget> {
   final TextEditingController _tableController = TextEditingController();
+  final ApiService _apiService = ApiService();
   int _tableCounter = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.zone.id != null) {
+      _cargarMesasDeZona();
+    }
+  }
 
   @override
   void dispose() {
     _tableController.dispose();
     super.dispose();
+  }
+
+  /// Cargar mesas de la zona desde el backend
+  /// Cargar mesas de la zona desde el backend
+  Future<void> _cargarMesasDeZona() async {
+    if (widget.zone.id == null) return;
+
+    try {
+      final mesas = await _apiService.obtenerMesasPorZona(int.parse(widget.zone.id!));
+      setState(() {
+        widget.zone.tables = mesas.map((m) => Mesa.fromJson(m)).toList();
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al cargar mesas: $e')),
+        );
+      }
+    }
   }
 
   BoxDecoration _cardDecoration(BuildContext context) {
@@ -416,7 +492,7 @@ class _ZoneWidgetState extends State<ZoneWidget> {
 /// Color principal del tema
 const Color mainColor = Color(0xFF7BA238);
 
-/// Menú principal con estado
+/// Menú principal con API
 class MainMenu extends StatefulWidget {
   const MainMenu({super.key});
 
@@ -426,10 +502,67 @@ class MainMenu extends StatefulWidget {
 
 class _MainMenuState extends State<MainMenu> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final ApiService _apiService = ApiService();
 
   bool _showAddZoneField = false;
   final TextEditingController _zoneController = TextEditingController();
   List<Zone> zones = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarZonas();
+  }
+
+/// Cargar zonas desde el backend
+  Future<void> _cargarZonas() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final zonasData = await _apiService.obtenerZonas();
+      setState(() {
+        zones = zonasData.map((z) => Zone.fromJson(z)).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  /// Crear zona en el backend
+  Future<void> _crearZona(String nombre) async {
+    try {
+      final nuevaZona = Zone(name: nombre);
+      final response = await _apiService.crearZona(nuevaZona.toJson());
+      final zonaCreada = Zone.fromJson(response);
+
+      setState(() {
+        zones.add(zonaCreada);
+        _zoneController.clear();
+        _showAddZoneField = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Zona creada correctamente')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al crear zona: $e')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -512,11 +645,7 @@ class _MainMenuState extends State<MainMenu> {
                           icon: Icon(Icons.check, color: barraSuperior),
                           onPressed: () {
                             if (_zoneController.text.isNotEmpty) {
-                              setState(() {
-                                zones.add(Zone(name: _zoneController.text));
-                                _zoneController.clear();
-                                _showAddZoneField = false;
-                              });
+                              _crearZona(_zoneController.text);
                             }
                           },
                         ),
@@ -527,20 +656,41 @@ class _MainMenuState extends State<MainMenu> {
 
                   // Lista de zonas
                   Expanded(
-                    child: ListView(
-                      children: zones
-                          .map(
-                            (z) => ZoneWidget(
-                              zone: z,
-                              onDelete: () {
-                                setState(() {
-                                  zones.remove(z);
-                                });
-                              },
+                    child: _isLoading
+                        ? Center(
+                            child: CircularProgressIndicator(
+                              color: barraSuperior,
                             ),
                           )
-                          .toList(),
-                    ),
+                        : _error != null
+                            ? Center(
+                                child: Text(
+                                  'Error: $_error',
+                                  style: TextStyle(color: textoGeneral),
+                                ),
+                              )
+                            : ListView(
+                                children: zones
+                                    .map(
+                                      (z) => ZoneWidget(
+                                        zone: z,
+                                        onDelete: () {
+                                          setState(() {
+                                            zones.remove(z);
+                                          });
+                                        },
+                                        onUpdate: (updatedZone) {
+                                          setState(() {
+                                            final index = zones.indexWhere((zone) => zone.id == updatedZone.id);
+                                            if (index != -1) {
+                                              zones[index] = updatedZone;
+                                            }
+                                          });
+                                        },
+                                      ),
+                                    )
+                                    .toList(),
+                              ),
                   ),
                 ],
               ),
