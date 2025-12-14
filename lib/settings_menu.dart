@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'main.dart';
-import 'ajustes_visuales.dart'; 
+import 'ajustes_visuales.dart';
 import 'visual_settings_provider.dart';
+import 'pantalla_principal.dart';
+import 'CartaPage.dart'; 
 
 class SettingsMenu extends StatelessWidget {
   const SettingsMenu({super.key});
@@ -15,7 +17,23 @@ class SettingsMenu extends StatelessWidget {
     final Color fondo = settings.darkMode ? Colors.black : Colors.white;
     final Color encabezado = settings.colorBlindMode ? Colors.blue : const Color(0xFF7BA238);
     final Color textoGeneral = settings.darkMode ? Colors.white : Colors.black;
-    final double fontSize = settings.smallFont ? 14 : 17;
+
+    // Tamaños dinámicos
+    final double fontSize = settings.currentFontSize;
+
+    final double headerFontSize =
+        settings.fontSize == FontSizeOption.small
+            ? 18
+            : settings.fontSize == FontSizeOption.medium
+                ? 22
+                : 26;
+
+    final double logoutFontSize =
+        settings.fontSize == FontSizeOption.small
+            ? 14
+            : settings.fontSize == FontSizeOption.medium
+                ? 16
+                : 18;
 
     return Drawer(
       child: SafeArea(
@@ -29,7 +47,7 @@ class SettingsMenu extends StatelessWidget {
               child: Text(
                 "Ajustes",
                 style: TextStyle(
-                  fontSize: settings.smallFont ? 18 : 22,
+                  fontSize: headerFontSize,
                   fontWeight: FontWeight.bold,
                   color: textoGeneral,
                 ),
@@ -52,7 +70,14 @@ class SettingsMenu extends StatelessWidget {
                     _menuItem(
                       icon: Icons.menu_book,
                       text: "Editar carta",
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CartaPage(),
+                          ),
+                        );
+                      },
                       textoColor: textoGeneral,
                       fontSize: fontSize,
                     ),
@@ -87,7 +112,12 @@ class SettingsMenu extends StatelessWidget {
                     _menuItem(
                       icon: Icons.approval,
                       text: "Acceso Menú Principal",
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => PantallaPrincipal()),
+                        );
+                      },
                       textoColor: textoGeneral,
                       fontSize: fontSize,
                     ),
@@ -111,11 +141,14 @@ class SettingsMenu extends StatelessWidget {
                       (route) => false,
                     );
                   },
-                  icon: Icon(Icons.logout, color: settings.colorBlindMode ? Colors.orange : const Color(0xFFC63425)),
+                  icon: Icon(
+                    Icons.logout,
+                    color: settings.colorBlindMode ? Colors.orange : const Color(0xFFC63425),
+                  ),
                   label: Text(
                     "Cerrar sesión",
                     style: TextStyle(
-                      fontSize: settings.smallFont ? 14 : 16,
+                      fontSize: logoutFontSize,
                       fontWeight: FontWeight.bold,
                       color: settings.colorBlindMode ? Colors.orange : const Color(0xFFC63425),
                     ),

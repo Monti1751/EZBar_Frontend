@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'pantalla_principal.dart';
 import 'package:provider/provider.dart';
 import 'visual_settings_provider.dart';
+import 'services/api_service.dart'; 
 
 void main() {
   runApp(
@@ -101,7 +102,7 @@ class _LoginPageState extends State<LoginPage> {
                 padding: const EdgeInsets.fromLTRB(24, 80, 24, 24),
                 decoration: BoxDecoration(
                   color: const Color(0xFF7BA238),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
                       color: const Color(0xFF4A4025).withOpacity(0.2),
@@ -127,9 +128,20 @@ class _LoginPageState extends State<LoginPage> {
                       const SizedBox(height: 30),
                       TextFormField(
                         controller: _usernameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Nombre de usuario...',
+                        decoration: InputDecoration(
+                          hintText: 'Nombre de usuario...',
                           prefixIcon: Icon(Icons.person_outlined, color: Color(0xFF4A4025)),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFF4A4025),  width: 1.5,),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFECF0D5),
+                              width: 2.2,
+                            ),
+                          ),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -145,9 +157,20 @@ class _LoginPageState extends State<LoginPage> {
                       TextFormField(
                         controller: _passwordController,
                         obscureText: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Contraseña...',
+                        decoration: InputDecoration(
+                          hintText: 'Contraseña...',
                           prefixIcon: Icon(Icons.lock_outline, color: Color(0xFF4A4025)),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Color(0xFF4A4025), width: 1.5,),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFECF0D5),
+                              width: 2.2,
+                            ),
+                          ),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -181,7 +204,6 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
-
               Container(
                 decoration: BoxDecoration(
                   color: const Color(0xFFECF0D5),
