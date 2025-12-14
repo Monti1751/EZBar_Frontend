@@ -2,16 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'settings_menu.dart';
 import 'visual_settings_provider.dart';
-import 'CartaPage.dart';
+import 'CartaPage.dart'; // 👈 Importamos la pantalla de la carta
 import 'services/api_service.dart';
-import 'plato.dart'; // Importante para el modelo
 
 class CuentaMesaPage extends StatefulWidget {
   final String nombreMesa;
-  // Podrías pasar también el ID de la mesa si lo tienes:
-  final int? mesaId;
 
-  const CuentaMesaPage({super.key, required this.nombreMesa, this.mesaId});
+  const CuentaMesaPage({super.key, required this.nombreMesa});
 
   @override
   State<CuentaMesaPage> createState() => _CuentaMesaPageState();
@@ -19,9 +16,9 @@ class CuentaMesaPage extends StatefulWidget {
 
 class _CuentaMesaPageState extends State<CuentaMesaPage> {
   double total = 0.0;
-  List<dynamic> detallesPedido = [];
-  bool isLoading = true;
+  int? _mesaId;
   final ApiService _apiService = ApiService();
+
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
@@ -31,60 +28,52 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
   }
 
   Future<void> _cargarCuenta() async {
-    setState(() => isLoading = true);
     try {
-      // 1. Necesitamos saber el ID de la mesa para buscar su pedido.
-      // Si no viene en el widget, tendrías que buscar la mesa por nombre primero o pasarlo.
-      // Asumiremos por ahora que widget.mesaId viene o hacemos una búsqueda básica.
-
-      int? idMesa = widget.mesaId;
-
-      // Si no tenemos ID, intentamos buscar la mesa por nombre (esto requiere un endpoint extra o filtrar todas)
-      if (idMesa == null) {
+      if (_mesaId == null) {
         final mesas = await _apiService.obtenerMesas();
-        final mesaEncontrada = mesas.firstWhere(
-          (m) =>
-              m['numero_mesa'].toString() ==
-              widget.nombreMesa.replaceAll(RegExp(r'[^0-9]'), ''),
-          orElse: () => null,
-        );
+        final mesaEncontrada = mesas.firstWhere((m) {
+          final numeroStr = m['numero_mesa'].toString();
+          final numeroEnNombre = widget.nombreMesa.replaceAll(
+            RegExp(r'[^0-9]'),
+            '',
+          );
+          return (numeroEnNombre.isNotEmpty && numeroStr == numeroEnNombre) ||
+              (m['nombre'] != null && m['nombre'] == widget.nombreMesa);
+        }, orElse: () => null);
+
         if (mesaEncontrada != null) {
-          idMesa = mesaEncontrada['mesa_id'];
+          _mesaId = mesaEncontrada['mesa_id'];
         }
       }
 
-      if (idMesa != null) {
-        final pedido = await _apiService.obtenerPedidoActivoMesa(idMesa);
+      if (_mesaId != null) {
+        final pedido = await _apiService.obtenerPedidoActivoMesa(_mesaId!);
         if (pedido != null) {
           setState(() {
             total = (pedido['total_pedido'] as num).toDouble();
-            // Si el endpoint de pedido devuelve los detalles (productos), los cargaríamos aquí.
-            // Si no, habría que llamar a otro endpoint /pedidos/{id}/detalles
-            // Por ahora solo mostramos el total global.
           });
-        } else {
-          setState(() => total = 0.0);
         }
       }
     } catch (e) {
       print('Error cargando cuenta: $e');
-    } finally {
-      setState(() => isLoading = false);
     }
   }
 
-  // Método para abrir la carta
+  // 👇 Método para abrir la carta
   void _abrirCarta() {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (ctx) => CartaPage(
+          // Callback opcional: suma el precio del plato al total
           onAddToCuenta: (plato) async {
-            // Aquí deberíamos llamar a la API para añadir el producto al pedido real
-            // Por simplicidad visual inmediata, sumamos localmente, pero lo ideal es:
-            // await _apiService.agregarProductoAPedido(pedidoId, plato.id);
-            // _cargarCuenta();
-
+            if (_mesaId != null && plato.id != null) {
+              try {
+                await _apiService.agregarProductoAMesa(_mesaId!, plato.id!);
+              } catch (e) {
+                print("Error adding product: $e");
+              }
+            }
             setState(() {
               total += plato.precio;
             });
@@ -182,7 +171,8 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                         child: Align(
                           alignment: Alignment.bottomCenter,
                           child: ElevatedButton(
-                            onPressed: _abrirCarta,
+                            onPressed:
+                                _abrirCarta, // 👈 Conectado con CartaPage
                             style: ElevatedButton.styleFrom(
                               backgroundColor: barraSuperior,
                               padding: const EdgeInsets.symmetric(
@@ -211,16 +201,14 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                   // === TOTAL ===
                   Row(
                     children: [
-                      isLoading
-                          ? const CircularProgressIndicator()
-                          : Text(
-                              'Total: ${total.toStringAsFixed(2)} €',
-                              style: TextStyle(
-                                fontSize: settings.currentFontSize,
-                                fontWeight: FontWeight.bold,
-                                color: textoGeneral,
-                              ),
-                            ),
+                      Text(
+                        'Total: ${total.toStringAsFixed(2)} €',
+                        style: TextStyle(
+                          fontSize: settings.currentFontSize,
+                          fontWeight: FontWeight.bold,
+                          color: textoGeneral,
+                        ),
+                      ),
                     ],
                   ),
                 ],

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'pantalla_principal.dart';
 import 'package:provider/provider.dart';
 import 'visual_settings_provider.dart';
-import 'services/api_service.dart'; 
 
 void main() {
   runApp(

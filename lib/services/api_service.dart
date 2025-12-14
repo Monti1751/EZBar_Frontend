@@ -65,6 +65,34 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> crearCategoria(String nombre) async {
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConfig.categorias),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'nombre': nombre, 'descripcion': ''}),
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return json.decode(response.body);
+      }
+      throw Exception('Error crear categoria: ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Error conexion: $e');
+    }
+  }
+
+  Future<bool> eliminarCategoria(int id) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('${ApiConfig.categorias}/$id'),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print(e);
+      return false;
+    }
+  }
+
   // Obtener todos los productos
   Future<List<dynamic>> obtenerProductos() async {
     try {
@@ -77,6 +105,34 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Error de conexión: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> crearProducto(Map<String, dynamic> data) async {
+    // data debe incluir 'nombre', 'precio', 'categoria': {'categoria_id': ...}
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConfig.productos),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(data),
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return json.decode(response.body);
+      }
+      throw Exception('Error crear producto: ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Error conexion: $e');
+    }
+  }
+
+  Future<bool> eliminarProducto(int id) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('${ApiConfig.productos}/$id'),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
     }
   }
 
@@ -326,6 +382,45 @@ class ApiService {
     } catch (e) {
       print('Error obteniendo pedido activo: $e');
       return null;
+    }
+  }
+
+  Future<List<dynamic>> obtenerDetallesPedido(int pedidoId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.pedidos}/$pedidoId/detalles'),
+      );
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      return [];
+    } catch (e) {
+      print("Error obteniendo detalles: $e");
+      return [];
+    }
+  }
+
+  // Agregar producto a mesa (crea pedido si es necesario)
+  Future<Map<String, dynamic>> agregarProductoAMesa(
+    int mesaId,
+    int productoId,
+  ) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.pedidos}/mesa/$mesaId/agregar-producto'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'productoId': productoId}),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return json.decode(response.body);
+      } else {
+        throw Exception(
+          'Error al agregar producto: ${response.statusCode} - ${response.body}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
     }
   }
 }

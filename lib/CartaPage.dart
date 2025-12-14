@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'plato.dart';
 import 'visual_settings_provider.dart';
 import 'settings_menu.dart';
+
 import 'services/api_service.dart';
 
 /// Helper para InputDecoration consistente
@@ -25,10 +26,11 @@ InputDecoration loginInputDecoration(String hint, IconData icon) {
 
 /// Modelo de Sección
 class Seccion {
+  int? id;
   String nombre;
   bool isOpen = false;
   List<Plato> platos = [];
-  Seccion({required this.nombre});
+  Seccion({this.id, required this.nombre});
 }
 
 /// Pantalla Carta
@@ -48,53 +50,47 @@ class _CartaPageState extends State<CartaPage> {
   final TextEditingController _platoController = TextEditingController();
   final ApiService _apiService = ApiService();
 
-  late Future<List<Seccion>> _seccionesFuture;
+  List<Seccion> secciones = [];
 
   @override
   void initState() {
     super.initState();
-    _seccionesFuture = _cargarDatos();
+    _cargarDatos();
   }
 
-  // Carga inicial de datos combinados (Categorías + Productos)
-  Future<List<Seccion>> _cargarDatos() async {
+  Future<void> _cargarDatos() async {
     try {
-      final categorias = await _apiService.obtenerCategorias();
-      final productos = await _apiService.obtenerProductos();
+      final cats = await _apiService.obtenerCategorias();
+      final prods = await _apiService.obtenerProductos();
 
-      List<Seccion> seccionesLista = [];
-
-      for (var cat in categorias) {
-        Seccion nuevaSeccion = Seccion(nombre: cat['nombre']);
-
-        // Filtrar productos de esta categoría
-        var productosCategoria = productos.where((p) {
-          // El backend Spring Boot devuelve 'categoria' como objeto anidado
+      List<Seccion> loaded = [];
+      for (var c in cats) {
+        Seccion s = Seccion(id: c['categoria_id'], nombre: c['nombre']);
+        var pList = prods.where((p) {
           if (p['categoria'] != null && p['categoria'] is Map) {
-            return p['categoria']['categoria_id'] == cat['categoria_id'];
+            return p['categoria']['categoria_id'] == c['categoria_id'];
           }
-          // Fallback por si acaso devolviera solo ID
-          return p['categoria_id'] == cat['categoria_id'];
-        }).toList();
+          // Fallback
+          return false;
+        });
 
-        for (var prod in productosCategoria) {
-          // Parsear ingredientes, extras, alérgenos si vinieran como string separado por comas o json (según tu BD)
-          // Asumiremos listas vacías por simplicidad inicial, o parsing básico
-          nuevaSeccion.platos.add(
+        for (var p in pList) {
+          s.platos.add(
             Plato(
-              id: prod['producto_id'], // Necesitarás añadir ID al modelo Plato
-              nombre: prod['nombre'],
-              precio: (prod['precio'] as num).toDouble(),
-              // imagen: ... (manejo de URL vs File local pendiente)
+              id: p['producto_id'],
+              nombre: p['nombre'],
+              precio: (p['precio'] as num).toDouble(),
+              // imagen: ...
             ),
           );
         }
-        seccionesLista.add(nuevaSeccion);
+        loaded.add(s);
       }
-      return seccionesLista;
+      setState(() {
+        secciones = loaded;
+      });
     } catch (e) {
-      print('Error cargando carta: $e');
-      return []; // Retorna lista vacía en error para no romper UI
+      print("Error loading data: $e");
     }
   }
 
@@ -174,230 +170,436 @@ class _CartaPageState extends State<CartaPage> {
             ),
           ),
 
-          // Lista de secciones (FutureBuilder)
+          // Lista de secciones
           Expanded(
-            child: FutureBuilder<List<Seccion>>(
-              future: _seccionesFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(
-                    child: Text(
-                      "Error al cargar la carta: ${snapshot.error}",
-                      style: TextStyle(color: Colors.red),
+            child: ListView(
+              children: [
+                for (var seccion in secciones)
+                  Container(
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
                     ),
-                  );
-                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(
-                    child: Text(
-                      "No hay productos disponibles.",
-                      style: TextStyle(color: textoGeneral),
+                    decoration: BoxDecoration(
+                      color: barraSuperior,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.black54),
                     ),
-                  );
-                }
-
-                final secciones = snapshot.data!;
-
-                return ListView(
-                  children: [
-                    for (var seccion in secciones)
-                      Container(
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: barraSuperior,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.black54),
-                        ),
-                        child: Column(
-                          children: [
-                            ListTile(
-                              title: Text(
-                                seccion.nombre,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: fontSize,
-                                  color: textoGeneral,
-                                ),
-                              ),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  // Eliminado botón borrar sección porque viene de API
-                                  Icon(
-                                    seccion.isOpen
-                                        ? Icons.expand_less
-                                        : Icons.expand_more,
-                                    color: textoGeneral,
-                                  ),
-                                ],
-                              ),
-                              onTap: () {
-                                setState(
-                                  () => seccion.isOpen = !seccion.isOpen,
-                                );
-                              },
+                    child: Column(
+                      children: [
+                        ListTile(
+                          title: Text(
+                            seccion.nombre,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: fontSize,
+                              color: textoGeneral,
                             ),
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete_outline,
+                                  color: Colors.red,
+                                ),
+                                tooltip: "Eliminar sección",
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (ctx) => AlertDialog(
+                                      title: const Text(
+                                        "Confirmar eliminación",
+                                      ),
+                                      content: Text(
+                                        "¿Seguro que quieres eliminar la sección '${seccion.nombre}'?",
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.of(ctx).pop(),
+                                          child: const Text("Cancelar"),
+                                        ),
+                                        TextButton(
+                                          onPressed: () async {
+                                            if (seccion.id != null) {
+                                              await _apiService
+                                                  .eliminarCategoria(
+                                                    seccion.id!,
+                                                  );
+                                            }
+                                            setState(() {
+                                              secciones.remove(seccion);
+                                            });
+                                            Navigator.of(ctx).pop();
+                                          },
+                                          child: const Text(
+                                            "Eliminar",
+                                            style: TextStyle(color: Colors.red),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                              Icon(
+                                seccion.isOpen
+                                    ? Icons.expand_less
+                                    : Icons.expand_more,
+                                color: textoGeneral,
+                              ),
+                            ],
+                          ),
+                          onTap: () {
+                            setState(() => seccion.isOpen = !seccion.isOpen);
+                          },
+                        ),
 
-                            if (seccion.isOpen)
-                              SizedBox(
-                                height:
-                                    MediaQuery.of(context).size.height * 0.65,
-                                child: Container(
-                                  margin: const EdgeInsets.all(10),
-                                  decoration: _cardDecoration(context),
-                                  padding: const EdgeInsets.all(10),
-                                  child: Column(
+                        if (seccion.isOpen)
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.65,
+                            child: Container(
+                              margin: const EdgeInsets.all(10),
+                              decoration: _cardDecoration(context),
+                              padding: const EdgeInsets.all(10),
+                              child: Column(
+                                children: [
+                                  // Añadir plato (solo nombre) -> abre editor y añade al volver
+                                  Row(
                                     children: [
-                                      // Eliminada opción rápida de crear plato localmente
-                                      const SizedBox(height: 10),
-
-                                      // Lista de platos
                                       Expanded(
-                                        child: ListView(
-                                          children: [
-                                            for (var plato in seccion.platos)
-                                              Container(
-                                                margin:
-                                                    const EdgeInsets.symmetric(
-                                                      vertical: 6,
-                                                      horizontal: 4,
-                                                    ),
-                                                decoration: _cardDecoration(
+                                        child: TextField(
+                                          controller: _platoController,
+                                          decoration: loginInputDecoration(
+                                            "Nombre del plato",
+                                            Icons.fastfood,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.add,
+                                          color: Colors.green,
+                                        ),
+                                        tooltip: "Crear plato",
+                                        onPressed: () async {
+                                          final nombre = _platoController.text
+                                              .trim();
+                                          if (nombre.isNotEmpty) {
+                                            final nuevoPlato =
+                                                await Navigator.push<Plato>(
                                                   context,
-                                                ),
-                                                child: InkWell(
-                                                  onTap: () {
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (ctx) =>
-                                                            PlatoEditorPage(
-                                                              plato: plato,
-                                                            ),
-                                                      ),
-                                                    );
-                                                  },
-                                                  child: Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                          12,
-                                                        ),
-                                                    child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
-                                                      children: [
-                                                        // Imagen + nombre
-                                                        Expanded(
-                                                          child: Row(
-                                                            children: [
-                                                              /* Manejo de imagen pendiente
-                                                              if (plato.imagen != null) ...
-                                                                
-                                                              else */
-                                                              Container(
-                                                                width: 50,
-                                                                height: 50,
-                                                                decoration: BoxDecoration(
-                                                                  color: Colors
-                                                                      .grey[300],
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        8,
-                                                                      ),
-                                                                  border: Border.all(
-                                                                    color: Colors
-                                                                        .black12,
-                                                                  ),
-                                                                ),
-                                                                child: const Icon(
-                                                                  Icons.image,
-                                                                  color: Colors
-                                                                      .black26,
-                                                                ),
-                                                              ),
-                                                              const SizedBox(
-                                                                width: 10,
-                                                              ),
-                                                              Expanded(
-                                                                child: Text(
-                                                                  plato.nombre,
-                                                                  style: TextStyle(
-                                                                    fontSize:
-                                                                        fontSize,
-                                                                    color:
-                                                                        textoGeneral,
-                                                                  ),
-                                                                  overflow:
-                                                                      TextOverflow
-                                                                          .ellipsis,
-                                                                ),
-                                                              ),
-                                                              const SizedBox(
-                                                                width: 10,
-                                                              ),
-                                                              Text(
-                                                                "${plato.precio.toStringAsFixed(2)} €",
-                                                                style: TextStyle(
-                                                                  fontSize:
-                                                                      fontSize,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                  color:
-                                                                      textoGeneral,
-                                                                ),
-                                                              ),
-                                                            ],
+                                                  MaterialPageRoute(
+                                                    builder: (ctx) =>
+                                                        PlatoEditorPage(
+                                                          plato: Plato(
+                                                            nombre: nombre,
+                                                            precio: 0.0,
                                                           ),
                                                         ),
-
-                                                        // Acciones
-                                                        Row(
-                                                          children: [
-                                                            IconButton(
-                                                              icon: Icon(
-                                                                Icons
-                                                                    .add_circle,
-                                                                color:
-                                                                    barraSuperior,
-                                                              ),
-                                                              tooltip:
-                                                                  "Añadir a la cuenta",
-                                                              onPressed: () =>
-                                                                  _addPlatoToCuenta(
-                                                                    plato,
-                                                                  ),
-                                                            ),
-                                                            // Eliminado botón borrar plato
-                                                          ],
-                                                        ),
-                                                      ],
-                                                    ),
                                                   ),
-                                                ),
-                                              ),
-                                          ],
-                                        ),
+                                                );
+
+                                            if (nuevoPlato != null) {
+                                              if (seccion.id != null) {
+                                                try {
+                                                  final data = {
+                                                    'nombre': nuevoPlato.nombre,
+                                                    'precio': nuevoPlato.precio,
+                                                    'categoria': {
+                                                      'categoria_id':
+                                                          seccion.id,
+                                                    },
+                                                  };
+                                                  final res = await _apiService
+                                                      .crearProducto(data);
+                                                  nuevoPlato.id =
+                                                      res['producto_id'];
+                                                  setState(() {
+                                                    seccion.platos.add(
+                                                      nuevoPlato,
+                                                    );
+                                                  });
+                                                } catch (e) {
+                                                  print(
+                                                    "Error creating product: $e",
+                                                  );
+                                                }
+                                              }
+                                              _platoController.clear();
+                                            }
+                                          }
+                                        },
                                       ),
                                     ],
                                   ),
-                                ),
+
+                                  const SizedBox(height: 10),
+
+                                  // Lista de platos
+                                  Expanded(
+                                    child: ListView(
+                                      children: [
+                                        for (var plato in seccion.platos)
+                                          Container(
+                                            margin: const EdgeInsets.symmetric(
+                                              vertical: 6,
+                                              horizontal: 4,
+                                            ),
+                                            decoration: _cardDecoration(
+                                              context,
+                                            ),
+                                            child: InkWell(
+                                              onTap: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (ctx) =>
+                                                        PlatoEditorPage(
+                                                          plato: plato,
+                                                        ),
+                                                  ),
+                                                );
+                                              },
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(
+                                                  12,
+                                                ),
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    // Imagen pequeña + nombre
+                                                    Expanded(
+                                                      child: Row(
+                                                        children: [
+                                                          if (plato.imagen !=
+                                                              null)
+                                                            ClipRRect(
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    8,
+                                                                  ),
+                                                              child: Image.file(
+                                                                plato.imagen!,
+                                                                width: 50,
+                                                                height: 50,
+                                                                fit: BoxFit
+                                                                    .cover,
+                                                              ),
+                                                            )
+                                                          else
+                                                            Container(
+                                                              width: 50,
+                                                              height: 50,
+                                                              decoration: BoxDecoration(
+                                                                color: Colors
+                                                                    .grey[300],
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      8,
+                                                                    ),
+                                                                border: Border.all(
+                                                                  color: Colors
+                                                                      .black12,
+                                                                ),
+                                                              ),
+                                                              child: const Icon(
+                                                                Icons.image,
+                                                                color: Colors
+                                                                    .black26,
+                                                              ),
+                                                            ),
+                                                          const SizedBox(
+                                                            width: 10,
+                                                          ),
+                                                          Expanded(
+                                                            child: Text(
+                                                              plato.nombre,
+                                                              style: TextStyle(
+                                                                fontSize:
+                                                                    fontSize,
+                                                                color:
+                                                                    textoGeneral,
+                                                              ),
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+
+                                                    // Acciones: añadir a cuenta (+) y eliminar
+                                                    Row(
+                                                      children: [
+                                                        IconButton(
+                                                          icon: Icon(
+                                                            Icons.add_circle,
+                                                            color:
+                                                                barraSuperior,
+                                                          ),
+                                                          tooltip:
+                                                              "Añadir a la cuenta",
+                                                          onPressed: () =>
+                                                              _addPlatoToCuenta(
+                                                                plato,
+                                                              ),
+                                                        ),
+                                                        IconButton(
+                                                          icon: const Icon(
+                                                            Icons
+                                                                .delete_outline,
+                                                            color: Colors.red,
+                                                          ),
+                                                          tooltip:
+                                                              "Eliminar plato",
+                                                          onPressed: () {
+                                                            showDialog(
+                                                              context: context,
+                                                              builder: (ctx) => AlertDialog(
+                                                                title: const Text(
+                                                                  "Confirmar eliminación",
+                                                                ),
+                                                                content: Text(
+                                                                  "¿Seguro que quieres eliminar el plato '${plato.nombre}'?",
+                                                                ),
+                                                                actions: [
+                                                                  TextButton(
+                                                                    onPressed: () =>
+                                                                        Navigator.of(
+                                                                          ctx,
+                                                                        ).pop(),
+                                                                    child: const Text(
+                                                                      "Cancelar",
+                                                                    ),
+                                                                  ),
+                                                                  TextButton(
+                                                                    onPressed: () async {
+                                                                      if (plato
+                                                                              .id !=
+                                                                          null) {
+                                                                        await _apiService.eliminarProducto(
+                                                                          plato
+                                                                              .id!,
+                                                                        );
+                                                                      }
+                                                                      setState(() {
+                                                                        seccion
+                                                                            .platos
+                                                                            .remove(
+                                                                              plato,
+                                                                            );
+                                                                      });
+                                                                      Navigator.of(
+                                                                        ctx,
+                                                                      ).pop();
+                                                                    },
+                                                                    child: const Text(
+                                                                      "Eliminar",
+                                                                      style: TextStyle(
+                                                                        color: Colors
+                                                                            .red,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            );
+                                                          },
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
-                          ],
-                        ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          // Botón para agregar sección
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: barraSuperior,
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 20,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: Text(
+                "Agregar sección...",
+                style: TextStyle(fontSize: fontSize, color: Colors.white),
+              ),
+              onPressed: () {
+                _seccionController.clear();
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text("Nueva sección"),
+                    content: TextField(
+                      controller: _seccionController,
+                      decoration: loginInputDecoration(
+                        "Nombre de la sección",
+                        Icons.list,
                       ),
-                  ],
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text("Cancelar"),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          if (_seccionController.text.isNotEmpty) {
+                            try {
+                              final nueva = await _apiService.crearCategoria(
+                                _seccionController.text,
+                              );
+                              setState(() {
+                                secciones.add(
+                                  Seccion(
+                                    id: nueva['categoria_id'],
+                                    nombre: nueva['nombre'],
+                                  ),
+                                );
+                              });
+                            } catch (e) {
+                              print("Error creating category: $e");
+                            }
+                          }
+                          Navigator.pop(ctx);
+                        },
+                        child: const Text("Agregar"),
+                      ),
+                    ],
+                  ),
                 );
               },
             ),
           ),
-
-          // Eliminado botón agregar sección
         ],
       ),
     );
