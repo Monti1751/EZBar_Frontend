@@ -7,13 +7,14 @@ class ApiConfig {
   
   // Para dispositivos iOS (simulador)
   // static const String baseUrl = 'http://localhost:3000/api';
-  
+
   // Para dispositivos físicos (usar IP de tu ordenador)
   // static const String baseUrl = 'http://192.168.1.XXX:3000/api';
-  
+
   // Endpoints
   static const String mesas = '$baseUrl/api/mesas';
   static const String pedidos = '$baseUrl/api/pedidos';
   static const String productos = '$baseUrl/api/productos';
-  static const String zonas     = '$baseUrl/api/zonas'; 
+  static const String zonas = '$baseUrl/api/zonas';
+  static const String categorias = '$baseUrl/api/categorias';
 }

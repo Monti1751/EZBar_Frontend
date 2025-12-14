@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'plato.dart';
 import 'visual_settings_provider.dart';
 import 'settings_menu.dart';
+import 'services/api_service.dart';
 
 /// Helper para InputDecoration consistente
 InputDecoration loginInputDecoration(String hint, IconData icon) {
@@ -30,10 +31,11 @@ InputDecoration loginInputDecoration(String hint, IconData icon) {
 
 /// Modelo de Sección
 class Seccion {
+  int? id;
   String nombre;
   bool isOpen = false;
   List<Plato> platos = [];
-  Seccion({required this.nombre});
+  Seccion({this.id, required this.nombre});
 }
 
 /// Pantalla Carta
@@ -51,8 +53,51 @@ class _CartaPageState extends State<CartaPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _seccionController = TextEditingController();
   final TextEditingController _platoController = TextEditingController();
+  final ApiService _apiService = ApiService();
 
   List<Seccion> secciones = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarDatos();
+  }
+
+  Future<void> _cargarDatos() async {
+    try {
+      final cats = await _apiService.obtenerCategorias();
+      final prods = await _apiService.obtenerProductos();
+
+      List<Seccion> loaded = [];
+      for (var c in cats) {
+        Seccion s = Seccion(id: c['categoria_id'], nombre: c['nombre']);
+        var pList = prods.where((p) {
+          if (p['categoria'] != null && p['categoria'] is Map) {
+            return p['categoria']['categoria_id'] == c['categoria_id'];
+          }
+          // Fallback
+          return false;
+        });
+
+        for (var p in pList) {
+          s.platos.add(
+            Plato(
+              id: p['producto_id'],
+              nombre: p['nombre'],
+              precio: (p['precio'] as num).toDouble(),
+              // imagen: ...
+            ),
+          );
+        }
+        loaded.add(s);
+      }
+      setState(() {
+        secciones = loaded;
+      });
+    } catch (e) {
+      print("Error loading data: $e");
+    }
+  }
 
   BoxDecoration _cardDecoration(BuildContext context) {
     final settings = Provider.of<VisualSettingsProvider>(context, listen: false);
@@ -164,7 +209,10 @@ class _CartaPageState extends State<CartaPage> {
                                           child: const Text("Cancelar"),
                                         ),
                                         TextButton(
-                                          onPressed: () {
+                                          onPressed: () async {
+                                            if (seccion.id != null) {
+                                              await _apiService.eliminarCategoria(seccion.id!);
+                                            }
                                             setState(() {
                                               secciones.remove(seccion);
                                             });
@@ -223,9 +271,24 @@ class _CartaPageState extends State<CartaPage> {
                                             );
 
                                             if (nuevoPlato != null) {
-                                              setState(() {
-                                                seccion.platos.add(nuevoPlato);
-                                              });
+                                              if (seccion.id != null) {
+                                                try {
+                                                  final data = {
+                                                    'nombre': nuevoPlato.nombre,
+                                                    'precio': nuevoPlato.precio,
+                                                    'categoria': {
+                                                      'categoria_id': seccion.id,
+                                                    },
+                                                  };
+                                                  final res = await _apiService.crearProducto(data);
+                                                  nuevoPlato.id = res['producto_id'];
+                                                  setState(() {
+                                                    seccion.platos.add(nuevoPlato);
+                                                  });
+                                                } catch (e) {
+                                                  print("Error creating product: $e");
+                                                }
+                                              }
                                               _platoController.clear();
                                             }
                                           }
@@ -242,14 +305,31 @@ class _CartaPageState extends State<CartaPage> {
                                       children: [
                                         for (var plato in seccion.platos)
                                           Container(
+<<<<<<< HEAD
                                             margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
                                             decoration: _cardDecoration(context),
+=======
+                                            margin: const EdgeInsets.symmetric(
+                                              vertical: 6,
+                                              horizontal: 4,
+                                            ),
+                                            decoration: _cardDecoration(
+                                              context,
+                                            ),
+>>>>>>> b01878056ba06f48bf2313eab50e5ceaa741eec6
                                             child: InkWell(
                                               onTap: () {
                                                 Navigator.push(
                                                   context,
                                                   MaterialPageRoute(
+<<<<<<< HEAD
                                                     builder: (ctx) => PlatoEditorPage(plato: plato),
+=======
+                                                    builder: (ctx) =>
+                                                        PlatoEditorPage(
+                                                          plato: plato,
+                                                        ),
+>>>>>>> b01878056ba06f48bf2313eab50e5ceaa741eec6
                                                   ),
                                                 );
                                               },
@@ -318,13 +398,26 @@ class _CartaPageState extends State<CartaPage> {
                                                                     child: const Text("Cancelar"),
                                                                   ),
                                                                   TextButton(
-                                                                    onPressed: () {
+                                                                    onPressed: () async {
+                                                                      if (plato.id != null) {
+                                                                        await _apiService.eliminarProducto(plato.id!);
+                                                                      }
                                                                       setState(() {
                                                                         seccion.platos.remove(plato);
                                                                       });
                                                                       Navigator.of(ctx).pop();
                                                                     },
                                                                     child: const Text("Eliminar", style: TextStyle(color: Colors.red)),
+                                                                      ).pop();
+                                                                    },
+                                                                    child: const Text(
+                                                                      "Eliminar",
+                                                                      style: TextStyle(
+                                                                        color: Colors
+                                                                            .red,
+                                                                      ),
+                                                                    ),
+>>>>>>> b01878056ba06f48bf2313eab50e5ceaa741eec6
                                                                   ),
                                                                 ],
                                                               ),
@@ -358,8 +451,18 @@ class _CartaPageState extends State<CartaPage> {
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: barraSuperior,
+<<<<<<< HEAD
                 padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+=======
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 20,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+>>>>>>> b01878056ba06f48bf2313eab50e5ceaa741eec6
               ),
               icon: const Icon(Icons.add, color: Colors.white),
               label: Text(
@@ -374,7 +477,14 @@ class _CartaPageState extends State<CartaPage> {
                     title: const Text("Nueva sección"),
                     content: TextField(
                       controller: _seccionController,
+<<<<<<< HEAD
                       decoration: loginInputDecoration("Nombre de la sección", Icons.list),
+=======
+                      decoration: loginInputDecoration(
+                        "Nombre de la sección",
+                        Icons.list,
+                      ),
+>>>>>>> b01878056ba06f48bf2313eab50e5ceaa741eec6
                     ),
                     actions: [
                       TextButton(
@@ -382,11 +492,31 @@ class _CartaPageState extends State<CartaPage> {
                         child: const Text("Cancelar"),
                       ),
                       TextButton(
+<<<<<<< HEAD
                         onPressed: () {
                           if (_seccionController.text.isNotEmpty) {
                             setState(() {
                               secciones.add(Seccion(nombre: _seccionController.text));
                             });
+=======
+                        onPressed: () async {
+                          if (_seccionController.text.isNotEmpty) {
+                            try {
+                              final nueva = await _apiService.crearCategoria(
+                                _seccionController.text,
+                              );
+                              setState(() {
+                                secciones.add(
+                                  Seccion(
+                                    id: nueva['categoria_id'],
+                                    nombre: nueva['nombre'],
+                                  ),
+                                );
+                              });
+                            } catch (e) {
+                              print("Error creating category: $e");
+                            }
+>>>>>>> b01878056ba06f48bf2313eab50e5ceaa741eec6
                           }
                           Navigator.pop(ctx);
                         },

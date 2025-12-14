@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'settings_menu.dart';
 import 'visual_settings_provider.dart';
 import 'CartaPage.dart'; // 👈 Importamos la pantalla de la carta
+import 'services/api_service.dart';
 
 class CuentaMesaPage extends StatefulWidget {
   final String nombreMesa;
@@ -15,8 +16,48 @@ class CuentaMesaPage extends StatefulWidget {
 
 class _CuentaMesaPageState extends State<CuentaMesaPage> {
   double total = 0.0;
+  int? _mesaId;
+  final ApiService _apiService = ApiService();
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarCuenta();
+  }
+
+  Future<void> _cargarCuenta() async {
+    try {
+      if (_mesaId == null) {
+        final mesas = await _apiService.obtenerMesas();
+        final mesaEncontrada = mesas.firstWhere((m) {
+          final numeroStr = m['numero_mesa'].toString();
+          final numeroEnNombre = widget.nombreMesa.replaceAll(
+            RegExp(r'[^0-9]'),
+            '',
+          );
+          return (numeroEnNombre.isNotEmpty && numeroStr == numeroEnNombre) ||
+              (m['nombre'] != null && m['nombre'] == widget.nombreMesa);
+        }, orElse: () => null);
+
+        if (mesaEncontrada != null) {
+          _mesaId = mesaEncontrada['mesa_id'];
+        }
+      }
+
+      if (_mesaId != null) {
+        final pedido = await _apiService.obtenerPedidoActivoMesa(_mesaId!);
+        if (pedido != null) {
+          setState(() {
+            total = (pedido['total_pedido'] as num).toDouble();
+          });
+        }
+      }
+    } catch (e) {
+      print('Error cargando cuenta: $e');
+    }
+  }
 
   // 👇 Método para abrir la carta
   void _abrirCarta() {
@@ -25,14 +66,21 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
       MaterialPageRoute(
         builder: (ctx) => CartaPage(
           // Callback opcional: suma el precio del plato al total
-          onAddToCuenta: (plato) {
+          onAddToCuenta: (plato) async {
+            if (_mesaId != null && plato.id != null) {
+              try {
+                await _apiService.agregarProductoAMesa(_mesaId!, plato.id!);
+              } catch (e) {
+                print("Error adding product: $e");
+              }
+            }
             setState(() {
               total += plato.precio;
             });
           },
         ),
       ),
-    );
+    ).then((_) => _cargarCuenta()); // Recargar al volver
   }
 
   @override
@@ -40,8 +88,12 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
     final settings = Provider.of<VisualSettingsProvider>(context);
 
     // Colores dinámicos según ajustes
-    final Color fondo = settings.darkMode ? Colors.black : const Color(0xFFECF0D5);
-    final Color barraSuperior = settings.colorBlindMode ? Colors.blue : const Color(0xFF7BA238);
+    final Color fondo = settings.darkMode
+        ? Colors.black
+        : const Color(0xFFECF0D5);
+    final Color barraSuperior = settings.colorBlindMode
+        ? Colors.blue
+        : const Color(0xFF7BA238);
     final Color textoGeneral = settings.darkMode ? Colors.white : Colors.black;
 
     // Tamaños de letra dinámicos
@@ -77,7 +129,6 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-
                   // === CUADRO PARA EL NOMBRE DE LA MESA ===
                   Card(
                     color: settings.darkMode ? Colors.grey[850] : Colors.white,
@@ -105,7 +156,9 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                   // === CONTENEDOR PARA LA CARTA ===
                   Expanded(
                     child: Card(
-                      color: settings.darkMode ? Colors.grey[850] : Colors.white,
+                      color: settings.darkMode
+                          ? Colors.grey[850]
+                          : Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -156,7 +209,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                         ),
                       ),
                     ],
-                  )
+                  ),
                 ],
               ),
             ),

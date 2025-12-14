@@ -20,7 +20,7 @@ class ApiService {
   Future<List<dynamic>> obtenerMesas() async {
     try {
       final response = await http.get(Uri.parse(ApiConfig.mesas));
-      
+
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {
@@ -30,7 +30,7 @@ class ApiService {
       throw Exception('Error de conexión: $e');
     }
   }
-  
+
   // Obtener todas las zonas
   Future<List<dynamic>> obtenerZonas() async {
     try {
@@ -50,6 +50,92 @@ class ApiService {
     }
   }
 
+  // Obtener todas las categorías
+  Future<List<dynamic>> obtenerCategorias() async {
+    try {
+      final response = await http.get(Uri.parse(ApiConfig.categorias));
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Error al cargar categorías: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> crearCategoria(String nombre) async {
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConfig.categorias),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'nombre': nombre, 'descripcion': ''}),
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return json.decode(response.body);
+      }
+      throw Exception('Error crear categoria: ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Error conexion: $e');
+    }
+  }
+
+  Future<bool> eliminarCategoria(int id) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('${ApiConfig.categorias}/$id'),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print(e);
+      return false;
+    }
+  }
+
+  // Obtener todos los productos
+  Future<List<dynamic>> obtenerProductos() async {
+    try {
+      final response = await http.get(Uri.parse(ApiConfig.productos));
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Error al cargar productos: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> crearProducto(Map<String, dynamic> data) async {
+    // data debe incluir 'nombre', 'precio', 'categoria': {'categoria_id': ...}
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConfig.productos),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(data),
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return json.decode(response.body);
+      }
+      throw Exception('Error crear producto: ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Error conexion: $e');
+    }
+  }
+
+  Future<bool> eliminarProducto(int id) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('${ApiConfig.productos}/$id'),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
   /// Guardar todas las mesas de una zona
   Future<Map<String, dynamic>> guardarMesasDeZona(
     String nombreZona,
@@ -61,9 +147,7 @@ class ApiService {
       final response = await http.post(
         Uri.parse('${ApiConfig.zonas}/$encodedZona/mesas'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'mesas': mesas,
-        }),
+        body: json.encode({'mesas': mesas}),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -77,9 +161,7 @@ class ApiService {
   }
 
   /// Guardar una mesa individual
-  Future<Map<String, dynamic>> guardarMesa(
-    Map<String, dynamic> mesa,
-  ) async {
+  Future<Map<String, dynamic>> guardarMesa(Map<String, dynamic> mesa) async {
     try {
       final response = await http.post(
         Uri.parse(ApiConfig.mesas),
@@ -101,18 +183,18 @@ class ApiService {
   Future<List<dynamic>> obtenerMesasPorZona(String nombreZona) async {
     try {
       print('🔍 Intentando obtener mesas para zona: $nombreZona');
-      
+
       // Usar Uri.http para codificar correctamente los parámetros
-      final url = Uri.parse(ApiConfig.mesas).replace(
-        queryParameters: {'ubicacion': nombreZona}
-      );
-      
+      final url = Uri.parse(
+        ApiConfig.mesas,
+      ).replace(queryParameters: {'ubicacion': nombreZona});
+
       print('📍 URL generada: $url');
       final response = await http.get(url);
-      
+
       print('📨 Respuesta recibida: ${response.statusCode}');
       print('📦 Body: ${response.body}');
-      
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         // Si el backend devuelve {mesas: [...]} en lugar de [...]
@@ -121,7 +203,9 @@ class ApiService {
         }
         return data;
       } else {
-        throw Exception('Error al cargar mesas de la zona $nombreZona: ${response.statusCode}');
+        throw Exception(
+          'Error al cargar mesas de la zona $nombreZona: ${response.statusCode}',
+        );
       }
     } catch (e) {
       print('❌ Error de conexión al cargar mesas por zona: $e');
@@ -134,9 +218,9 @@ class ApiService {
     try {
       final encodedUbicacion = Uri.encodeComponent(ubicacion);
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/api/zonas/$encodedUbicacion/stats')
+        Uri.parse('${ApiConfig.baseUrl}/api/zonas/$encodedUbicacion/stats'),
       );
-      
+
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {
@@ -146,11 +230,11 @@ class ApiService {
       throw Exception('Error de conexión: $e');
     }
   }
-  
+
   // Actualizar estado de mesa
   Future<Map<String, dynamic>> actualizarMesa(
-    int mesaId, 
-    Map<String, dynamic> datos
+    int mesaId,
+    Map<String, dynamic> datos,
   ) async {
     try {
       final response = await http.put(
@@ -158,7 +242,7 @@ class ApiService {
         headers: {'Content-Type': 'application/json'},
         body: json.encode(datos),
       );
-      
+
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {
@@ -168,18 +252,16 @@ class ApiService {
       throw Exception('Error de conexión: $e');
     }
   }
-  
+
   // Crear pedido
-  Future<Map<String, dynamic>> crearPedido(
-    Map<String, dynamic> pedido
-  ) async {
+  Future<Map<String, dynamic>> crearPedido(Map<String, dynamic> pedido) async {
     try {
       final response = await http.post(
         Uri.parse(ApiConfig.pedidos),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(pedido),
       );
-      
+
       if (response.statusCode == 201 || response.statusCode == 200) {
         return json.decode(response.body);
       } else {
@@ -255,6 +337,97 @@ class ApiService {
       );
 
       return response.statusCode == 200;
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  // Obtener todos los pedidos
+  Future<List<dynamic>> obtenerPedidos() async {
+    try {
+      final response = await http.get(Uri.parse(ApiConfig.pedidos));
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Error al cargar pedidos: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  // Obtener pedido activo de una mesa
+  Future<Map<String, dynamic>?> obtenerPedidoActivoMesa(int mesaId) async {
+    try {
+      // Obtenemos todos los pedidos y filtramos en el cliente (temporal)
+      final pedidos = await obtenerPedidos();
+
+        // Buscar pedido de esta mesa que no esté pagado ni cancelado
+        try {
+          return pedidos.firstWhere((p) {
+            // Verificar si 'mesa' es objeto o ID
+            int? pMesaId;
+            if (p['mesa'] != null) {
+              if (p['mesa'] is int) {
+                pMesaId = p['mesa'];
+              } else if (p['mesa'] is Map) {
+                pMesaId = p['mesa']['mesa_id'];
+              }
+            } else if (p['mesa_id'] != null) {
+              pMesaId = p['mesa_id'];
+            }
+
+            if (pMesaId != mesaId) return false;
+
+            String estado = p['estado'].toString().toLowerCase();
+            return estado != 'pagado' && estado != 'cancelado';
+          });
+        } catch (e) {
+          // Si no se encuentra ningun elemento firstWhere lanza excepcion
+          return null;
+        }
+      }
+      return null;
+    } catch (e) {
+      print('Error obteniendo pedido activo: $e');
+      return null;
+    }
+  }
+
+  Future<List<dynamic>> obtenerDetallesPedido(int pedidoId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.pedidos}/$pedidoId/detalles'),
+      );
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      return [];
+    } catch (e) {
+      print("Error obteniendo detalles: $e");
+      return [];
+    }
+  }
+
+  // Agregar producto a mesa (crea pedido si es necesario)
+  Future<Map<String, dynamic>> agregarProductoAMesa(
+    int mesaId,
+    int productoId,
+  ) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.pedidos}/mesa/$mesaId/agregar-producto'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'productoId': productoId}),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return json.decode(response.body);
+      } else {
+        throw Exception(
+          'Error al agregar producto: ${response.statusCode} - ${response.body}',
+        );
+      }
     } catch (e) {
       throw Exception('Error de conexión: $e');
     }

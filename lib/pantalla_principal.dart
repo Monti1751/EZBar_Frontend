@@ -8,7 +8,7 @@ import 'services/local_storage_service.dart';
 import 'models/mesa.dart';
 import 'models/zona.dart'; 
 
- InputDecoration loginInputDecoration(String hint, IconData icon) {
+InputDecoration loginInputDecoration(String hint, IconData icon) {
   return InputDecoration(
     hintText: hint,
     prefixIcon: Icon(icon, color: Color(0xFF4A4025)),
@@ -66,6 +66,8 @@ class _ZoneWidgetState extends State<ZoneWidget> {
   final LocalStorageService _localStorage = LocalStorageService();
   int _tableCounter = 1;
 
+  final ApiService _apiService = ApiService();
+
   @override
   void initState() {
     super.initState();
@@ -80,6 +82,7 @@ class _ZoneWidgetState extends State<ZoneWidget> {
     super.dispose();
   }
 
+<<<<<<< HEAD
   /// ✅ Cargar mesas de la zona desde el backend (corregido)
   Future<void> _cargarMesasDeZona() async {
     // ✅ IMPORTANTE: Limpiar la lista de mesas al inicio para evitar mezclas entre zonas
@@ -215,7 +218,13 @@ class _ZoneWidgetState extends State<ZoneWidget> {
   Widget build(BuildContext context) {
     final settings = Provider.of<VisualSettingsProvider>(context);
     final double fontSize = settings.currentFontSize;
+<<<<<<< HEAD
     final Color tarjetaZona = settings.colorBlindMode ? Colors.blue : const Color(0xFF7BA238);
+=======
+    final Color tarjetaZona = settings.colorBlindMode
+        ? Colors.blue
+        : const Color(0xFF7BA238);
+>>>>>>> b01878056ba06f48bf2313eab50e5ceaa741eec6
     final Color textoZona = settings.darkMode ? Colors.white : Colors.black;
 
     return Container(
@@ -271,7 +280,10 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                     );
                   },
                 ),
-                Icon(widget.zone.isOpen ? Icons.expand_less : Icons.expand_more, color: textoZona),
+                Icon(
+                  widget.zone.isOpen ? Icons.expand_less : Icons.expand_more,
+                  color: textoZona,
+                ),
               ],
             ),
             onTap: () {
@@ -481,6 +493,7 @@ class _MainMenuState extends State<MainMenu> {
     _cargarZonas();
   }
 
+<<<<<<< HEAD
   /// ✅ Cargar zonas desde el backend (corregido)
   Future<void> _cargarZonas() async {
     // 1. Cargar localmente primero
@@ -516,13 +529,7 @@ class _MainMenuState extends State<MainMenu> {
       await _localStorage.saveZones(zones);
     } catch (e) {
       setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
-    }
-  }
-
-  /// Crear zona en el backend
+    /// Crear zona en el backend
   Future<void> _crearZona(String nombre) async {
     try {
       final nuevaZona = Zone(name: nombre);
@@ -605,7 +612,11 @@ class _MainMenuState extends State<MainMenu> {
                       child: Text(
                         "Agregar Zona",
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: textoGeneral),
+                        style: TextStyle(
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.bold,
+                          color: textoGeneral,
+                        ),
                       ),
                     ),
                   ),
@@ -628,7 +639,7 @@ class _MainMenuState extends State<MainMenu> {
                         const SizedBox(width: 8),
                         IconButton(
                           icon: Icon(Icons.check, color: barraSuperior),
-                          onPressed: () {
+                          onPressed: () async {
                             if (_zoneController.text.isNotEmpty) {
                               _crearZona(_zoneController.text);
                             }
