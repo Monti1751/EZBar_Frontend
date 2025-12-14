@@ -4,6 +4,9 @@ import 'package:provider/provider.dart';
 import 'cuenta.dart';
 import 'visual_settings_provider.dart';
 import 'services/api_service.dart'; 
+import 'services/local_storage_service.dart';
+import 'models/mesa.dart';
+import 'models/zona.dart'; 
 
  InputDecoration loginInputDecoration(String hint, IconData icon) {
   return InputDecoration(
@@ -38,136 +41,7 @@ class PantallaPrincipal extends StatelessWidget {
   }
 }
 
-/// === MODELO DE ZONA ===
-class Zone {
-  String? id;
-  String name;
-  bool isOpen = false;
-  List<Mesa> tables = [];
 
-  Zone({this.id, required this.name});
-
-  // ✅ Convertir desde JSON del backend (adaptado para el nuevo formato)
-  factory Zone.fromJson(Map<String, dynamic> json) {
-    return Zone(
-      id: json['nombre']?.toString(), // Usa 'nombre' como ID
-      name: json['nombre'] ?? json['name'] ?? '',
-    );
-  }
-
-  // Convertir a JSON para enviar al backend
-  Map<String, dynamic> toJson() {
-    return {
-      'nombre': name,
-    };
-  }
-}
-
-/// === MODELO DE MESA ===
-class Mesa {
-  String id;
-  String name;
-  String estado; // "libre", "reservado", "ocupado"
-  String ubicacion;
-  int numeroMesa;
-  int capacidad;
-
-  Mesa({
-    required this.id,
-    required this.name,
-    required this.ubicacion,
-    required this.numeroMesa,
-    required this.capacidad,
-    this.estado = "libre",
-  });
-
-  // Convertir desde JSON del backend
-  factory Mesa.fromJson(Map<String, dynamic> json) {
-    return Mesa(
-      id: json['mesa_id']?.toString() ?? json['id']?.toString() ?? '',
-      name: json['nombre'] ?? json['name'] ?? 'Mesa ${json['numero_mesa'] ?? ''}',
-      ubicacion: json['ubicacion'] ?? '',
-      numeroMesa: json['numero_mesa'] ?? json['numeroMesa'] ?? json['numero'] ?? 0,
-      capacidad: json['capacidad'] ?? 4,
-      estado: json['estado'] ?? 'libre',
-    );
-  }
-
-  // Convertir a JSON para enviar al backend
-  Map<String, dynamic> toJson() {
-    return {
-      if (int.tryParse(id) != null) 'id': int.parse(id),
-      'nombre': name,
-      'ubicacion': ubicacion,
-      'numero_mesa': numeroMesa,
-      'capacidad': capacidad,
-      'estado': estado,
-    };
-  }
-
-  void setEstado(int disposicion) {
-    switch (disposicion) {
-      case 1:
-        estado = "libre";
-        break;
-      case 2:
-        estado = "reservado";
-        break;
-      case 3:
-        estado = "ocupado";
-        break;
-      default:
-        estado = "libre";
-    }
-  }
-
-  Color getColorByEstado(BuildContext context) {
-    final settings = Provider.of<VisualSettingsProvider>(context, listen: false);
-    if (settings.colorBlindMode) {
-      switch (estado.toLowerCase()) {
-        case 'libre':
-          return Colors.blue;
-        case 'reservado':
-          return Colors.orange;
-        case 'ocupado':
-          return Colors.purple;
-        default:
-          return Colors.grey;
-      }
-    } else {
-      switch (estado.toLowerCase()) {
-        case 'libre':
-          return Colors.green;
-        case 'reservado':
-          return Colors.orange;
-        case 'ocupado':
-          return Colors.red;
-        default:
-          return Colors.grey;
-      }
-    }
-  }
-
-  /// Badge discreto: solo borde y texto con el color del estado
-  Widget getEstadoBadge(BuildContext context) {
-    final Color color = getColorByEstado(context);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        border: Border.all(color: color, width: 2),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        estado.toUpperCase(),
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-        ).copyWith(color: color),
-      ),
-    );
-  }
-}
 
 /// === WIDGET ZONA CON API===
 class ZoneWidget extends StatefulWidget {
@@ -189,6 +63,7 @@ class ZoneWidget extends StatefulWidget {
 class _ZoneWidgetState extends State<ZoneWidget> {
   final TextEditingController _tableController = TextEditingController();
   final ApiService _apiService = ApiService();
+  final LocalStorageService _localStorage = LocalStorageService();
   int _tableCounter = 1;
 
   @override
@@ -207,18 +82,55 @@ class _ZoneWidgetState extends State<ZoneWidget> {
 
   /// ✅ Cargar mesas de la zona desde el backend (corregido)
   Future<void> _cargarMesasDeZona() async {
+    // ✅ IMPORTANTE: Limpiar la lista de mesas al inicio para evitar mezclas entre zonas
+    if (mounted) {
+      setState(() {
+        widget.zone.tables.clear();
+      });
+    }
+
+    // 1. Cargar localmente primero
+    final mesasLocales = await _localStorage.getTables(widget.zone.name);
+    if (mounted && mesasLocales.isNotEmpty) {
+      setState(() {
+         // ✅ Crear una NUEVA lista en lugar de asignar directamente
+         // ✅ Filtrar defensivamente por ubicacion para asegurar aislamiento
+         widget.zone.tables = mesasLocales
+             .where((mesa) => mesa.ubicacion == widget.zone.name)
+             .toList();
+         // Actualizar contador para evitar duplicados si es posible
+         if (widget.zone.tables.isNotEmpty) {
+            _tableCounter = widget.zone.tables.length + 1;
+         }
+      });
+    }
+
     try {
       final mesas = await _apiService.obtenerMesasPorZona(widget.zone.name);
       if (mounted) {
         setState(() {
-          widget.zone.tables = mesas.map((m) => Mesa.fromJson(m)).toList();
+          // ✅ Crear una NUEVA lista y filtrar defensivamente
+          final mesasFiltradas = mesas
+              .map((m) => Mesa.fromJson(m))
+              .where((mesa) => mesa.ubicacion == widget.zone.name)
+              .toList();
+          widget.zone.tables = mesasFiltradas;
+          if (widget.zone.tables.isNotEmpty) {
+             _tableCounter = widget.zone.tables.length + 1;
+          }
         });
+        // 2. Guardar en local después de obtener del API
+        await _localStorage.saveTables(widget.zone.name, widget.zone.tables);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al cargar mesas: $e')),
-        );
+        // Si falla la API y no teníamos datos locales (o queremos notificar error igual)
+        // Pero si ya mostramos datos locales, la UX es mejor.
+        if (widget.zone.tables.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error al cargar mesas: $e')),
+          );
+        }
       }
     }
   }
@@ -255,22 +167,44 @@ class _ZoneWidgetState extends State<ZoneWidget> {
               Icons.add,
               color: settings.colorBlindMode ? Colors.blue : const Color(0xFF7BA238),
             ),
-            onPressed: () {
+            onPressed: () async {
               if (_tableController.text.isNotEmpty) {
-                setState(() {
-                  widget.zone.tables.add(
-                    Mesa(
-                      id: DateTime.now().millisecondsSinceEpoch.toString(),
-                      name: _tableController.text,
-                      ubicacion: widget.zone.name,
-                      numeroMesa: _tableCounter++,
-                      capacidad: 4,
-                    ),
-                  );
-                  _tableController.clear();
-                });
+                final nuevaMesa = Mesa(
+                  id: DateTime.now().millisecondsSinceEpoch.toString(),
+                  name: _tableController.text,
+                  ubicacion: widget.zone.name,
+                  numeroMesa: _tableCounter++,
+                  capacidad: 4,
+                );
+                
+                try {
+                  // Primero agregar a la lista local
+                  setState(() {
+                    widget.zone.tables.add(nuevaMesa);
+                    _tableController.clear();
+                  });
+                  
+                  // Luego guardar TODAS las mesas de la zona en el backend
+                  final mesasJson = widget.zone.tables.map((mesa) => mesa.toJson()).toList();
+                  await _apiService.guardarMesasDeZona(widget.zone.name, mesasJson);
+
+                  // Guardar localmente también
+                  await _localStorage.saveTables(widget.zone.name, widget.zone.tables);
+                  
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Mesa "${nuevaMesa.name}" guardada')),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error al guardar mesa: $e')),
+                    );
+                  }
+                }
               }
-            },
+            }
           ),
         ],
       ),
@@ -316,9 +250,19 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                             child: const Text("Cancelar"),
                           ),
                           TextButton(
-                            onPressed: () {
-                              widget.onDelete();
-                              Navigator.of(ctx).pop();
+                            onPressed: () async {
+                              try {
+                                await _apiService.eliminarZona(widget.zone.name);
+                                widget.onDelete();
+                                Navigator.of(ctx).pop();
+                              } catch (e) {
+                                Navigator.of(ctx).pop();
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Error al eliminar zona: $e')),
+                                  );
+                                }
+                              }
                             },
                             child: const Text("Eliminar", style: TextStyle(color: Colors.red)),
                           ),
@@ -453,11 +397,35 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                                                     child: const Text("Cancelar"),
                                                   ),
                                                   TextButton(
-                                                    onPressed: () {
-                                                      setState(() {
-                                                        widget.zone.tables.remove(table);
-                                                      });
-                                                      Navigator.of(ctx).pop();
+                                                    onPressed: () async {
+                                                      try {
+                                                        // Primero eliminar localmente
+                                                        setState(() {
+                                                          widget.zone.tables.remove(table);
+                                                        });
+                                                        
+                                                        // Luego guardar el estado actualizado en el backend
+                                                        final mesasJson = widget.zone.tables.map((mesa) => mesa.toJson()).toList();
+                                                        await _apiService.guardarMesasDeZona(widget.zone.name, mesasJson);
+
+                                                        // Actualizar local storage
+                                                        await _localStorage.saveTables(widget.zone.name, widget.zone.tables);
+                                                        
+                                                        Navigator.of(ctx).pop();
+                                                        
+                                                        if (mounted) {
+                                                          ScaffoldMessenger.of(context).showSnackBar(
+                                                            SnackBar(content: Text('Mesa "${table.name}" eliminada')),
+                                                          );
+                                                        }
+                                                      } catch (e) {
+                                                        Navigator.of(ctx).pop();
+                                                        if (mounted) {
+                                                          ScaffoldMessenger.of(context).showSnackBar(
+                                                            SnackBar(content: Text('Error al eliminar mesa: $e')),
+                                                          );
+                                                        }
+                                                      }
                                                     },
                                                     child: const Text("Eliminar", style: TextStyle(color: Colors.red)),
                                                   ),
@@ -499,6 +467,7 @@ class MainMenu extends StatefulWidget {
 class _MainMenuState extends State<MainMenu> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ApiService _apiService = ApiService();
+  final LocalStorageService _localStorage = LocalStorageService();
 
   bool _showAddZoneField = false;
   final TextEditingController _zoneController = TextEditingController();
@@ -514,17 +483,37 @@ class _MainMenuState extends State<MainMenu> {
 
   /// ✅ Cargar zonas desde el backend (corregido)
   Future<void> _cargarZonas() async {
+    // 1. Cargar localmente primero
+    final zonasLocales = await _localStorage.getZones();
+    if (mounted && zonasLocales.isNotEmpty) {
+      setState(() {
+        // ✅ Asegurar que cada zona tenga una lista de mesas vacía y fresca
+        zones = zonasLocales.map((z) {
+          z.tables = []; // Limpiar tablas para evitar referencias compartidas
+          return z;
+        }).toList();
+        _isLoading = false;
+      });
+    }
+
     setState(() {
-      _isLoading = true;
+      if (zones.isEmpty) _isLoading = true; // Solo mostrar loading si no hay datos locales
       _error = null;
     });
 
     try {
       final zonasData = await _apiService.obtenerZonas();
       setState(() {
-        zones = zonasData.map((z) => Zone.fromJson(z)).toList();
+        // ✅ Crear zonas frescas con listas de mesas vacías
+        zones = zonasData.map((z) {
+          final zona = Zone.fromJson(z);
+          zona.tables = []; // Inicializar con lista vacía
+          return zona;
+        }).toList();
         _isLoading = false;
       });
+      // 2. Guardar en local
+      await _localStorage.saveZones(zones);
     } catch (e) {
       setState(() {
         _error = e.toString();
@@ -545,6 +534,9 @@ class _MainMenuState extends State<MainMenu> {
         _zoneController.clear();
         _showAddZoneField = false;
       });
+      
+      // Guardar en local
+      await _localStorage.saveZones(zones);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -666,10 +658,13 @@ class _MainMenuState extends State<MainMenu> {
                                     .map(
                                       (z) => ZoneWidget(
                                         zone: z,
-                                        onDelete: () {
+                                        onDelete: () async {
                                           setState(() {
                                             zones.remove(z);
                                           });
+                                          // Eliminar de local storage también
+                                          await _localStorage.saveZones(zones);
+                                          await _localStorage.removeTables(z.name);
                                         },
                                         onUpdate: (updatedZone) {
                                           setState(() {

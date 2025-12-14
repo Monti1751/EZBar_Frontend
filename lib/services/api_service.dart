@@ -31,40 +31,95 @@ class ApiService {
     }
   }
   
- 
-Future<List<dynamic>> obtenerZonas() async {
-  try {
-    print('🔌 Intentando conectar a: ${ApiConfig.zonas}');
-    final response = await http.get(Uri.parse(ApiConfig.zonas));
-    print('📨 Respuesta recibida: ${response.statusCode}');
-    print('📦 Body: ${response.body}');
-
-    if (response.statusCode == 200) {
-      return json.decode(response.body); // ✅ Devuelve List<dynamic>
-    } else {
-      throw Exception('Error HTTP ${response.statusCode}: ${response.body}');
-    }
-  } catch (e) {
-    print('❌ Error: $e');
-    throw Exception('Error de conexión: $e');
-  }
-}
-
-/// Obtener las mesas de una zona específica
-  Future<List<dynamic>> obtenerMesasPorZona(String nombreZona) async {
-    // Asumiendo que tu backend tiene un endpoint para filtrar mesas por ubicación (zona)
-    // Usaremos la ruta 'ApiConfig.mesas?ubicacion=nombreZona' o similar.
-    // Si tu API usa una ruta tipo /mesas/zona/:nombreZona, ajústalo.
-    final url = Uri.parse('${ApiConfig.mesas}?ubicacion=$nombreZona');
-
+  // Obtener todas las zonas
+  Future<List<dynamic>> obtenerZonas() async {
     try {
-      print('🔍 Intentando obtener mesas para zona: $nombreZona en $url');
+      print('🔌 Intentando conectar a: ${ApiConfig.zonas}');
+      final response = await http.get(Uri.parse(ApiConfig.zonas));
+      print('📨 Respuesta recibida: ${response.statusCode}');
+      print('📦 Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Error HTTP ${response.statusCode}: ${response.body}');
+      }
+    } catch (e) {
+      print('❌ Error: $e');
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  /// Guardar todas las mesas de una zona
+  Future<Map<String, dynamic>> guardarMesasDeZona(
+    String nombreZona,
+    List<Map<String, dynamic>> mesas,
+  ) async {
+    try {
+      // Codificar correctamente el nombre de la zona en la URL
+      final encodedZona = Uri.encodeComponent(nombreZona);
+      final response = await http.post(
+        Uri.parse('${ApiConfig.zonas}/$encodedZona/mesas'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'mesas': mesas,
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Error al guardar mesas: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  /// Guardar una mesa individual
+  Future<Map<String, dynamic>> guardarMesa(
+    Map<String, dynamic> mesa,
+  ) async {
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConfig.mesas),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(mesa),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Error al guardar mesa: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  /// Obtener las mesas de una zona específica
+  Future<List<dynamic>> obtenerMesasPorZona(String nombreZona) async {
+    try {
+      print('🔍 Intentando obtener mesas para zona: $nombreZona');
+      
+      // Usar Uri.http para codificar correctamente los parámetros
+      final url = Uri.parse(ApiConfig.mesas).replace(
+        queryParameters: {'ubicacion': nombreZona}
+      );
+      
+      print('📍 URL generada: $url');
       final response = await http.get(url);
-      print('📨 Respuesta recibida para mesas: ${response.statusCode}');
+      
+      print('📨 Respuesta recibida: ${response.statusCode}');
+      print('📦 Body: ${response.body}');
       
       if (response.statusCode == 200) {
-        // Asegúrate de que el body es una lista JSON, lo cual es lo habitual para colecciones
-        return json.decode(response.body); 
+        final data = json.decode(response.body);
+        // Si el backend devuelve {mesas: [...]} en lugar de [...]
+        if (data is Map && data.containsKey('mesas')) {
+          return data['mesas'];
+        }
+        return data;
       } else {
         throw Exception('Error al cargar mesas de la zona $nombreZona: ${response.statusCode}');
       }
@@ -77,8 +132,9 @@ Future<List<dynamic>> obtenerZonas() async {
   // Obtener estadísticas de una zona
   Future<Map<String, dynamic>> obtenerEstadisticasZona(String ubicacion) async {
     try {
+      final encodedUbicacion = Uri.encodeComponent(ubicacion);
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/api/zonas/$ubicacion/stats')
+        Uri.parse('${ApiConfig.baseUrl}/api/zonas/$encodedUbicacion/stats')
       );
       
       if (response.statusCode == 200) {
@@ -137,18 +193,23 @@ Future<List<dynamic>> obtenerZonas() async {
   // Crear mesa
   Future<Map<String, dynamic>> crearMesa(Map<String, dynamic> datos) async {
     try {
+      print('📤 Creando mesa: ${json.encode(datos)}');
       final response = await http.post(
         Uri.parse(ApiConfig.mesas),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(datos),
       );
 
+      print('📨 Respuesta: ${response.statusCode}');
+      print('📦 Body: ${response.body}');
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         return json.decode(response.body);
       } else {
-        throw Exception('Error al crear mesa: ${response.statusCode}');
+        throw Exception('Error al crear mesa: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
+      print('❌ Error al crear mesa: $e');
       throw Exception('Error de conexión: $e');
     }
   }
@@ -166,8 +227,7 @@ Future<List<dynamic>> obtenerZonas() async {
     }
   }
 
-  // Crear zona (ya no es necesario porque las zonas están en la tabla mesas)
-  // Mantenerlo por compatibilidad pero podría no usarse
+  // Crear zona
   Future<Map<String, dynamic>> crearZona(Map<String, dynamic> zona) async {
     try {
       final response = await http.post(
@@ -186,12 +246,12 @@ Future<List<dynamic>> obtenerZonas() async {
     }
   }
 
-  // Eliminar zona (ya no es necesario porque las zonas están en la tabla mesas)
-  // Mantenerlo por compatibilidad pero podría no usarse
+  // Eliminar zona
   Future<bool> eliminarZona(String ubicacion) async {
     try {
+      final encodedUbicacion = Uri.encodeComponent(ubicacion);
       final response = await http.delete(
-        Uri.parse('${ApiConfig.zonas}/$ubicacion'),
+        Uri.parse('${ApiConfig.zonas}/$encodedUbicacion'),
       );
 
       return response.statusCode == 200;
