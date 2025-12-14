@@ -4,6 +4,7 @@ import 'main.dart';
 import 'ajustes_visuales.dart';
 import 'visual_settings_provider.dart';
 import 'pantalla_principal.dart';
+import 'CartaPage.dart'; 
 
 class SettingsMenu extends StatelessWidget {
   const SettingsMenu({super.key});
@@ -18,21 +19,21 @@ class SettingsMenu extends StatelessWidget {
     final Color textoGeneral = settings.darkMode ? Colors.white : Colors.black;
 
     // Tamaños dinámicos
-final double fontSize = settings.currentFontSize;
+    final double fontSize = settings.currentFontSize;
 
-final double headerFontSize =
-    settings.fontSize == FontSizeOption.small
-        ? 18
-        : settings.fontSize == FontSizeOption.medium
-            ? 22
-            : 26;
+    final double headerFontSize =
+        settings.fontSize == FontSizeOption.small
+            ? 18
+            : settings.fontSize == FontSizeOption.medium
+                ? 22
+                : 26;
 
-final double logoutFontSize =
-    settings.fontSize == FontSizeOption.small
-        ? 14
-        : settings.fontSize == FontSizeOption.medium
-            ? 16
-            : 18;
+    final double logoutFontSize =
+        settings.fontSize == FontSizeOption.small
+            ? 14
+            : settings.fontSize == FontSizeOption.medium
+                ? 16
+                : 18;
 
     return Drawer(
       child: SafeArea(
@@ -69,7 +70,14 @@ final double logoutFontSize =
                     _menuItem(
                       icon: Icons.menu_book,
                       text: "Editar carta",
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CartaPage(),
+                          ),
+                        );
+                      },
                       textoColor: textoGeneral,
                       fontSize: fontSize,
                     ),

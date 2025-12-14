@@ -95,6 +95,18 @@ class VisualSettingsPage extends StatelessWidget {
                 },
               ),
             ),
+            
+            ListTile(
+              title: Text(
+                "Cambiar idioma",
+                style: TextStyle(fontSize: fontSize, color: texto),
+              ),
+              trailing: const Icon(Icons.language), // 👈 Solo un icono decorativo
+              onTap: () {
+                // Por ahora no hace nada
+              },
+            ),
+
 
             const Spacer(),
 
