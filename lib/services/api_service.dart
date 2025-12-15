@@ -125,6 +125,25 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> actualizarProducto(
+    int id,
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      final response = await http.put(
+        Uri.parse('${ApiConfig.productos}/$id'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(data),
+      );
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      throw Exception('Error actualizar producto: ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Error conexion: $e');
+    }
+  }
+
   Future<bool> eliminarProducto(int id) async {
     try {
       final response = await http.delete(
@@ -382,6 +401,18 @@ class ApiService {
     } catch (e) {
       print('Error obteniendo pedido activo: $e');
       return null;
+    }
+  }
+
+  Future<bool> eliminarDetallePedido(int detalleId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('${ApiConfig.pedidos}/detalles/$detalleId'),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Error eliminando detalle: $e");
+      return false;
     }
   }
 

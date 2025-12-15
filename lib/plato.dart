@@ -156,7 +156,8 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
 
   void _guardarPlato() {
     widget.plato.nombre = _nombreController.text.trim();
-    widget.plato.precio = double.tryParse(_precioController.text.trim()) ?? 0.0;
+    String precioStr = _precioController.text.trim().replaceAll(',', '.');
+    widget.plato.precio = double.tryParse(precioStr) ?? 0.0;
     widget.plato.imagen = _imagenPlato;
     widget.plato.ingredientes = _ingredientes;
     widget.plato.extras = _extras;

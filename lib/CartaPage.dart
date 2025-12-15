@@ -75,11 +75,36 @@ class _CartaPageState extends State<CartaPage> {
         });
 
         for (var p in pList) {
+          // Parsear descripcion para recuperar listas
+          List<String> ing = [];
+          List<String> ext = [];
+          List<String> ale = [];
+
+          if (p['descripcion'] != null) {
+            final desc = p['descripcion'].toString();
+            final lines = desc.split('\n');
+            for (var line in lines) {
+              if (line.startsWith("Ingredientes: ")) {
+                ing = line
+                    .substring("Ingredientes: ".length)
+                    .split(', ')
+                    .toList();
+              } else if (line.startsWith("Extras: ")) {
+                ext = line.substring("Extras: ".length).split(', ').toList();
+              } else if (line.startsWith("Alergenos: ")) {
+                ale = line.substring("Alergenos: ".length).split(', ').toList();
+              }
+            }
+          }
+
           s.platos.add(
             Plato(
               id: p['producto_id'],
               nombre: p['nombre'],
               precio: (p['precio'] as num).toDouble(),
+              ingredientes: ing,
+              extras: ext,
+              alergenos: ale,
               // imagen: ...
             ),
           );
@@ -309,6 +334,20 @@ class _CartaPageState extends State<CartaPage> {
                                                   final data = {
                                                     'nombre': nuevoPlato.nombre,
                                                     'precio': nuevoPlato.precio,
+                                                    'descripcion': [
+                                                      if (nuevoPlato
+                                                          .ingredientes
+                                                          .isNotEmpty)
+                                                        "Ingredientes: ${nuevoPlato.ingredientes.join(', ')}",
+                                                      if (nuevoPlato
+                                                          .extras
+                                                          .isNotEmpty)
+                                                        "Extras: ${nuevoPlato.extras.join(', ')}",
+                                                      if (nuevoPlato
+                                                          .alergenos
+                                                          .isNotEmpty)
+                                                        "Alergenos: ${nuevoPlato.alergenos.join(', ')}",
+                                                    ].join('\n'),
                                                     'categoria': {
                                                       'categoria_id':
                                                           seccion.id,
@@ -353,16 +392,71 @@ class _CartaPageState extends State<CartaPage> {
                                               context,
                                             ),
                                             child: InkWell(
-                                              onTap: () {
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (ctx) =>
-                                                        PlatoEditorPage(
-                                                          plato: plato,
+                                              onTap: () async {
+                                                final platoEditado =
+                                                    await Navigator.push<Plato>(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (ctx) =>
+                                                            PlatoEditorPage(
+                                                              plato: plato,
+                                                            ),
+                                                      ),
+                                                    );
+
+                                                if (platoEditado != null &&
+                                                    platoEditado.id != null) {
+                                                  // Construir JSON y actualizar en backend
+                                                  final data = {
+                                                    'nombre':
+                                                        platoEditado.nombre,
+                                                    'precio':
+                                                        platoEditado.precio,
+                                                    'descripcion': [
+                                                      if (platoEditado
+                                                          .ingredientes
+                                                          .isNotEmpty)
+                                                        "Ingredientes: ${platoEditado.ingredientes.join(', ')}",
+                                                      if (platoEditado
+                                                          .extras
+                                                          .isNotEmpty)
+                                                        "Extras: ${platoEditado.extras.join(', ')}",
+                                                      if (platoEditado
+                                                          .alergenos
+                                                          .isNotEmpty)
+                                                        "Alergenos: ${platoEditado.alergenos.join(', ')}",
+                                                    ].join('\n'),
+                                                    'categoria': {
+                                                      'categoria_id':
+                                                          seccion.id,
+                                                    },
+                                                  };
+                                                  try {
+                                                    await _apiService
+                                                        .actualizarProducto(
+                                                          platoEditado.id!,
+                                                          data,
+                                                        );
+                                                    setState(() {
+                                                      // Actualizar UI local si es necesario (ya se actualiza por referencia pero asegura consistencia)
+                                                    });
+                                                  } catch (e) {
+                                                    print(
+                                                      "Error updating product: $e",
+                                                    );
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                          "Error guardando cambios: $e",
                                                         ),
-                                                  ),
-                                                );
+                                                        backgroundColor:
+                                                            Colors.red,
+                                                      ),
+                                                    );
+                                                  }
+                                                }
                                               },
                                               child: Padding(
                                                 padding: const EdgeInsets.all(

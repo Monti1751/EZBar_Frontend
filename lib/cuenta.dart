@@ -17,6 +17,7 @@ class CuentaMesaPage extends StatefulWidget {
 class _CuentaMesaPageState extends State<CuentaMesaPage> {
   double total = 0.0;
   int? _mesaId;
+  List<dynamic> _detalles = []; // Lista para guardar los productos
   final ApiService _apiService = ApiService();
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -49,13 +50,50 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
       if (_mesaId != null) {
         final pedido = await _apiService.obtenerPedidoActivoMesa(_mesaId!);
         if (pedido != null) {
+          // Primero actualizamos el total del pedido
           setState(() {
-            total = (pedido['total_pedido'] as num).toDouble();
+            final totalPedido = pedido['total_pedido'];
+            total = totalPedido != null ? (totalPedido as num).toDouble() : 0.0;
           });
+          // Luego cargamos los detalles
+          await _cargarDetalles(pedido['pedido_id']);
         }
       }
     } catch (e) {
       print('Error cargando cuenta: $e');
+    }
+  }
+
+  Future<void> _cargarDetalles(int pedidoId) async {
+    try {
+      final detalles = await _apiService.obtenerDetallesPedido(pedidoId);
+      setState(() {
+        _detalles = detalles;
+        // Recalcular total desde detalles para asegurar sincronización
+        if (_detalles.isNotEmpty) {
+          double sum = 0;
+          for (var d in _detalles) {
+            // Check for null price or total_linea
+            // The backend returns 'total_linea' or 'precio_unitario'
+            // Try multiple field names for robustness (snake_case vs camelCase)
+            // and fallback to nested product price
+            final precio =
+                d['total_linea'] ??
+                d['totalLinea'] ??
+                d['precio_unitario'] ??
+                d['precioUnitario'] ??
+                d['precio'] ??
+                (d['producto'] != null ? d['producto']['precio'] : null);
+
+            if (precio != null) {
+              sum += (precio as num).toDouble();
+            }
+          }
+          total = sum;
+        }
+      });
+    } catch (e) {
+      print('Error cargando detalles: $e');
     }
   }
 
@@ -74,13 +112,14 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                 print("Error adding product: $e");
               }
             }
+            // Actualización optimista
             setState(() {
               total += plato.precio;
             });
           },
         ),
       ),
-    ).then((_) => _cargarCuenta()); // Recargar al volver
+    ).then((_) => _cargarCuenta()); // Recargar al volver para sincronizar
   }
 
   @override
@@ -153,44 +192,107 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
 
                   const SizedBox(height: 10),
 
-                  // === CONTENEDOR PARA LA CARTA ===
+                  // === LISTA DE DETALLES ===
                   Expanded(
-                    child: Card(
-                      color: settings.darkMode
-                          ? Colors.grey[850]
-                          : Colors.white,
-                      shape: RoundedRectangleBorder(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: settings.darkMode
+                            ? Colors.grey[900]
+                            : Colors.white70,
                         borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 4,
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          vertical: MediaQuery.of(context).size.height * 0.05,
-                          horizontal: MediaQuery.of(context).size.width * 0.05,
+                        border: Border.all(
+                          color: settings.darkMode
+                              ? Colors.white24
+                              : Colors.black12,
                         ),
-                        child: Align(
-                          alignment: Alignment.bottomCenter,
-                          child: ElevatedButton(
-                            onPressed:
-                                _abrirCarta, // 👈 Conectado con CartaPage
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: barraSuperior,
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 18,
-                                horizontal: 50,
+                      ),
+                      child: _detalles.isEmpty
+                          ? Center(
+                              child: Text(
+                                "No hay productos",
+                                style: TextStyle(color: textoGeneral),
                               ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
+                            )
+                          : ListView.builder(
+                              itemCount: _detalles.length,
+                              itemBuilder: (ctx, i) {
+                                final item = _detalles[i];
+                                final producto = item['producto'];
+                                final nombre =
+                                    (producto != null && producto is Map)
+                                    ? (producto['nombre'] as String?)
+                                    : (item['nombre'] as String?);
+
+                                final precioVal =
+                                    item['total_linea'] ??
+                                    item['totalLinea'] ??
+                                    item['precio_unitario'] ??
+                                    item['precioUnitario'] ??
+                                    item['precio'] ??
+                                    (item['producto'] != null
+                                        ? item['producto']['precio']
+                                        : 0);
+
+                                return ListTile(
+                                  title: Text(
+                                    nombre ?? 'Producto',
+                                    style: TextStyle(
+                                      color: textoGeneral,
+                                      fontSize: fontSize,
+                                    ),
+                                  ),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        "${((precioVal ?? 0) as num).toStringAsFixed(2)} €",
+                                        style: TextStyle(
+                                          color: textoGeneral,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: fontSize,
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.delete,
+                                          color: Colors.red,
+                                        ),
+                                        onPressed: () async {
+                                          final id = item['detalle_id'];
+                                          if (id != null) {
+                                            await _apiService
+                                                .eliminarDetallePedido(id);
+                                            _cargarCuenta(); // Recargar la cuenta
+                                          }
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
                             ),
-                            child: Text(
-                              'Carta +',
-                              style: TextStyle(
-                                fontSize: settings.currentFontSize,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // === BOTÓN CARTA ===
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _abrirCarta,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: barraSuperior,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        'Añadir Productos (Carta)',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: fontSize,
                         ),
                       ),
                     ),

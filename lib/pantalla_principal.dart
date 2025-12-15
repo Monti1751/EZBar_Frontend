@@ -65,10 +65,10 @@ class Mesa {
         estado = "libre";
         break;
       case 2:
-        estado = "reservado";
+        estado = "reservada";
         break;
       case 3:
-        estado = "ocupado";
+        estado = "ocupada";
         break;
       default:
         estado = "libre";
@@ -84,9 +84,9 @@ class Mesa {
       switch (estado.toLowerCase()) {
         case 'libre':
           return Colors.blue;
-        case 'reservado':
+        case 'reservada':
           return Colors.orange;
-        case 'ocupado':
+        case 'ocupada':
           return Colors.purple;
         default:
           return Colors.grey;
@@ -95,9 +95,9 @@ class Mesa {
       switch (estado.toLowerCase()) {
         case 'libre':
           return Colors.green;
-        case 'reservado':
+        case 'reservada':
           return Colors.orange;
-        case 'ocupado':
+        case 'ocupada':
           return Colors.red;
         default:
           return Colors.grey;
@@ -366,10 +366,10 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                                                 case 'libre':
                                                   table.setEstado(1);
                                                   break;
-                                                case 'reservado':
+                                                case 'reservada':
                                                   table.setEstado(2);
                                                   break;
-                                                case 'ocupado':
+                                                case 'ocupada':
                                                   table.setEstado(3);
                                                   break;
                                               }
@@ -390,7 +390,7 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                                               ),
                                             ),
                                             PopupMenuItem(
-                                              value: 'reservado',
+                                              value: 'reservada',
                                               child: Row(
                                                 children: [
                                                   Icon(
@@ -403,7 +403,7 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                                               ),
                                             ),
                                             PopupMenuItem(
-                                              value: 'ocupado',
+                                              value: 'ocupada',
                                               child: Row(
                                                 children: [
                                                   Icon(
@@ -638,16 +638,21 @@ class _MainMenuState extends State<MainMenu> {
                           onPressed: () async {
                             if (_zoneController.text.isNotEmpty) {
                               try {
-                                final success = await _apiService.crearZona(
-                                  _zoneController.text,
-                                );
-                                if (success) {
-                                  setState(() {
-                                    zones.add(Zone(name: _zoneController.text));
-                                    _zoneController.clear();
-                                    _showAddZoneField = false;
-                                  });
-                                }
+                                final result = await _apiService.crearZona({
+                                  'nombre': _zoneController.text,
+                                });
+                                // Si llega aquí es que fue exitoso (crearZona lanza excepción si falla)
+                                setState(() {
+                                  zones.add(
+                                    Zone(
+                                      name:
+                                          result['nombre'] ??
+                                          _zoneController.text,
+                                    ),
+                                  );
+                                  _zoneController.clear();
+                                  _showAddZoneField = false;
+                                });
                               } catch (e) {
                                 print("Error creating zone: $e");
                               }
