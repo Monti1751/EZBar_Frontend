@@ -65,7 +65,7 @@ class Zone {
 
 /// === MODELO DE MESA ===
 class Mesa {
-  String id;
+  int? id;
   String name;
   String estado; // "libre", "reservado", "ocupado"
   String ubicacion;
@@ -73,7 +73,7 @@ class Mesa {
   int capacidad;
 
   Mesa({
-    required this.id,
+    this.id,
     required this.name,
     required this.ubicacion,
     required this.numeroMesa,
@@ -111,10 +111,10 @@ class Mesa {
         estado = "libre";
         break;
       case 2:
-        estado = "reservado";
+        estado = "reservada";
         break;
       case 3:
-        estado = "ocupado";
+        estado = "ocupada";
         break;
       default:
         estado = "libre";
@@ -122,14 +122,17 @@ class Mesa {
   }
 
   Color getColorByEstado(BuildContext context) {
-    final settings = Provider.of<VisualSettingsProvider>(context, listen: false);
+    final settings = Provider.of<VisualSettingsProvider>(
+      context,
+      listen: false,
+    );
     if (settings.colorBlindMode) {
       switch (estado.toLowerCase()) {
         case 'libre':
           return Colors.blue;
-        case 'reservado':
+        case 'reservada':
           return Colors.orange;
-        case 'ocupado':
+        case 'ocupada':
           return Colors.purple;
         default:
           return Colors.grey;
@@ -138,9 +141,9 @@ class Mesa {
       switch (estado.toLowerCase()) {
         case 'libre':
           return Colors.green;
-        case 'reservado':
+        case 'reservada':
           return Colors.orange;
-        case 'ocupado':
+        case 'ocupada':
           return Colors.red;
         default:
           return Colors.grey;
@@ -190,6 +193,8 @@ class _ZoneWidgetState extends State<ZoneWidget> {
   final TextEditingController _tableController = TextEditingController();
   final ApiService _apiService = ApiService();
   int _tableCounter = 1;
+
+  final ApiService _apiService = ApiService();
 
   @override
   void initState() {
@@ -327,7 +332,6 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                     );
                   },
                 ),
-                Icon(widget.zone.isOpen ? Icons.expand_less : Icons.expand_more, color: textoZona),
               ],
             ),
             onTap: () {
@@ -613,7 +617,11 @@ class _MainMenuState extends State<MainMenu> {
                       child: Text(
                         "Agregar Zona",
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: textoGeneral),
+                        style: TextStyle(
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.bold,
+                          color: textoGeneral,
+                        ),
                       ),
                     ),
                   ),
@@ -636,7 +644,7 @@ class _MainMenuState extends State<MainMenu> {
                         const SizedBox(width: 8),
                         IconButton(
                           icon: Icon(Icons.check, color: barraSuperior),
-                          onPressed: () {
+                          onPressed: () async {
                             if (_zoneController.text.isNotEmpty) {
                               _crearZona(_zoneController.text);
                             }

@@ -20,7 +20,7 @@ class ApiService {
   Future<List<dynamic>> obtenerMesas() async {
     try {
       final response = await http.get(Uri.parse(ApiConfig.mesas));
-      
+
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {
@@ -77,10 +77,45 @@ Future<List<dynamic>> obtenerZonas() async {
   // Obtener estadísticas de una zona
   Future<Map<String, dynamic>> obtenerEstadisticasZona(String ubicacion) async {
     try {
+      print('🔍 Intentando obtener mesas para zona: $nombreZona');
+
+      // Usar Uri.http para codificar correctamente los parámetros
+      final url = Uri.parse(
+        ApiConfig.mesas,
+      ).replace(queryParameters: {'ubicacion': nombreZona});
+
+      print('📍 URL generada: $url');
+      final response = await http.get(url);
+
+      print('📨 Respuesta recibida: ${response.statusCode}');
+      print('📦 Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        // Si el backend devuelve {mesas: [...]} en lugar de [...]
+        if (data is Map && data.containsKey('mesas')) {
+          return data['mesas'];
+        }
+        return data;
+      } else {
+        throw Exception(
+          'Error al cargar mesas de la zona $nombreZona: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      print('❌ Error de conexión al cargar mesas por zona: $e');
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  // Obtener estadísticas de una zona
+  Future<Map<String, dynamic>> obtenerEstadisticasZona(String ubicacion) async {
+    try {
+      final encodedUbicacion = Uri.encodeComponent(ubicacion);
       final response = await http.get(
         Uri.parse('${ApiConfig.baseUrl}/api/zonas/$ubicacion/stats')
       );
-      
+
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {
@@ -90,11 +125,11 @@ Future<List<dynamic>> obtenerZonas() async {
       throw Exception('Error de conexión: $e');
     }
   }
-  
+
   // Actualizar estado de mesa
   Future<Map<String, dynamic>> actualizarMesa(
-    int mesaId, 
-    Map<String, dynamic> datos
+    int mesaId,
+    Map<String, dynamic> datos,
   ) async {
     try {
       final response = await http.put(
@@ -102,7 +137,7 @@ Future<List<dynamic>> obtenerZonas() async {
         headers: {'Content-Type': 'application/json'},
         body: json.encode(datos),
       );
-      
+
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {
@@ -112,18 +147,16 @@ Future<List<dynamic>> obtenerZonas() async {
       throw Exception('Error de conexión: $e');
     }
   }
-  
+
   // Crear pedido
-  Future<Map<String, dynamic>> crearPedido(
-    Map<String, dynamic> pedido
-  ) async {
+  Future<Map<String, dynamic>> crearPedido(Map<String, dynamic> pedido) async {
     try {
       final response = await http.post(
         Uri.parse(ApiConfig.pedidos),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(pedido),
       );
-      
+
       if (response.statusCode == 201 || response.statusCode == 200) {
         return json.decode(response.body);
       } else {

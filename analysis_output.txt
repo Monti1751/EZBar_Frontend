@@ -1,0 +1,45 @@
+Analyzing EZBar_Frontend...                                     
+
+   info - The file name 'CartaPage.dart' isn't a lower_case_with_underscores identifier - lib\CartaPage.dart:1:1 - file_names
+   info - Don't invoke 'print' in production code - lib\CartaPage.dart:93:7 - avoid_print
+   info - Don't use 'BuildContext's across async gaps - lib\CartaPage.dart:235:58 - use_build_context_synchronously
+   info - Don't invoke 'print' in production code - lib\CartaPage.dart:327:51 - avoid_print
+   info - Don't use 'BuildContext's across async gaps - lib\CartaPage.dart:500:73 - use_build_context_synchronously
+   info - Don't invoke 'print' in production code - lib\CartaPage.dart:590:31 - avoid_print
+   info - Don't use 'BuildContext's across async gaps - lib\CartaPage.dart:593:41 - use_build_context_synchronously
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\ajustes_visuales.dart:54:15 - deprecated_member_use
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\ajustes_visuales.dart:62:15 - deprecated_member_use
+   info - Don't invoke 'print' in production code - lib\cuenta.dart:58:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\cuenta.dart:74:17 - avoid_print
+   info - Don't use 'BuildContext's across async gaps - lib\main.dart:83:11 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\main.dart:107:54 - deprecated_member_use
+   info - Don't invoke 'print' in production code - lib\pantalla_principal.dart:218:19 - avoid_print
+   info - Don't invoke 'print' in production code - lib\pantalla_principal.dart:452:59 - avoid_print
+   info - Don't use 'BuildContext's across async gaps - lib\pantalla_principal.dart:459:68 - use_build_context_synchronously
+   info - Don't invoke 'print' in production code - lib\pantalla_principal.dart:547:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\pantalla_principal.dart:657:33 - avoid_print
+   info - Don't invoke 'print' in production code - lib\pantalla_principal.dart:678:35 - avoid_print
+   info - Parameter 'key' could be a super parameter - lib\plato.dart:47:9 - use_super_parameters
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:9:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:11:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:14:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:37:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:39:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:40:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:48:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:91:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:185:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:192:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:195:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:196:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:211:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:278:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:285:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:286:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:296:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:383:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:398:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\local_storage_service.dart:29:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\local_storage_service.dart:58:7 - avoid_print
+
+41 issues found. (ran in 2.4s)
