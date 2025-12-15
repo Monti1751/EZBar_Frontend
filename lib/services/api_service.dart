@@ -288,7 +288,9 @@ class ApiService {
       if (response.statusCode == 200 || response.statusCode == 201) {
         return json.decode(response.body);
       } else {
-        throw Exception('Error al crear mesa: ${response.statusCode} - ${response.body}');
+        throw Exception(
+          'Error al crear mesa: ${response.statusCode} - ${response.body}',
+        );
       }
     } catch (e) {
       print('❌ Error al crear mesa: $e');
@@ -359,33 +361,12 @@ class ApiService {
   // Obtener pedido activo de una mesa
   Future<Map<String, dynamic>?> obtenerPedidoActivoMesa(int mesaId) async {
     try {
-      // Obtenemos todos los pedidos y filtramos en el cliente (temporal)
-      final pedidos = await obtenerPedidos();
-
-        // Buscar pedido de esta mesa que no esté pagado ni cancelado
-        try {
-          return pedidos.firstWhere((p) {
-            // Verificar si 'mesa' es objeto o ID
-            int? pMesaId;
-            if (p['mesa'] != null) {
-              if (p['mesa'] is int) {
-                pMesaId = p['mesa'];
-              } else if (p['mesa'] is Map) {
-                pMesaId = p['mesa']['mesa_id'];
-              }
-            } else if (p['mesa_id'] != null) {
-              pMesaId = p['mesa_id'];
-            }
-
-            if (pMesaId != mesaId) return false;
-
-            String estado = p['estado'].toString().toLowerCase();
-            return estado != 'pagado' && estado != 'cancelado';
-          });
-        } catch (e) {
-          // Si no se encuentra ningun elemento firstWhere lanza excepcion
-          return null;
-        }
+      final response = await http.get(
+        Uri.parse('${ApiConfig.pedidos}/mesa/$mesaId/activo'),
+      );
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data == null ? null : Map<String, dynamic>.from(data);
       }
       return null;
     } catch (e) {

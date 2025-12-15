@@ -17,6 +17,7 @@ class CuentaMesaPage extends StatefulWidget {
 class _CuentaMesaPageState extends State<CuentaMesaPage> {
   double total = 0.0;
   int? _mesaId;
+  List<dynamic> detalles = [];
   final ApiService _apiService = ApiService();
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -49,8 +50,14 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
       if (_mesaId != null) {
         final pedido = await _apiService.obtenerPedidoActivoMesa(_mesaId!);
         if (pedido != null) {
+          final pedidoId = pedido['pedido_id'] ?? pedido['id'] ?? null;
+          List<dynamic> detallesResp = [];
+          if (pedidoId != null) {
+            detallesResp = await _apiService.obtenerDetallesPedido(pedidoId);
+          }
           setState(() {
             total = (pedido['total_pedido'] as num).toDouble();
+            detalles = detallesResp;
           });
         }
       }
@@ -65,18 +72,21 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
       context,
       MaterialPageRoute(
         builder: (ctx) => CartaPage(
-          // Callback opcional: suma el precio del plato al total
+          // Callback: agregar producto y actualizar UI con respuesta del servidor
           onAddToCuenta: (plato) async {
             if (_mesaId != null && plato.id != null) {
               try {
-                await _apiService.agregarProductoAMesa(_mesaId!, plato.id!);
+                final resp = await _apiService.agregarProductoAMesa(_mesaId!, plato.id!);
+                if (resp != null) {
+                  setState(() {
+                    total = (resp['total_pedido'] as num).toDouble();
+                    detalles = resp['detalles'] ?? detalles;
+                  });
+                }
               } catch (e) {
                 print("Error adding product: $e");
               }
             }
-            setState(() {
-              total += plato.precio;
-            });
           },
         ),
       ),
@@ -196,6 +206,34 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                   ),
 
                   const SizedBox(height: 20),
+
+                  // === DETALLES DEL PEDIDO ===
+                  SizedBox(
+                    height: 180,
+                    child: detalles.isEmpty
+                        ? Center(
+                            child: Text(
+                              'No hay productos en la cuenta',
+                              style: TextStyle(color: textoGeneral),
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: detalles.length,
+                            itemBuilder: (ctx, i) {
+                              final d = detalles[i];
+                              final nombre = d['producto_nombre'] ?? 'Producto';
+                              final cantidad = (d['cantidad'] is num) ? d['cantidad'].toString() : '${d['cantidad']}';
+                              final linea = (d['total_linea'] is num) ? (d['total_linea'] as num).toDouble() : 0.0;
+                              return ListTile(
+                                title: Text(nombre, style: TextStyle(color: textoGeneral)),
+                                subtitle: Text('Cantidad: $cantidad', style: TextStyle(color: textoGeneral)),
+                                trailing: Text('${linea.toStringAsFixed(2)} €', style: TextStyle(color: textoGeneral)),
+                              );
+                            },
+                          ),
+                  ),
+
+                  const SizedBox(height: 12),
 
                   // === TOTAL ===
                   Row(

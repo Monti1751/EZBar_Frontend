@@ -14,17 +14,11 @@ InputDecoration loginInputDecoration(String hint, IconData icon) {
     fillColor: const Color(0xFFFFFFFF),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(
-        color: Color(0xFF4A4025),
-        width: 1.5,
-      ),
+      borderSide: const BorderSide(color: Color(0xFF4A4025), width: 1.5),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(
-        color: Color(0xFF7BA238),
-        width: 2.2,
-      ),
+      borderSide: const BorderSide(color: Color(0xFF7BA238), width: 2.2),
     ),
   );
 }
@@ -100,7 +94,10 @@ class _CartaPageState extends State<CartaPage> {
   }
 
   BoxDecoration _cardDecoration(BuildContext context) {
-    final settings = Provider.of<VisualSettingsProvider>(context, listen: false);
+    final settings = Provider.of<VisualSettingsProvider>(
+      context,
+      listen: false,
+    );
     return BoxDecoration(
       color: settings.darkMode ? Colors.grey[850] : Colors.white,
       borderRadius: BorderRadius.circular(10),
@@ -132,8 +129,12 @@ class _CartaPageState extends State<CartaPage> {
   Widget build(BuildContext context) {
     final settings = Provider.of<VisualSettingsProvider>(context);
 
-    final Color fondo = settings.darkMode ? Colors.black : const Color(0xFFECF0D5);
-    final Color barraSuperior = settings.colorBlindMode ? Colors.blue : const Color(0xFF7BA238);
+    final Color fondo = settings.darkMode
+        ? Colors.black
+        : const Color(0xFFECF0D5);
+    final Color barraSuperior = settings.colorBlindMode
+        ? Colors.blue
+        : const Color(0xFF7BA238);
     final Color textoGeneral = settings.darkMode ? Colors.white : Colors.black;
     final double fontSize = settings.currentFontSize;
 
@@ -174,7 +175,10 @@ class _CartaPageState extends State<CartaPage> {
               children: [
                 for (var seccion in secciones)
                   Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: barraSuperior,
                       borderRadius: BorderRadius.circular(10),
@@ -195,30 +199,44 @@ class _CartaPageState extends State<CartaPage> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                icon: const Icon(
+                                  Icons.delete_outline,
+                                  color: Colors.red,
+                                ),
                                 tooltip: "Eliminar sección",
                                 onPressed: () {
                                   showDialog(
                                     context: context,
                                     builder: (ctx) => AlertDialog(
-                                      title: const Text("Confirmar eliminación"),
-                                      content: Text("¿Seguro que quieres eliminar la sección '${seccion.nombre}'?"),
+                                      title: const Text(
+                                        "Confirmar eliminación",
+                                      ),
+                                      content: Text(
+                                        "¿Seguro que quieres eliminar la sección '${seccion.nombre}'?",
+                                      ),
                                       actions: [
                                         TextButton(
-                                          onPressed: () => Navigator.of(ctx).pop(),
+                                          onPressed: () =>
+                                              Navigator.of(ctx).pop(),
                                           child: const Text("Cancelar"),
                                         ),
                                         TextButton(
                                           onPressed: () async {
                                             if (seccion.id != null) {
-                                              await _apiService.eliminarCategoria(seccion.id!);
+                                              await _apiService
+                                                  .eliminarCategoria(
+                                                    seccion.id!,
+                                                  );
                                             }
                                             setState(() {
                                               secciones.remove(seccion);
                                             });
                                             Navigator.of(ctx).pop();
                                           },
-                                          child: const Text("Eliminar", style: TextStyle(color: Colors.red)),
+                                          child: const Text(
+                                            "Eliminar",
+                                            style: TextStyle(color: Colors.red),
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -226,7 +244,9 @@ class _CartaPageState extends State<CartaPage> {
                                 },
                               ),
                               Icon(
-                                seccion.isOpen ? Icons.expand_less : Icons.expand_more,
+                                seccion.isOpen
+                                    ? Icons.expand_less
+                                    : Icons.expand_more,
                                 color: textoGeneral,
                               ),
                             ],
@@ -251,24 +271,36 @@ class _CartaPageState extends State<CartaPage> {
                                       Expanded(
                                         child: TextField(
                                           controller: _platoController,
-                                          decoration: loginInputDecoration("Nombre del plato", Icons.fastfood),
+                                          decoration: loginInputDecoration(
+                                            "Nombre del plato",
+                                            Icons.fastfood,
+                                          ),
                                         ),
                                       ),
                                       const SizedBox(width: 8),
                                       IconButton(
-                                        icon: const Icon(Icons.add, color: Colors.green),
+                                        icon: const Icon(
+                                          Icons.add,
+                                          color: Colors.green,
+                                        ),
                                         tooltip: "Crear plato",
                                         onPressed: () async {
-                                          final nombre = _platoController.text.trim();
+                                          final nombre = _platoController.text
+                                              .trim();
                                           if (nombre.isNotEmpty) {
-                                            final nuevoPlato = await Navigator.push<Plato>(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (ctx) => PlatoEditorPage(
-                                                  plato: Plato(nombre: nombre, precio: 0.0),
-                                                ),
-                                              ),
-                                            );
+                                            final nuevoPlato =
+                                                await Navigator.push<Plato>(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (ctx) =>
+                                                        PlatoEditorPage(
+                                                          plato: Plato(
+                                                            nombre: nombre,
+                                                            precio: 0.0,
+                                                          ),
+                                                        ),
+                                                  ),
+                                                );
 
                                             if (nuevoPlato != null) {
                                               if (seccion.id != null) {
@@ -277,16 +309,23 @@ class _CartaPageState extends State<CartaPage> {
                                                     'nombre': nuevoPlato.nombre,
                                                     'precio': nuevoPlato.precio,
                                                     'categoria': {
-                                                      'categoria_id': seccion.id,
+                                                      'categoria_id':
+                                                          seccion.id,
                                                     },
                                                   };
-                                                  final res = await _apiService.crearProducto(data);
-                                                  nuevoPlato.id = res['producto_id'];
+                                                  final res = await _apiService
+                                                      .crearProducto(data);
+                                                  nuevoPlato.id =
+                                                      res['producto_id'];
                                                   setState(() {
-                                                    seccion.platos.add(nuevoPlato);
+                                                    seccion.platos.add(
+                                                      nuevoPlato,
+                                                    );
                                                   });
                                                 } catch (e) {
-                                                  print("Error creating product: $e");
+                                                  print(
+                                                    "Error creating product: $e",
+                                                  );
                                                 }
                                               }
                                               _platoController.clear();
@@ -305,10 +344,6 @@ class _CartaPageState extends State<CartaPage> {
                                       children: [
                                         for (var plato in seccion.platos)
                                           Container(
-<<<<<<< HEAD
-                                            margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-                                            decoration: _cardDecoration(context),
-=======
                                             margin: const EdgeInsets.symmetric(
                                               vertical: 6,
                                               horizontal: 4,
@@ -316,40 +351,44 @@ class _CartaPageState extends State<CartaPage> {
                                             decoration: _cardDecoration(
                                               context,
                                             ),
->>>>>>> b01878056ba06f48bf2313eab50e5ceaa741eec6
                                             child: InkWell(
                                               onTap: () {
                                                 Navigator.push(
                                                   context,
                                                   MaterialPageRoute(
-<<<<<<< HEAD
-                                                    builder: (ctx) => PlatoEditorPage(plato: plato),
-=======
                                                     builder: (ctx) =>
                                                         PlatoEditorPage(
                                                           plato: plato,
                                                         ),
->>>>>>> b01878056ba06f48bf2313eab50e5ceaa741eec6
                                                   ),
                                                 );
                                               },
                                               child: Padding(
-                                                padding: const EdgeInsets.all(12),
+                                                padding: const EdgeInsets.all(
+                                                  12,
+                                                ),
                                                 child: Row(
-                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
                                                   children: [
                                                     // Imagen pequeña + nombre
                                                     Expanded(
                                                       child: Row(
                                                         children: [
-                                                          if (plato.imagen != null)
+                                                          if (plato.imagen !=
+                                                              null)
                                                             ClipRRect(
-                                                              borderRadius: BorderRadius.circular(8),
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    8,
+                                                                  ),
                                                               child: Image.file(
                                                                 plato.imagen!,
                                                                 width: 50,
                                                                 height: 50,
-                                                                fit: BoxFit.cover,
+                                                                fit: BoxFit
+                                                                    .cover,
                                                               ),
                                                             )
                                                           else
@@ -357,18 +396,38 @@ class _CartaPageState extends State<CartaPage> {
                                                               width: 50,
                                                               height: 50,
                                                               decoration: BoxDecoration(
-                                                                color: Colors.grey[300],
-                                                                borderRadius: BorderRadius.circular(8),
-                                                                border: Border.all(color: Colors.black12),
+                                                                color: Colors
+                                                                    .grey[300],
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      8,
+                                                                    ),
+                                                                border: Border.all(
+                                                                  color: Colors
+                                                                      .black12,
+                                                                ),
                                                               ),
-                                                              child: const Icon(Icons.image, color: Colors.black26),
+                                                              child: const Icon(
+                                                                Icons.image,
+                                                                color: Colors
+                                                                    .black26,
+                                                              ),
                                                             ),
-                                                          const SizedBox(width: 10),
+                                                          const SizedBox(
+                                                            width: 10,
+                                                          ),
                                                           Expanded(
                                                             child: Text(
                                                               plato.nombre,
-                                                              style: TextStyle(fontSize: fontSize, color: textoGeneral),
-                                                              overflow: TextOverflow.ellipsis,
+                                                              style: TextStyle(
+                                                                fontSize:
+                                                                    fontSize,
+                                                                color:
+                                                                    textoGeneral,
+                                                              ),
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
                                                             ),
                                                           ),
                                                         ],
@@ -379,35 +438,65 @@ class _CartaPageState extends State<CartaPage> {
                                                     Row(
                                                       children: [
                                                         IconButton(
-                                                          icon: Icon(Icons.add_circle, color: barraSuperior),
-                                                          tooltip: "Añadir a la cuenta",
-                                                          onPressed: () => _addPlatoToCuenta(plato),
+                                                          icon: Icon(
+                                                            Icons.add_circle,
+                                                            color:
+                                                                barraSuperior,
+                                                          ),
+                                                          tooltip:
+                                                              "Añadir a la cuenta",
+                                                          onPressed: () =>
+                                                              _addPlatoToCuenta(
+                                                                plato,
+                                                              ),
                                                         ),
                                                         IconButton(
-                                                          icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                                          tooltip: "Eliminar plato",
+                                                          icon: const Icon(
+                                                            Icons
+                                                                .delete_outline,
+                                                            color: Colors.red,
+                                                          ),
+                                                          tooltip:
+                                                              "Eliminar plato",
                                                           onPressed: () {
                                                             showDialog(
                                                               context: context,
                                                               builder: (ctx) => AlertDialog(
-                                                                title: const Text("Confirmar eliminación"),
-                                                                content: Text("¿Seguro que quieres eliminar el plato '${plato.nombre}'?"),
+                                                                title: const Text(
+                                                                  "Confirmar eliminación",
+                                                                ),
+                                                                content: Text(
+                                                                  "¿Seguro que quieres eliminar el plato '${plato.nombre}'?",
+                                                                ),
                                                                 actions: [
                                                                   TextButton(
-                                                                    onPressed: () => Navigator.of(ctx).pop(),
-                                                                    child: const Text("Cancelar"),
+                                                                    onPressed: () =>
+                                                                        Navigator.of(
+                                                                          ctx,
+                                                                        ).pop(),
+                                                                    child: const Text(
+                                                                      "Cancelar",
+                                                                    ),
                                                                   ),
                                                                   TextButton(
                                                                     onPressed: () async {
-                                                                      if (plato.id != null) {
-                                                                        await _apiService.eliminarProducto(plato.id!);
+                                                                      if (plato
+                                                                              .id !=
+                                                                          null) {
+                                                                        await _apiService.eliminarProducto(
+                                                                          plato
+                                                                              .id!,
+                                                                        );
                                                                       }
                                                                       setState(() {
-                                                                        seccion.platos.remove(plato);
+                                                                        seccion
+                                                                            .platos
+                                                                            .remove(
+                                                                              plato,
+                                                                            );
                                                                       });
-                                                                      Navigator.of(ctx).pop();
-                                                                    },
-                                                                    child: const Text("Eliminar", style: TextStyle(color: Colors.red)),
+                                                                      Navigator.of(
+                                                                        ctx,
                                                                       ).pop();
                                                                     },
                                                                     child: const Text(
@@ -417,7 +506,6 @@ class _CartaPageState extends State<CartaPage> {
                                                                             .red,
                                                                       ),
                                                                     ),
->>>>>>> b01878056ba06f48bf2313eab50e5ceaa741eec6
                                                                   ),
                                                                 ],
                                                               ),
@@ -451,10 +539,6 @@ class _CartaPageState extends State<CartaPage> {
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: barraSuperior,
-<<<<<<< HEAD
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-=======
                 padding: const EdgeInsets.symmetric(
                   vertical: 14,
                   horizontal: 20,
@@ -462,7 +546,6 @@ class _CartaPageState extends State<CartaPage> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
->>>>>>> b01878056ba06f48bf2313eab50e5ceaa741eec6
               ),
               icon: const Icon(Icons.add, color: Colors.white),
               label: Text(
@@ -477,14 +560,10 @@ class _CartaPageState extends State<CartaPage> {
                     title: const Text("Nueva sección"),
                     content: TextField(
                       controller: _seccionController,
-<<<<<<< HEAD
-                      decoration: loginInputDecoration("Nombre de la sección", Icons.list),
-=======
                       decoration: loginInputDecoration(
                         "Nombre de la sección",
                         Icons.list,
                       ),
->>>>>>> b01878056ba06f48bf2313eab50e5ceaa741eec6
                     ),
                     actions: [
                       TextButton(
@@ -492,13 +571,6 @@ class _CartaPageState extends State<CartaPage> {
                         child: const Text("Cancelar"),
                       ),
                       TextButton(
-<<<<<<< HEAD
-                        onPressed: () {
-                          if (_seccionController.text.isNotEmpty) {
-                            setState(() {
-                              secciones.add(Seccion(nombre: _seccionController.text));
-                            });
-=======
                         onPressed: () async {
                           if (_seccionController.text.isNotEmpty) {
                             try {
@@ -516,7 +588,6 @@ class _CartaPageState extends State<CartaPage> {
                             } catch (e) {
                               print("Error creating category: $e");
                             }
->>>>>>> b01878056ba06f48bf2313eab50e5ceaa741eec6
                           }
                           Navigator.pop(ctx);
                         },

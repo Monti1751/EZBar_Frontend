@@ -19,9 +19,9 @@ class Plato {
     List<String>? ingredientes,
     List<String>? extras,
     List<String>? alergenos,
-  })  : ingredientes = ingredientes ?? [],
-        extras = extras ?? [],
-        alergenos = alergenos ?? [];
+  }) : ingredientes = ingredientes ?? [],
+       extras = extras ?? [],
+       alergenos = alergenos ?? [];
 }
 
 /// Helper para InputDecoration consistente
@@ -69,7 +69,9 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
     super.initState();
     _imagenPlato = widget.plato.imagen;
     _nombreController = TextEditingController(text: widget.plato.nombre);
-    _precioController = TextEditingController(text: widget.plato.precio.toString());
+    _precioController = TextEditingController(
+      text: widget.plato.precio.toString(),
+    );
     _ingredientes = List.from(widget.plato.ingredientes);
     _extras = List.from(widget.plato.extras);
     _alergenos = List.from(widget.plato.alergenos);
@@ -190,14 +192,10 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   image: _imagenPlato != null
-<<<<<<< HEAD
-                      ? DecorationImage(image: FileImage(_imagenPlato!), fit: BoxFit.cover)
-=======
                       ? DecorationImage(
                           image: FileImage(_imagenPlato!),
                           fit: BoxFit.cover,
                         )
->>>>>>> b01878056ba06f48bf2313eab50e5ceaa741eec6
                       : null,
                 ),
                 child: _imagenPlato == null
@@ -214,14 +212,10 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
                 Expanded(
                   child: TextFormField(
                     controller: _nombreController,
-<<<<<<< HEAD
-                    decoration: loginInputDecoration("Nombre del plato", Icons.fastfood),
-=======
                     decoration: loginInputDecoration(
                       "Nombre del plato",
                       Icons.fastfood,
                     ),
->>>>>>> b01878056ba06f48bf2313eab50e5ceaa741eec6
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -248,14 +242,10 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
                         Expanded(
                           child: TextFormField(
                             controller: _alergenoController,
-<<<<<<< HEAD
-                            decoration: loginInputDecoration("Alérgeno", Icons.warning),
-=======
                             decoration: loginInputDecoration(
                               "Alérgeno",
                               Icons.warning,
                             ),
->>>>>>> b01878056ba06f48bf2313eab50e5ceaa741eec6
                           ),
                         ),
                         IconButton(
@@ -293,14 +283,10 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
                         Expanded(
                           child: TextFormField(
                             controller: _ingredienteController,
-<<<<<<< HEAD
-                            decoration: loginInputDecoration("Ingrediente", Icons.restaurant),
-=======
                             decoration: loginInputDecoration(
                               "Ingrediente",
                               Icons.restaurant,
                             ),
->>>>>>> b01878056ba06f48bf2313eab50e5ceaa741eec6
                           ),
                         ),
                         IconButton(
@@ -338,14 +324,10 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
                         Expanded(
                           child: TextFormField(
                             controller: _extraController,
-<<<<<<< HEAD
-                            decoration: loginInputDecoration("Extra", Icons.add_circle_outline),
-=======
                             decoration: loginInputDecoration(
                               "Extra",
                               Icons.add_circle_outline,
                             ),
->>>>>>> b01878056ba06f48bf2313eab50e5ceaa741eec6
                           ),
                         ),
                         IconButton(
@@ -381,11 +363,6 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: verde,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-<<<<<<< HEAD
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: const Text("Guardar plato", style: TextStyle(color: Colors.black)),
-=======
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -394,7 +371,6 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
                       "Guardar plato",
                       style: TextStyle(color: Colors.black),
                     ),
->>>>>>> b01878056ba06f48bf2313eab50e5ceaa741eec6
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -404,11 +380,6 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-<<<<<<< HEAD
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: const Text("Cancelar", style: TextStyle(color: Colors.black)),
-=======
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -417,7 +388,6 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
                       "Cancelar",
                       style: TextStyle(color: Colors.black),
                     ),
->>>>>>> b01878056ba06f48bf2313eab50e5ceaa741eec6
                   ),
                 ),
               ],
