@@ -3,9 +3,9 @@ import 'settings_menu.dart';
 import 'package:provider/provider.dart';
 import 'cuenta.dart';
 import 'visual_settings_provider.dart';
-import 'services/api_service.dart';
+import 'services/api_service.dart'; 
 
-InputDecoration loginInputDecoration(String hint, IconData icon) {
+ InputDecoration loginInputDecoration(String hint, IconData icon) {
   return InputDecoration(
     hintText: hint,
     prefixIcon: Icon(icon, color: Color(0xFF4A4025)),
@@ -13,11 +13,17 @@ InputDecoration loginInputDecoration(String hint, IconData icon) {
     fillColor: Color(0xFFFFFFFF),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: Color(0xFF4A4025), width: 1.5),
+      borderSide: BorderSide(
+        color: Color(0xFF4A4025),
+        width: 1.5,
+      ),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: Color(0xFF7BA238), width: 2.2),
+      borderSide: BorderSide(
+        color: Color(0xFF7BA238),
+        width: 2.2,
+      ),
     ),
   );
 }
@@ -34,11 +40,27 @@ class PantallaPrincipal extends StatelessWidget {
 
 /// === MODELO DE ZONA ===
 class Zone {
+  String? id;
   String name;
   bool isOpen = false;
   List<Mesa> tables = [];
 
-  Zone({required this.name});
+  Zone({this.id, required this.name});
+
+  // ✅ Convertir desde JSON del backend (adaptado para el nuevo formato)
+  factory Zone.fromJson(Map<String, dynamic> json) {
+    return Zone(
+      id: json['nombre']?.toString(), // Usa 'nombre' como ID
+      name: json['nombre'] ?? json['name'] ?? '',
+    );
+  }
+
+  // Convertir a JSON para enviar al backend
+  Map<String, dynamic> toJson() {
+    return {
+      'nombre': name,
+    };
+  }
 }
 
 /// === MODELO DE MESA ===
@@ -58,6 +80,30 @@ class Mesa {
     required this.capacidad,
     this.estado = "libre",
   });
+
+  // Convertir desde JSON del backend
+  factory Mesa.fromJson(Map<String, dynamic> json) {
+    return Mesa(
+      id: json['mesa_id']?.toString() ?? json['id']?.toString() ?? '',
+      name: json['nombre'] ?? json['name'] ?? 'Mesa ${json['numero_mesa'] ?? ''}',
+      ubicacion: json['ubicacion'] ?? '',
+      numeroMesa: json['numero_mesa'] ?? json['numeroMesa'] ?? json['numero'] ?? 0,
+      capacidad: json['capacidad'] ?? 4,
+      estado: json['estado'] ?? 'libre',
+    );
+  }
+
+  // Convertir a JSON para enviar al backend
+  Map<String, dynamic> toJson() {
+    return {
+      if (int.tryParse(id) != null) 'id': int.parse(id),
+      'nombre': name,
+      'ubicacion': ubicacion,
+      'numero_mesa': numeroMesa,
+      'capacidad': capacidad,
+      'estado': estado,
+    };
+  }
 
   void setEstado(int disposicion) {
     switch (disposicion) {
@@ -118,7 +164,6 @@ class Mesa {
       child: Text(
         estado.toUpperCase(),
         style: const TextStyle(
-          // El badge se mantiene en 12 para legibilidad
           fontSize: 12,
           fontWeight: FontWeight.bold,
         ).copyWith(color: color),
@@ -127,12 +172,18 @@ class Mesa {
   }
 }
 
-/// === WIDGET ZONA ===
+/// === WIDGET ZONA CON API===
 class ZoneWidget extends StatefulWidget {
   final Zone zone;
   final VoidCallback onDelete;
+  final Function(Zone) onUpdate;
 
-  const ZoneWidget({super.key, required this.zone, required this.onDelete});
+  const ZoneWidget({
+    super.key,
+    required this.zone,
+    required this.onDelete,
+    required this.onUpdate,
+  });
 
   @override
   State<ZoneWidget> createState() => _ZoneWidgetState();
@@ -140,9 +191,18 @@ class ZoneWidget extends StatefulWidget {
 
 class _ZoneWidgetState extends State<ZoneWidget> {
   final TextEditingController _tableController = TextEditingController();
+  final ApiService _apiService = ApiService();
   int _tableCounter = 1;
 
   final ApiService _apiService = ApiService();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.zone.name.isNotEmpty) {
+      _cargarMesasDeZona();
+    }
+  }
 
   @override
   void dispose() {
@@ -150,11 +210,26 @@ class _ZoneWidgetState extends State<ZoneWidget> {
     super.dispose();
   }
 
+  /// ✅ Cargar mesas de la zona desde el backend (corregido)
+  Future<void> _cargarMesasDeZona() async {
+    try {
+      final mesas = await _apiService.obtenerMesasPorZona(widget.zone.name);
+      if (mounted) {
+        setState(() {
+          widget.zone.tables = mesas.map((m) => Mesa.fromJson(m)).toList();
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al cargar mesas: $e')),
+        );
+      }
+    }
+  }
+
   BoxDecoration _cardDecoration(BuildContext context) {
-    final settings = Provider.of<VisualSettingsProvider>(
-      context,
-      listen: false,
-    );
+    final settings = Provider.of<VisualSettingsProvider>(context, listen: false);
     return BoxDecoration(
       color: settings.darkMode ? Colors.grey[850] : Colors.white,
       borderRadius: BorderRadius.circular(10),
@@ -173,50 +248,32 @@ class _ZoneWidgetState extends State<ZoneWidget> {
             child: TextField(
               controller: _tableController,
               decoration: loginInputDecoration(
-                "Nombre de la mesa",
-                Icons.table_restaurant_outlined,
+                 "Nombre de la mesa",
+                 Icons.table_restaurant_outlined
               ),
-              style: TextStyle(
-                color: settings.darkMode ? Colors.white : Colors.black,
-              ),
+              style: TextStyle(color: settings.darkMode ? Colors.white : Colors.black),
             ),
           ),
           const SizedBox(width: 8),
           IconButton(
             icon: Icon(
               Icons.add,
-              color: settings.colorBlindMode
-                  ? Colors.blue
-                  : const Color(0xFF7BA238),
+              color: settings.colorBlindMode ? Colors.blue : const Color(0xFF7BA238),
             ),
-            onPressed: () async {
+            onPressed: () {
               if (_tableController.text.isNotEmpty) {
-                try {
-                  final result = await _apiService.crearMesa({
-                    'nombre': _tableController.text,
-                    'ubicacion': widget.zone.name,
-                    'numero_mesa': _tableCounter,
-                    'capacidad': 4,
-                    'estado': 'libre',
-                  });
-
-                  setState(() {
-                    widget.zone.tables.add(
-                      Mesa(
-                        id: result['mesa_id'],
-                        name: result['nombre'] ?? _tableController.text,
-                        ubicacion: widget.zone.name,
-                        numeroMesa: result['numero_mesa'] ?? _tableCounter,
-                        capacidad: result['capacidad'] ?? 4,
-                        estado: result['estado'] ?? 'libre',
-                      ),
-                    );
-                    _tableCounter++;
-                    _tableController.clear();
-                  });
-                } catch (e) {
-                  print("Error creating table: $e");
-                }
+                setState(() {
+                  widget.zone.tables.add(
+                    Mesa(
+                      id: DateTime.now().millisecondsSinceEpoch.toString(),
+                      name: _tableController.text,
+                      ubicacion: widget.zone.name,
+                      numeroMesa: _tableCounter++,
+                      capacidad: 4,
+                    ),
+                  );
+                  _tableController.clear();
+                });
               }
             },
           ),
@@ -229,9 +286,7 @@ class _ZoneWidgetState extends State<ZoneWidget> {
   Widget build(BuildContext context) {
     final settings = Provider.of<VisualSettingsProvider>(context);
     final double fontSize = settings.currentFontSize;
-    final Color tarjetaZona = settings.colorBlindMode
-        ? Colors.blue
-        : const Color(0xFF7BA238);
+    final Color tarjetaZona = settings.colorBlindMode ? Colors.blue : const Color(0xFF7BA238);
     final Color textoZona = settings.darkMode ? Colors.white : Colors.black;
 
     return Container(
@@ -246,11 +301,7 @@ class _ZoneWidgetState extends State<ZoneWidget> {
           ListTile(
             title: Text(
               widget.zone.name,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: fontSize,
-                color: textoZona,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: fontSize, color: textoZona),
             ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
@@ -263,9 +314,7 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                       context: context,
                       builder: (ctx) => AlertDialog(
                         title: const Text("Confirmar eliminación"),
-                        content: Text(
-                          "¿Seguro que quieres eliminar la zona '${widget.zone.name}'?",
-                        ),
+                        content: Text("¿Seguro que quieres eliminar la zona '${widget.zone.name}'?"),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.of(ctx).pop(),
@@ -276,19 +325,12 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                               widget.onDelete();
                               Navigator.of(ctx).pop();
                             },
-                            child: const Text(
-                              "Eliminar",
-                              style: TextStyle(color: Colors.red),
-                            ),
+                            child: const Text("Eliminar", style: TextStyle(color: Colors.red)),
                           ),
                         ],
                       ),
                     );
                   },
-                ),
-                Icon(
-                  widget.zone.isOpen ? Icons.expand_less : Icons.expand_more,
-                  color: textoZona,
                 ),
               ],
             ),
@@ -316,8 +358,7 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) =>
-                                        CuentaMesaPage(nombreMesa: table.name),
+                                    builder: (context) => CuentaMesaPage(nombreMesa: table.name),
                                   ),
                                 );
                               },
@@ -326,9 +367,7 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                                 padding: const EdgeInsets.all(12),
                                 decoration: _cardDecoration(context),
                                 child: Row(
-                                  // Corrección aquí: spaceBetween (camelCase)
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Expanded(
                                       child: Row(
@@ -341,9 +380,7 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                                               overflow: TextOverflow.ellipsis,
                                               style: TextStyle(
                                                 fontWeight: FontWeight.bold,
-                                                color: settings.darkMode
-                                                    ? Colors.white
-                                                    : Colors.black,
+                                                color: settings.darkMode ? Colors.white : Colors.black,
                                                 fontSize: fontSize,
                                               ),
                                             ),
@@ -356,9 +393,7 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                                         PopupMenuButton<String>(
                                           icon: Icon(
                                             Icons.more_vert,
-                                            color: settings.darkMode
-                                                ? Colors.white70
-                                                : Colors.black54,
+                                            color: settings.darkMode ? Colors.white70 : Colors.black54,
                                           ),
                                           onSelected: (value) {
                                             setState(() {
@@ -366,10 +401,10 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                                                 case 'libre':
                                                   table.setEstado(1);
                                                   break;
-                                                case 'reservada':
+                                                case 'reservado':
                                                   table.setEstado(2);
                                                   break;
-                                                case 'ocupada':
+                                                case 'ocupado':
                                                   table.setEstado(3);
                                                   break;
                                               }
@@ -380,36 +415,27 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                                               value: 'libre',
                                               child: Row(
                                                 children: [
-                                                  Icon(
-                                                    Icons.circle,
-                                                    color: Colors.green,
-                                                  ),
+                                                  Icon(Icons.circle, color: Colors.green),
                                                   SizedBox(width: 8),
                                                   Text('Libre'),
                                                 ],
                                               ),
                                             ),
                                             PopupMenuItem(
-                                              value: 'reservada',
+                                              value: 'reservado',
                                               child: Row(
                                                 children: [
-                                                  Icon(
-                                                    Icons.circle,
-                                                    color: Colors.orange,
-                                                  ),
+                                                  Icon(Icons.circle, color: Colors.orange),
                                                   SizedBox(width: 8),
                                                   Text('Reservado'),
                                                 ],
                                               ),
                                             ),
                                             PopupMenuItem(
-                                              value: 'ocupada',
+                                              value: 'ocupado',
                                               child: Row(
                                                 children: [
-                                                  Icon(
-                                                    Icons.circle,
-                                                    color: Colors.red,
-                                                  ),
+                                                  Icon(Icons.circle, color: Colors.red),
                                                   SizedBox(width: 8),
                                                   Text('Ocupado'),
                                                 ],
@@ -418,52 +444,26 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                                           ],
                                         ),
                                         IconButton(
-                                          icon: const Icon(
-                                            Icons.delete_outline,
-                                            color: Colors.red,
-                                          ),
+                                          icon: const Icon(Icons.delete_outline, color: Colors.red),
                                           onPressed: () {
                                             showDialog(
                                               context: context,
                                               builder: (ctx) => AlertDialog(
-                                                title: const Text(
-                                                  "Confirmar eliminación",
-                                                ),
-                                                content: Text(
-                                                  "¿Seguro que quieres eliminar la mesa '${table.name}'?",
-                                                ),
+                                                title: const Text("Confirmar eliminación"),
+                                                content: Text("¿Seguro que quieres eliminar la mesa '${table.name}'?"),
                                                 actions: [
                                                   TextButton(
-                                                    onPressed: () =>
-                                                        Navigator.of(ctx).pop(),
-                                                    child: const Text(
-                                                      "Cancelar",
-                                                    ),
+                                                    onPressed: () => Navigator.of(ctx).pop(),
+                                                    child: const Text("Cancelar"),
                                                   ),
                                                   TextButton(
-                                                    onPressed: () async {
-                                                      if (table.id != null) {
-                                                        try {
-                                                          await _apiService
-                                                              .eliminarMesa(
-                                                                table.id!,
-                                                              );
-                                                        } catch (e) {
-                                                          print(e);
-                                                        }
-                                                      }
+                                                    onPressed: () {
                                                       setState(() {
-                                                        widget.zone.tables
-                                                            .remove(table);
+                                                        widget.zone.tables.remove(table);
                                                       });
                                                       Navigator.of(ctx).pop();
                                                     },
-                                                    child: const Text(
-                                                      "Eliminar",
-                                                      style: TextStyle(
-                                                        color: Colors.red,
-                                                      ),
-                                                    ),
+                                                    child: const Text("Eliminar", style: TextStyle(color: Colors.red)),
                                                   ),
                                                 ],
                                               ),
@@ -492,7 +492,7 @@ class _ZoneWidgetState extends State<ZoneWidget> {
 /// Color principal del tema
 const Color mainColor = Color(0xFF7BA238);
 
-/// Menú principal con estado
+/// Menú principal con API
 class MainMenu extends StatefulWidget {
   const MainMenu({super.key});
 
@@ -507,6 +507,8 @@ class _MainMenuState extends State<MainMenu> {
   bool _showAddZoneField = false;
   final TextEditingController _zoneController = TextEditingController();
   List<Zone> zones = [];
+  bool _isLoading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -514,50 +516,59 @@ class _MainMenuState extends State<MainMenu> {
     _cargarZonas();
   }
 
+  /// ✅ Cargar zonas desde el backend (corregido)
   Future<void> _cargarZonas() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
     try {
       final zonasData = await _apiService.obtenerZonas();
-      List<Zone> loadedZones = [];
-
-      // Load tables for all zones?
-      // Option 1: fetch all tables and distribute
-      final mesasData = await _apiService.obtenerMesas();
-
-      for (var z in zonasData) {
-        Zone zone = Zone(name: z['nombre']);
-        var mesasZona = mesasData.where((m) => m['ubicacion'] == z['nombre']);
-        for (var m in mesasZona) {
-          zone.tables.add(
-            Mesa(
-              id: m['mesa_id'],
-              name: m['nombre'] ?? 'Mesa ${m['mesa_id']}',
-              ubicacion: m['ubicacion'],
-              numeroMesa: m['numero_mesa'] ?? 0,
-              capacidad: m['capacidad'] ?? 4,
-              estado: m['estado'] ?? 'libre',
-            ),
-          );
-        }
-        loadedZones.add(zone);
-      }
       setState(() {
-        zones = loadedZones;
+        zones = zonasData.map((z) => Zone.fromJson(z)).toList();
+        _isLoading = false;
       });
     } catch (e) {
-      print("Error loading zones: $e");
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  /// Crear zona en el backend
+  Future<void> _crearZona(String nombre) async {
+    try {
+      final nuevaZona = Zone(name: nombre);
+      final response = await _apiService.crearZona(nuevaZona.toJson());
+      final zonaCreada = Zone.fromJson(response);
+
+      setState(() {
+        zones.add(zonaCreada);
+        _zoneController.clear();
+        _showAddZoneField = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Zona creada correctamente')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al crear zona: $e')),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final settings = Provider.of<VisualSettingsProvider>(context);
-    // Colores y tamaños dinámicos según ajustes
-    final Color fondo = settings.darkMode
-        ? Colors.black
-        : const Color(0xFFECF0D5);
-    final Color barraSuperior = settings.colorBlindMode
-        ? Colors.blue
-        : const Color(0xFF7BA238);
+    final Color fondo = settings.darkMode ? Colors.black : const Color(0xFFECF0D5);
+    final Color barraSuperior = settings.colorBlindMode ? Colors.blue : const Color(0xFF7BA238);
     final double fontSize = settings.currentFontSize;
     final Color textoGeneral = settings.darkMode ? Colors.white : Colors.black;
 
@@ -567,7 +578,6 @@ class _MainMenuState extends State<MainMenu> {
       backgroundColor: fondo,
       body: Column(
         children: [
-          // Barra superior
           Container(
             height: 55,
             color: barraSuperior,
@@ -585,7 +595,6 @@ class _MainMenuState extends State<MainMenu> {
             ),
           ),
 
-          // Contenido principal
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(12),
@@ -626,8 +635,8 @@ class _MainMenuState extends State<MainMenu> {
                           child: TextField(
                             controller: _zoneController,
                             decoration: loginInputDecoration(
-                              "Nombre de la zona",
-                              Icons.map_outlined,
+                               "Nombre de la zona",
+                              Icons.map_outlined
                             ),
                             style: TextStyle(color: textoGeneral),
                           ),
@@ -637,25 +646,7 @@ class _MainMenuState extends State<MainMenu> {
                           icon: Icon(Icons.check, color: barraSuperior),
                           onPressed: () async {
                             if (_zoneController.text.isNotEmpty) {
-                              try {
-                                final result = await _apiService.crearZona({
-                                  'nombre': _zoneController.text,
-                                });
-                                // Si llega aquí es que fue exitoso (crearZona lanza excepción si falla)
-                                setState(() {
-                                  zones.add(
-                                    Zone(
-                                      name:
-                                          result['nombre'] ??
-                                          _zoneController.text,
-                                    ),
-                                  );
-                                  _zoneController.clear();
-                                  _showAddZoneField = false;
-                                });
-                              } catch (e) {
-                                print("Error creating zone: $e");
-                              }
+                              _crearZona(_zoneController.text);
                             }
                           },
                         ),
@@ -664,27 +655,42 @@ class _MainMenuState extends State<MainMenu> {
 
                   const SizedBox(height: 10),
 
-                  // Lista de zonas
                   Expanded(
-                    child: ListView(
-                      children: zones
-                          .map(
-                            (z) => ZoneWidget(
-                              zone: z,
-                              onDelete: () async {
-                                try {
-                                  await _apiService.eliminarZona(z.name);
-                                } catch (e) {
-                                  print("Error deleting zone: $e");
-                                }
-                                setState(() {
-                                  zones.remove(z);
-                                });
-                              },
+                    child: _isLoading
+                        ? Center(
+                            child: CircularProgressIndicator(
+                              color: barraSuperior,
                             ),
                           )
-                          .toList(),
-                    ),
+                        : _error != null
+                            ? Center(
+                                child: Text(
+                                  'Error: $_error',
+                                  style: TextStyle(color: textoGeneral),
+                                ),
+                              )
+                            : ListView(
+                                children: zones
+                                    .map(
+                                      (z) => ZoneWidget(
+                                        zone: z,
+                                        onDelete: () {
+                                          setState(() {
+                                            zones.remove(z);
+                                          });
+                                        },
+                                        onUpdate: (updatedZone) {
+                                          setState(() {
+                                            final index = zones.indexWhere((zone) => zone.id == updatedZone.id);
+                                            if (index != -1) {
+                                              zones[index] = updatedZone;
+                                            }
+                                          });
+                                        },
+                                      ),
+                                    )
+                                    .toList(),
+                              ),
                   ),
                 ],
               ),

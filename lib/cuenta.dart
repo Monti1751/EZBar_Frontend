@@ -135,7 +135,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
         : const Color(0xFF7BA238);
     final Color textoGeneral = settings.darkMode ? Colors.white : Colors.black;
 
-    // Tamaños de letra dinámicos
+    // Nuevo sistema de tamaños (pequeño, mediano, grande)
     final double fontSize = settings.currentFontSize;
 
     return Scaffold(
@@ -194,23 +194,29 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
 
                   // === LISTA DE DETALLES ===
                   Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: settings.darkMode
-                            ? Colors.grey[900]
-                            : Colors.white70,
+                    child: Card(
+                      color: settings.darkMode ? Colors.grey[850] : Colors.white,
+                      shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: settings.darkMode
-                              ? Colors.white24
-                              : Colors.black12,
-                        ),
                       ),
-                      child: _detalles.isEmpty
-                          ? Center(
-                              child: Text(
-                                "No hay productos",
-                                style: TextStyle(color: textoGeneral),
+                      elevation: 4,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          vertical: MediaQuery.of(context).size.height * 0.05,
+                          horizontal: MediaQuery.of(context).size.width * 0.05,
+                        ),
+                        child: Align(
+                          alignment: Alignment.bottomCenter,
+                          child: ElevatedButton(
+                            onPressed: _abrirCarta,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: barraSuperior,
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 18,
+                                horizontal: 50,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
                             )
                           : ListView.builder(
@@ -271,28 +277,14 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                                 );
                               },
                             ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  // === BOTÓN CARTA ===
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _abrirCarta,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: barraSuperior,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        'Añadir Productos (Carta)',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: fontSize,
+                            child: Text(
+                              'Carta +',
+                              style: TextStyle(
+                                fontSize: settings.currentFontSize,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),

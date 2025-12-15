@@ -1,26 +1,36 @@
-import 'mesa.dart';
+class Zona {
+  final String nombre;
+  final int totalMesas;
+  final int mesasLibres;
+  final int mesasOcupadas;
 
-/// === MODELO DE ZONA ===
-class Zone {
-  String? id;
-  String name;
-  bool isOpen = false;
-  List<Mesa> tables = [];
+  Zona({
+    required this.nombre,
+    required this.totalMesas,
+    required this.mesasLibres,
+    required this.mesasOcupadas,
+  });
 
-  Zone({this.id, required this.name});
-
-  // ✅ Convertir desde JSON del backend (adaptado para el nuevo formato)
-  factory Zone.fromJson(Map<String, dynamic> json) {
-    return Zone(
-      id: json['nombre']?.toString(), // Usa 'nombre' como ID
-      name: json['nombre'] ?? json['name'] ?? '',
+  factory Zona.fromJson(Map<String, dynamic> json) {
+    return Zona(
+      nombre: json['nombre'] as String? ?? '',
+      totalMesas: json['total_mesas'] as int? ?? 0,
+      mesasLibres: json['mesas_libres'] as int? ?? 0,
+      mesasOcupadas: json['mesas_ocupadas'] as int? ?? 0,
     );
   }
 
-  // Convertir a JSON para enviar al backend
   Map<String, dynamic> toJson() {
     return {
-      'nombre': name,
+      'nombre': nombre,
+      'total_mesas': totalMesas,
+      'mesas_libres': mesasLibres,
+      'mesas_ocupadas': mesasOcupadas,
     };
+  }
+
+  double get porcentajeOcupacion {
+    if (totalMesas == 0) return 0.0;
+    return (mesasOcupadas / totalMesas) * 100;
   }
 }
