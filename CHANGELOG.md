@@ -1,4 +1,23 @@
 # Changelog
+## -15-12-2025
+
+### Añadido
+* Se ha añadido la pantalla para la creación de los plato.
+* Se ha añadido la pantalla para la carta y un acceso desde ajuses funcinal.
+* Se ha añadido advertencia de borrado.
+* Se ha añadido el botón para cambiar el idiama de la app en ajustes (aun sin funcionalidad).
+
+### Corregido
+* Se ha cambiado la funcionalidad del botón para acceder a la carta.
+* Se ha cambiado el estilo visual de los estados de las mesas (Badges).
+* Ajustar botón de la zona.
+* Eliminar segundo bloque de añadir mesas.
+* Corregir tamaño de la letra.
+* Se ha cambiado los scrolls de las pantallas.
+* Uniformidad en los contenedores.
+* Se ha cambiado la funcinalidad del botón para regresar al menú principal.
+* Se han corregido los cuadros de texto (Nuestros colores, levelText -> hintText) y que no se deformen.
+* Ajustar botón carta.
 
 ## -30-11-2025
 
