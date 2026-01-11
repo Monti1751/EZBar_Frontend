@@ -394,4 +394,27 @@ class ApiService {
       throw Exception('Error al eliminar detalle: $e');
     }
   }
+
+  // --- Login ---
+  Future<Map<String, dynamic>> login(String username, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/api/auth/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'username': username, 'password': password}),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else if (response.statusCode == 401) {
+        throw Exception('Credenciales incorrectas');
+      } else if (response.statusCode == 403) {
+        throw Exception('Usuario desactivado');
+      } else {
+        throw Exception('Error en el servidor: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('$e'); // Propagar el mensaje de error directamente
+    }
+  }
 }
