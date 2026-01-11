@@ -43,3 +43,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Large SDK folders
+android_sdk/
+android_sdk_temp/

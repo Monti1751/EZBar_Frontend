@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:io';
-
+import 'package:log_in/plato.dart';
 import 'visual_settings_provider.dart';
 import 'settings_menu.dart';
+import 'services/api_service.dart';
+import 'services/local_storage_service.dart';
 
 /// Helper para InputDecoration consistente
 InputDecoration loginInputDecoration(String hint, IconData icon) {
@@ -14,34 +15,22 @@ InputDecoration loginInputDecoration(String hint, IconData icon) {
     fillColor: const Color(0xFFFFFFFF),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(
-        color: Color(0xFF4A4025),
-        width: 1.5,
-      ),
+      borderSide: const BorderSide(color: Color(0xFF4A4025), width: 1.5),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(
-        color: Color(0xFF7BA238),
-        width: 2.2,
-      ),
+      borderSide: const BorderSide(color: Color(0xFF7BA238), width: 2.2),
     ),
   );
 }
 
-/// Modelo de Plato (imagen opcional, cantidades se gestionan en otra pantalla)
-class Plato {
-  String nombre;
-  File? imagen; // Se cargará/editará en la pantalla propia del plato
-  Plato({required this.nombre, this.imagen});
-}
-
 /// Modelo de Sección
 class Seccion {
+  int? id;
   String nombre;
   bool isOpen = false;
   List<Plato> platos = [];
-  Seccion({required this.nombre});
+  Seccion({this.id, required this.nombre});
 }
 
 /// Pantalla Carta
@@ -59,11 +48,71 @@ class _CartaPageState extends State<CartaPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _seccionController = TextEditingController();
   final TextEditingController _platoController = TextEditingController();
+  final ApiService _apiService = ApiService();
 
   List<Seccion> secciones = [];
+  final LocalStorageService _localStorage = LocalStorageService();
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarDatos();
+  }
+
+  Future<void> _cargarDatos() async {
+    try {
+      final cats = await _apiService.obtenerCategorias();
+      final prods = await _apiService.obtenerProductos();
+      
+      // Obtener lista negra de categorías eliminadas
+      final deletedCategoryIds = await _localStorage.getDeletedCategories();
+
+      List<Seccion> loaded = [];
+      for (var c in cats) {
+        // Filtrar categorías eliminadas
+        if (deletedCategoryIds.contains(c['categoria_id'])) {
+          continue;
+        }
+        
+        Seccion s = Seccion(id: c['categoria_id'], nombre: c['nombre']);
+        var pList = prods.where((p) {
+          if (p['categoria'] != null && p['categoria'] is Map) {
+            return p['categoria']['categoria_id'] == c['categoria_id'];
+          }
+          // Fallback
+          return false;
+        });
+
+        for (var p in pList) {
+          // Convertir precio (puede ser String o num)
+          final precioRaw = p['precio'];
+          final precio = precioRaw is String
+              ? (double.tryParse(precioRaw) ?? 0.0)
+              : (precioRaw as num).toDouble();
+          
+          s.platos.add(
+            Plato(
+              id: p['producto_id'],
+              nombre: p['nombre'],
+              precio: precio,
+            ),
+          );
+        }
+        loaded.add(s);
+      }
+      setState(() {
+        secciones = loaded;
+      });
+    } catch (e) {
+      print("Error loading data: $e");
+    }
+  }
 
   BoxDecoration _cardDecoration(BuildContext context) {
-    final settings = Provider.of<VisualSettingsProvider>(context, listen: false);
+    final settings = Provider.of<VisualSettingsProvider>(
+      context,
+      listen: false,
+    );
     return BoxDecoration(
       color: settings.darkMode ? Colors.grey[850] : Colors.white,
       borderRadius: BorderRadius.circular(10),
@@ -95,8 +144,12 @@ class _CartaPageState extends State<CartaPage> {
   Widget build(BuildContext context) {
     final settings = Provider.of<VisualSettingsProvider>(context);
 
-    final Color fondo = settings.darkMode ? Colors.black : const Color(0xFFECF0D5);
-    final Color barraSuperior = settings.colorBlindMode ? Colors.blue : const Color(0xFF7BA238);
+    final Color fondo = settings.darkMode
+        ? Colors.black
+        : const Color(0xFFECF0D5);
+    final Color barraSuperior = settings.colorBlindMode
+        ? Colors.blue
+        : const Color(0xFF7BA238);
     final Color textoGeneral = settings.darkMode ? Colors.white : Colors.black;
     final double fontSize = settings.currentFontSize;
 
@@ -110,10 +163,14 @@ class _CartaPageState extends State<CartaPage> {
           Container(
             height: 55,
             color: barraSuperior,
-            padding: const EdgeInsets.only(right: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 10),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                IconButton(
+                  icon: Icon(Icons.arrow_back, color: textoGeneral, size: 28),
+                  onPressed: () => Navigator.pop(context),
+                ),
                 IconButton(
                   icon: Icon(Icons.menu, color: textoGeneral, size: 28),
                   onPressed: () => _scaffoldKey.currentState?.openDrawer(),
@@ -137,7 +194,10 @@ class _CartaPageState extends State<CartaPage> {
               children: [
                 for (var seccion in secciones)
                   Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: barraSuperior,
                       borderRadius: BorderRadius.circular(10),
@@ -158,27 +218,52 @@ class _CartaPageState extends State<CartaPage> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                icon: const Icon(
+                                  Icons.delete_outline,
+                                  color: Colors.red,
+                                ),
                                 tooltip: "Eliminar sección",
                                 onPressed: () {
                                   showDialog(
                                     context: context,
                                     builder: (ctx) => AlertDialog(
-                                      title: const Text("Confirmar eliminación"),
-                                      content: Text("¿Seguro que quieres eliminar la sección '${seccion.nombre}'?"),
+                                      title: const Text(
+                                        "Confirmar eliminación",
+                                      ),
+                                      content: Text(
+                                        "¿Seguro que quieres eliminar la sección '${seccion.nombre}'?",
+                                      ),
                                       actions: [
                                         TextButton(
-                                          onPressed: () => Navigator.of(ctx).pop(),
+                                          onPressed: () =>
+                                              Navigator.of(ctx).pop(),
                                           child: const Text("Cancelar"),
                                         ),
                                         TextButton(
-                                          onPressed: () {
+                                          onPressed: () async {
+                                            if (seccion.id != null) {
+                                              // Intentar eliminar del backend
+                                              try {
+                                                await _apiService
+                                                    .eliminarCategoria(
+                                                      seccion.id!,
+                                                    );
+                                              } catch (e) {
+                                                print('Error eliminando categoría del backend: $e');
+                                              }
+                                              
+                                              // Añadir a lista negra local
+                                              await _localStorage.addDeletedCategory(seccion.id!);
+                                            }
                                             setState(() {
                                               secciones.remove(seccion);
                                             });
                                             Navigator.of(ctx).pop();
                                           },
-                                          child: const Text("Eliminar", style: TextStyle(color: Colors.red)),
+                                          child: const Text(
+                                            "Eliminar",
+                                            style: TextStyle(color: Colors.red),
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -186,7 +271,9 @@ class _CartaPageState extends State<CartaPage> {
                                 },
                               ),
                               Icon(
-                                seccion.isOpen ? Icons.expand_less : Icons.expand_more,
+                                seccion.isOpen
+                                    ? Icons.expand_less
+                                    : Icons.expand_more,
                                 color: textoGeneral,
                               ),
                             ],
@@ -205,25 +292,74 @@ class _CartaPageState extends State<CartaPage> {
                               padding: const EdgeInsets.all(10),
                               child: Column(
                                 children: [
-                                  // Añadir plato (solo nombre)
+                                  // Añadir plato (solo nombre) -> abre editor y añade al volver
                                   Row(
                                     children: [
                                       Expanded(
                                         child: TextField(
                                           controller: _platoController,
-                                          decoration: loginInputDecoration("Nombre del plato", Icons.fastfood),
+                                          decoration: loginInputDecoration(
+                                            "Nombre del plato",
+                                            Icons.fastfood,
+                                          ),
                                         ),
                                       ),
                                       const SizedBox(width: 8),
                                       IconButton(
-                                        icon: const Icon(Icons.add, color: Colors.green),
-                                        tooltip: "Agregar plato",
-                                        onPressed: () {
-                                          if (_platoController.text.isNotEmpty) {
-                                            setState(() {
-                                              seccion.platos.add(Plato(nombre: _platoController.text));
+                                        icon: const Icon(
+                                          Icons.add,
+                                          color: Colors.green,
+                                        ),
+                                        tooltip: "Crear plato",
+                                        onPressed: () async {
+                                          final nombre = _platoController.text
+                                              .trim();
+                                          if (nombre.isNotEmpty) {
+                                            final nuevoPlato =
+                                                await Navigator.push<Plato>(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (ctx) =>
+                                                        PlatoEditorPage(
+                                                          plato: Plato(
+                                                            nombre: nombre,
+                                                            precio: 0.0,
+                                                          ),
+                                                        ),
+                                                  ),
+                                                );
+
+                                            if (nuevoPlato != null) {
+                                              if (seccion.id != null) {
+                                                try {
+                                                  final data = {
+                                                    'nombre': nuevoPlato.nombre,
+                                                    'precio': nuevoPlato.precio,
+                                                    'categoria': {
+                                                      'categoria_id':
+                                                          seccion.id,
+                                                    },
+                                                    'ingredientes': nuevoPlato.ingredientes,
+                                                    'extras': nuevoPlato.extras,
+                                                    'alergenos': nuevoPlato.alergenos,
+                                                  };
+                                                  final res = await _apiService
+                                                      .crearProducto(data);
+                                                  nuevoPlato.id =
+                                                      res['producto_id'];
+                                                  setState(() {
+                                                    seccion.platos.add(
+                                                      nuevoPlato,
+                                                    );
+                                                  });
+                                                } catch (e) {
+                                                  print(
+                                                    "Error creating product: $e",
+                                                  );
+                                                }
+                                              }
                                               _platoController.clear();
-                                            });
+                                            }
                                           }
                                         },
                                       ),
@@ -238,34 +374,51 @@ class _CartaPageState extends State<CartaPage> {
                                       children: [
                                         for (var plato in seccion.platos)
                                           Container(
-                                            margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-                                            decoration: _cardDecoration(context),
+                                            margin: const EdgeInsets.symmetric(
+                                              vertical: 6,
+                                              horizontal: 4,
+                                            ),
+                                            decoration: _cardDecoration(
+                                              context,
+                                            ),
                                             child: InkWell(
                                               onTap: () {
                                                 Navigator.push(
                                                   context,
                                                   MaterialPageRoute(
-                                                    builder: (ctx) => PlatoPage(plato: plato),
+                                                    builder: (ctx) =>
+                                                        PlatoEditorPage(
+                                                          plato: plato,
+                                                        ),
                                                   ),
                                                 );
                                               },
                                               child: Padding(
-                                                padding: const EdgeInsets.all(12),
+                                                padding: const EdgeInsets.all(
+                                                  12,
+                                                ),
                                                 child: Row(
-                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
                                                   children: [
                                                     // Imagen pequeña + nombre
                                                     Expanded(
                                                       child: Row(
                                                         children: [
-                                                          if (plato.imagen != null)
+                                                          if (plato.imagen !=
+                                                              null)
                                                             ClipRRect(
-                                                              borderRadius: BorderRadius.circular(8),
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    8,
+                                                                  ),
                                                               child: Image.file(
                                                                 plato.imagen!,
                                                                 width: 50,
                                                                 height: 50,
-                                                                fit: BoxFit.cover,
+                                                                fit: BoxFit
+                                                                    .cover,
                                                               ),
                                                             )
                                                           else
@@ -273,18 +426,38 @@ class _CartaPageState extends State<CartaPage> {
                                                               width: 50,
                                                               height: 50,
                                                               decoration: BoxDecoration(
-                                                                color: Colors.grey[300],
-                                                                borderRadius: BorderRadius.circular(8),
-                                                                border: Border.all(color: Colors.black12),
+                                                                color: Colors
+                                                                    .grey[300],
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      8,
+                                                                    ),
+                                                                border: Border.all(
+                                                                  color: Colors
+                                                                      .black12,
+                                                                ),
                                                               ),
-                                                              child: const Icon(Icons.image, color: Colors.black26),
+                                                              child: const Icon(
+                                                                Icons.image,
+                                                                color: Colors
+                                                                    .black26,
+                                                              ),
                                                             ),
-                                                          const SizedBox(width: 10),
+                                                          const SizedBox(
+                                                            width: 10,
+                                                          ),
                                                           Expanded(
                                                             child: Text(
                                                               plato.nombre,
-                                                              style: TextStyle(fontSize: fontSize, color: textoGeneral),
-                                                              overflow: TextOverflow.ellipsis,
+                                                              style: TextStyle(
+                                                                fontSize:
+                                                                    fontSize,
+                                                                color:
+                                                                    textoGeneral,
+                                                              ),
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
                                                             ),
                                                           ),
                                                         ],
@@ -295,32 +468,74 @@ class _CartaPageState extends State<CartaPage> {
                                                     Row(
                                                       children: [
                                                         IconButton(
-                                                          icon: Icon(Icons.add_circle, color: barraSuperior),
-                                                          tooltip: "Añadir a la cuenta",
-                                                          onPressed: () => _addPlatoToCuenta(plato),
+                                                          icon: Icon(
+                                                            Icons.add_circle,
+                                                            color:
+                                                                barraSuperior,
+                                                          ),
+                                                          tooltip:
+                                                              "Añadir a la cuenta",
+                                                          onPressed: () =>
+                                                              _addPlatoToCuenta(
+                                                                plato,
+                                                              ),
                                                         ),
                                                         IconButton(
-                                                          icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                                          tooltip: "Eliminar plato",
+                                                          icon: const Icon(
+                                                            Icons
+                                                                .delete_outline,
+                                                            color: Colors.red,
+                                                          ),
+                                                          tooltip:
+                                                              "Eliminar plato",
                                                           onPressed: () {
                                                             showDialog(
                                                               context: context,
                                                               builder: (ctx) => AlertDialog(
-                                                                title: const Text("Confirmar eliminación"),
-                                                                content: Text("¿Seguro que quieres eliminar el plato '${plato.nombre}'?"),
+                                                                title: const Text(
+                                                                  "Confirmar eliminación",
+                                                                ),
+                                                                content: Text(
+                                                                  "¿Seguro que quieres eliminar el plato '${plato.nombre}'?",
+                                                                ),
                                                                 actions: [
                                                                   TextButton(
-                                                                    onPressed: () => Navigator.of(ctx).pop(),
-                                                                    child: const Text("Cancelar"),
+                                                                    onPressed: () =>
+                                                                        Navigator.of(
+                                                                          ctx,
+                                                                        ).pop(),
+                                                                    child: const Text(
+                                                                      "Cancelar",
+                                                                    ),
                                                                   ),
                                                                   TextButton(
-                                                                    onPressed: () {
+                                                                    onPressed: () async {
+                                                                      if (plato
+                                                                              .id !=
+                                                                          null) {
+                                                                        await _apiService.eliminarProducto(
+                                                                          plato
+                                                                              .id!,
+                                                                        );
+                                                                      }
                                                                       setState(() {
-                                                                        seccion.platos.remove(plato);
+                                                                        seccion
+                                                                            .platos
+                                                                            .remove(
+                                                                              plato,
+                                                                            );
                                                                       });
-                                                                      Navigator.of(ctx).pop();
+                                                                      Navigator.of(
+                                                                        ctx,
+                                                                      ).pop();
                                                                     },
-                                                                    child: const Text("Eliminar", style: TextStyle(color: Colors.red)),
+                                                                    child: const Text(
+                                                                      "Eliminar",
+                                                                      style: TextStyle(
+                                                                        color: Colors
+                                                                            .red,
+                                                                      ),
+                                                                    ),
                                                                   ),
                                                                 ],
                                                               ),
@@ -354,8 +569,13 @@ class _CartaPageState extends State<CartaPage> {
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: barraSuperior,
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 20,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               icon: const Icon(Icons.add, color: Colors.white),
               label: Text(
@@ -370,7 +590,10 @@ class _CartaPageState extends State<CartaPage> {
                     title: const Text("Nueva sección"),
                     content: TextField(
                       controller: _seccionController,
-                      decoration: loginInputDecoration("Nombre de la sección", Icons.list),
+                      decoration: loginInputDecoration(
+                        "Nombre de la sección",
+                        Icons.list,
+                      ),
                     ),
                     actions: [
                       TextButton(
@@ -378,11 +601,23 @@ class _CartaPageState extends State<CartaPage> {
                         child: const Text("Cancelar"),
                       ),
                       TextButton(
-                        onPressed: () {
+                        onPressed: () async {
                           if (_seccionController.text.isNotEmpty) {
-                            setState(() {
-                              secciones.add(Seccion(nombre: _seccionController.text));
-                            });
+                            try {
+                              final nueva = await _apiService.crearCategoria(
+                                _seccionController.text,
+                              );
+                              setState(() {
+                                secciones.add(
+                                  Seccion(
+                                    id: nueva['categoria_id'],
+                                    nombre: nueva['nombre'],
+                                  ),
+                                );
+                              });
+                            } catch (e) {
+                              print("Error creating category: $e");
+                            }
                           }
                           Navigator.pop(ctx);
                         },
@@ -395,38 +630,6 @@ class _CartaPageState extends State<CartaPage> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Stub de pantalla de detalle de plato para navegar.
-/// Sustitúyela por tu implementación real (imagen, descripción, precio, etc.).
-class PlatoPage extends StatelessWidget {
-  final Plato plato;
-  const PlatoPage({super.key, required this.plato});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(plato.nombre)),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (plato.imagen != null)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.file(plato.imagen!, width: 180, height: 180, fit: BoxFit.cover),
-              )
-            else
-              const Icon(Icons.image, size: 64, color: Colors.black26),
-            const SizedBox(height: 16),
-            Text("Detalle del plato: ${plato.nombre}"),
-            const SizedBox(height: 8),
-            const Text("Aquí podrás editar imagen, descripción y precio."),
-          ],
-        ),
       ),
     );
   }
