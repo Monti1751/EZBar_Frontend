@@ -1,20 +1,36 @@
+import 'package:log_in/services/discovery/discovery_service.dart';
+
 class ApiConfig {
-  // URL base de la API Node.js
-  // static const String baseUrl = 'http://localhost:3000';
+  // Inicialmente vacio o fallback
+  static String baseUrl = 'http://10.250.218.56:3000';
+  static bool isConfigured = false;
 
-  // Para dispositivos Android (emulador)
-  // static const String baseUrl = 'http://10.0.2.2:3000';
+  // Endpoints dinamicos
+  static String get mesas => '$baseUrl/api/mesas';
+  static String get pedidos => '$baseUrl/api/pedidos';
+  static String get productos => '$baseUrl/api/productos';
+  static String get zonas => '$baseUrl/api/zonas';
+  static String get categorias => '$baseUrl/api/categorias';
 
-  // Para dispositivos iOS (simulador)
-  // static const String baseUrl = 'http://localhost:8080/api';
+  // Metodo para auto-descubrir servidor via UDP (o Web fallback)
+  static Future<bool> findServer() async {
+    print('🔍 Iniciando descubrimiento de servidor...');
 
-  // Para dispositivos físicos (Tu IP local detectada)
-  static const String baseUrl = 'http://172.20.10.5:3000';
+    String? ip = await findServerIp();
 
-  // Endpoints
-  static const String mesas = '$baseUrl/api/mesas';
-  static const String pedidos = '$baseUrl/api/pedidos';
-  static const String productos = '$baseUrl/api/productos';
-  static const String zonas = '$baseUrl/api/zonas';
-  static const String categorias = '$baseUrl/api/categorias';
+    if (ip != null) {
+      // En Web puede devolver 'localhost' o una IP real
+      if (ip == 'localhost') {
+        baseUrl = 'http://localhost:3000';
+      } else {
+        baseUrl = 'http://$ip:3000';
+      }
+      isConfigured = true;
+      print('✅ Servidor configurado en: $baseUrl');
+      return true;
+    }
+
+    print('❌ No se encontró servidor (o error en descubrimiento)');
+    return false;
+  }
 }

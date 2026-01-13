@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'pantalla_principal.dart';
 import 'package:provider/provider.dart';
 import 'visual_settings_provider.dart';
+import 'pantalla_principal.dart';
 import 'services/api_service.dart';
+import 'config/api_config.dart';
 
 void main() {
   runApp(
@@ -13,11 +14,101 @@ void main() {
   );
 }
 
-class LogIn extends StatelessWidget {
+class LogIn extends StatefulWidget {
   const LogIn({super.key});
 
   @override
+  State<LogIn> createState() => _LogInState();
+}
+
+class _LogInState extends State<LogIn> {
+  bool _searching = true;
+  bool _found = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _startDiscovery();
+  }
+
+  Future<void> _startDiscovery() async {
+    setState(() {
+      _searching = true;
+    });
+
+    // Intentar conectar con la IP guardada o descubrir nueva
+    bool success = await ApiConfig.findServer();
+
+    if (mounted) {
+      setState(() {
+        _found = success;
+        _searching = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // Mientras busca, mostrar pantalla de carga
+    if (_searching) {
+      return const MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(
+          backgroundColor: Color(0xFFECF0D5),
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(color: Color(0xFF7BA238)),
+                SizedBox(height: 20),
+                Text(
+                  "Buscando servidor EZBar...",
+                  style: TextStyle(color: Color(0xFF4A4025), fontSize: 18),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Si no encuentra el servidor, mostrar error y botón de reintentar
+    if (!_found) {
+      return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(
+          backgroundColor: Color(0xFFECF0D5),
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 60, color: Colors.red),
+                const SizedBox(height: 20),
+                const Text(
+                  "No se encontró el servidor EZBar",
+                  style: TextStyle(color: Color(0xFF4A4025), fontSize: 18),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  "Asegúrate de estar en la misma red Wi-Fi",
+                  style: TextStyle(color: Colors.grey),
+                ),
+                const SizedBox(height: 30),
+                ElevatedButton(
+                  onPressed: _startDiscovery,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF7BA238),
+                  ),
+                  child: const Text("Reintentar"),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Si encuentra, mostrar app normal
     final settings = Provider.of<VisualSettingsProvider>(context);
 
     return MaterialApp(
