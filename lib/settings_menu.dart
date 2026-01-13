@@ -4,7 +4,9 @@ import 'main.dart';
 import 'ajustes_visuales.dart';
 import 'visual_settings_provider.dart';
 import 'pantalla_principal.dart';
-import 'CartaPage.dart'; 
+import 'CartaPage.dart';
+import 'Usuario.dart';
+import 'cuenta.dart';
 
 class SettingsMenu extends StatelessWidget {
   const SettingsMenu({super.key});
@@ -84,10 +86,18 @@ class SettingsMenu extends StatelessWidget {
                     _menuItem(
                       icon: Icons.group,
                       text: "Editar usuarios",
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const EditarCrearUsuarioPage(),
+                          ),
+                        );
+                      },
                       textoColor: textoGeneral,
                       fontSize: fontSize,
                     ),
+
                     _menuItem(
                       icon: Icons.inventory,
                       text: "Editar inventario",
