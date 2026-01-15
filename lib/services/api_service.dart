@@ -9,6 +9,10 @@ class ApiService {
 
   // Health check para verificar si el servidor está activo
   Future<bool> verificarConexion() async {
+    if (ApiConfig.mode == 2) {
+      print('⚡ Mock Mode: conexión simulada OK');
+      return true;
+    }
     try {
       print('🔍 Verificando conexión a: ${ApiConfig.baseUrl}/api/health');
       final response = await http
@@ -28,6 +32,31 @@ class ApiService {
 
   // Obtener todas las mesas
   Future<List<dynamic>> obtenerMesas() async {
+    if (ApiConfig.mode == 2) {
+      return [
+        {
+          'id': 1,
+          'numero': 1,
+          'estado': 'libre',
+          'zona': 'Terraza',
+          'ubicacion': 'Terraza',
+        },
+        {
+          'id': 2,
+          'numero': 2,
+          'estado': 'ocupada',
+          'zona': 'Terraza',
+          'ubicacion': 'Terraza',
+        },
+        {
+          'id': 3,
+          'numero': 10,
+          'estado': 'libre',
+          'zona': 'Interior',
+          'ubicacion': 'Interior',
+        },
+      ];
+    }
     try {
       final response = await http.get(
         Uri.parse(ApiConfig.mesas),
@@ -45,6 +74,12 @@ class ApiService {
   }
 
   Future<List<dynamic>> obtenerZonas() async {
+    if (ApiConfig.mode == 2) {
+      return [
+        {'id': 1, 'nombre': 'Terraza', 'ubicacion': 'Exterior'},
+        {'id': 2, 'nombre': 'Interior', 'ubicacion': 'Sala Principal'},
+      ];
+    }
     try {
       print('🔌 Intentando conectar a: ${ApiConfig.zonas}');
       final response = await http.get(
@@ -427,6 +462,24 @@ class ApiService {
 
   // --- Login ---
   Future<Map<String, dynamic>> login(String username, String password) async {
+    if (ApiConfig.mode == 2) {
+      await Future.delayed(Duration(seconds: 1)); // Simular delay de red
+      if (username == 'admin' && password == '12345678') {
+        return {
+          'status': 'OK',
+          'data': {'token': 'mock-token', 'user': 'admin'},
+        };
+      } else {
+        // Para propósitos de test, dejamos entrar a cualquiera con contraseña larga
+        if (password.length >= 8)
+          return {
+            'status': 'OK',
+            'data': {'token': 'mock-token', 'user': username},
+          };
+        throw Exception('Credenciales incorrectas (Mock)');
+      }
+    }
+
     try {
       final response = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/api/auth/login'),

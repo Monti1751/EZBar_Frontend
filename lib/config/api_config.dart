@@ -4,7 +4,8 @@ class ApiConfig {
   // CONFIGURACIÓN DE MODO:
   // 0 = Web / Localhost
   // 1 = APK / Ngrok Remoto
-  static const int mode = 1;
+  // 2 = Mock / Offline (Sin backend)
+  static const int mode = 2;
 
   // Inicialmente vacio o fallback según el modo
   static String baseUrl = mode == 0
@@ -27,6 +28,12 @@ class ApiConfig {
     if (mode == 1 && baseUrl.contains('ngrok')) {
       isConfigured = true;
       print('🚀 Modo Ngrok activo. Usando: $baseUrl');
+      return true;
+    }
+
+    if (mode == 2) {
+      isConfigured = true;
+      print('⚡ Modo Mock activo. Sin conexión al backend.');
       return true;
     }
 
