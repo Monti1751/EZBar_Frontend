@@ -10,14 +10,17 @@ Future<String?> findServerIp() async {
     );
     socket.broadcastEnabled = true;
 
-    // Enviar solicitud
+    // Enviar solicitud varias veces para asegurar entrega (UDP es no confiable)
     List<int> data = utf8.encode('EZBAR_DISCOVER');
-    socket.send(data, InternetAddress('255.255.255.255'), 3001);
+    for (int i = 0; i < 3; i++) {
+      socket.send(data, InternetAddress('255.255.255.255'), 3001);
+      await Future.delayed(Duration(milliseconds: 500));
+    }
 
-    // Esperar respuesta (max 3 segundos)
+    // Esperar respuesta (max 5 segundos)
     String? foundIp;
 
-    await for (RawSocketEvent event in socket.timeout(Duration(seconds: 3))) {
+    await for (RawSocketEvent event in socket.timeout(Duration(seconds: 5))) {
       if (event == RawSocketEvent.read) {
         Datagram? dg = socket.receive();
         if (dg != null) {
@@ -27,9 +30,7 @@ Future<String?> findServerIp() async {
             Map<String, dynamic> json = jsonDecode(response);
             if (json['service'] == 'EZBar_API') {
               foundIp = json['ip'];
-              int port =
-                  json['port']; // Podriamos devolver el puerto tambien si cambiase
-              // Por ahora solo devolvemos la IP
+              // int port = json['port'];
               socket.close();
               return foundIp;
             }

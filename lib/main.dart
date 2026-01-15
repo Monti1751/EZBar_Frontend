@@ -9,19 +9,53 @@ void main() {
   runApp(
     ChangeNotifierProvider(
       create: (_) => VisualSettingsProvider(),
-      child: const LogIn(),
+      child: const EzBarApp(),
     ),
   );
 }
 
-class LogIn extends StatefulWidget {
-  const LogIn({super.key});
+class EzBarApp extends StatelessWidget {
+  const EzBarApp({super.key});
 
   @override
-  State<LogIn> createState() => _LogInState();
+  Widget build(BuildContext context) {
+    final settings = Provider.of<VisualSettingsProvider>(context);
+
+    return MaterialApp(
+      title: 'EZBar',
+      debugShowCheckedModeBanner: false,
+      themeMode: settings.darkMode ? ThemeMode.dark : ThemeMode.light,
+      theme: ThemeData(
+        brightness: Brightness.light,
+        primarySwatch: Colors.green,
+        scaffoldBackgroundColor: const Color(0xFFECF0D5),
+        inputDecorationTheme: const InputDecorationTheme(
+          filled: true,
+          fillColor: Color(0xFFECF0D5),
+        ),
+      ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        primarySwatch: Colors.green,
+        scaffoldBackgroundColor: Colors.black,
+        inputDecorationTheme: const InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.black,
+        ),
+      ),
+      home: const ConnectionWrapper(),
+    );
+  }
 }
 
-class _LogInState extends State<LogIn> {
+class ConnectionWrapper extends StatefulWidget {
+  const ConnectionWrapper({super.key});
+
+  @override
+  State<ConnectionWrapper> createState() => _ConnectionWrapperState();
+}
+
+class _ConnectionWrapperState extends State<ConnectionWrapper> {
   bool _searching = true;
   bool _found = false;
 
@@ -47,26 +81,80 @@ class _LogInState extends State<LogIn> {
     }
   }
 
+  Future<void> _showManualConfigDialog() {
+    TextEditingController ipController = TextEditingController();
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Configurar IP Manual'),
+        content: TextField(
+          controller: ipController,
+          decoration: const InputDecoration(
+            hintText: 'Ej: 192.168.1.35',
+            labelText: 'Dirección IP',
+          ),
+          keyboardType: TextInputType.url,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context); // Cierra el dialogo
+              if (ipController.text.isNotEmpty) {
+                ApiConfig.setManualIp(ipController.text);
+                setState(() {
+                  _searching = true;
+                });
+
+                // Verificar conexión con la nueva IP
+                bool connected = await ApiService().verificarConexion();
+
+                if (mounted) {
+                  setState(() {
+                    _searching = false;
+                    _found = connected;
+                  });
+
+                  if (!connected) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'No se pudo conectar. Verifica la IP y el Firewall.',
+                        ),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              }
+            },
+            child: const Text('Conectar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Mientras busca, mostrar pantalla de carga
     if (_searching) {
-      return const MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: Scaffold(
-          backgroundColor: Color(0xFFECF0D5),
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(color: Color(0xFF7BA238)),
-                SizedBox(height: 20),
-                Text(
-                  "Buscando servidor EZBar...",
-                  style: TextStyle(color: Color(0xFF4A4025), fontSize: 18),
-                ),
-              ],
-            ),
+      return Scaffold(
+        backgroundColor: const Color(0xFFECF0D5),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              CircularProgressIndicator(color: Color(0xFF7BA238)),
+              SizedBox(height: 20),
+              Text(
+                "Buscando servidor EZBar...",
+                style: TextStyle(color: Color(0xFF4A4025), fontSize: 18),
+              ),
+            ],
           ),
         ),
       );
@@ -74,67 +162,47 @@ class _LogInState extends State<LogIn> {
 
     // Si no encuentra el servidor, mostrar error y botón de reintentar
     if (!_found) {
-      return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: Scaffold(
-          backgroundColor: Color(0xFFECF0D5),
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, size: 60, color: Colors.red),
-                const SizedBox(height: 20),
-                const Text(
-                  "No se encontró el servidor EZBar",
-                  style: TextStyle(color: Color(0xFF4A4025), fontSize: 18),
+      return Scaffold(
+        backgroundColor: const Color(0xFFECF0D5),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 60, color: Colors.red),
+              const SizedBox(height: 20),
+              const Text(
+                "No se encontró el servidor EZBar",
+                style: TextStyle(color: Color(0xFF4A4025), fontSize: 18),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                "Asegúrate de estar en la misma red Wi-Fi",
+                style: TextStyle(color: Colors.grey),
+              ),
+              const SizedBox(height: 30),
+              ElevatedButton(
+                onPressed: _startDiscovery,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF7BA238),
                 ),
-                const SizedBox(height: 10),
-                const Text(
-                  "Asegúrate de estar en la misma red Wi-Fi",
-                  style: TextStyle(color: Colors.grey),
+                child: const Text("Reintentar"),
+              ),
+              const SizedBox(height: 15),
+              TextButton(
+                onPressed: _showManualConfigDialog,
+                child: const Text(
+                  "Configurar IP Manual",
+                  style: TextStyle(color: Color(0xFF4A4025)),
                 ),
-                const SizedBox(height: 30),
-                ElevatedButton(
-                  onPressed: _startDiscovery,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF7BA238),
-                  ),
-                  child: const Text("Reintentar"),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       );
     }
 
     // Si encuentra, mostrar app normal
-    final settings = Provider.of<VisualSettingsProvider>(context);
-
-    return MaterialApp(
-      title: 'EZBar',
-      debugShowCheckedModeBanner: false,
-      themeMode: settings.darkMode ? ThemeMode.dark : ThemeMode.light,
-      theme: ThemeData(
-        brightness: Brightness.light,
-        primarySwatch: Colors.green,
-        scaffoldBackgroundColor: const Color(0xFFECF0D5),
-        inputDecorationTheme: const InputDecorationTheme(
-          filled: true,
-          fillColor: Color(0xFFECF0D5),
-        ),
-      ),
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        primarySwatch: Colors.green,
-        scaffoldBackgroundColor: Colors.black,
-        inputDecorationTheme: const InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.black,
-        ),
-      ),
-      home: const LoginPage(),
-    );
+    return const LoginPage();
   }
 }
 

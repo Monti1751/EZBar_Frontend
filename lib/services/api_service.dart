@@ -3,13 +3,23 @@ import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 
 class ApiService {
+  final Map<String, String> _ngrokHeaders = {
+    'ngrok-skip-browser-warning': 'true',
+  };
+
   // Health check para verificar si el servidor está activo
   Future<bool> verificarConexion() async {
     try {
-      print('🔍 Verificando conexión a: http://localhost:3000');
-      final response = await http.get(Uri.parse('http://localhost:3000'));
+      print('🔍 Verificando conexión a: ${ApiConfig.baseUrl}/api/health');
+      final response = await http
+          .get(
+            Uri.parse('${ApiConfig.baseUrl}/api/health'),
+            headers: _ngrokHeaders,
+          )
+          .timeout(const Duration(seconds: 5)); // Timeout de 5 segundos
       print('✅ Servidor respondió con status: ${response.statusCode}');
-      return response.statusCode == 200 || response.statusCode == 404;
+      // Aceptamos 200 OK. El health endpoint devuelve JSON, pero status 200 es suficiente.
+      return response.statusCode == 200;
     } catch (e) {
       print('❌ No hay conexión: $e');
       return false;
@@ -19,7 +29,10 @@ class ApiService {
   // Obtener todas las mesas
   Future<List<dynamic>> obtenerMesas() async {
     try {
-      final response = await http.get(Uri.parse(ApiConfig.mesas));
+      final response = await http.get(
+        Uri.parse(ApiConfig.mesas),
+        headers: _ngrokHeaders,
+      );
 
       if (response.statusCode == 200) {
         return json.decode(response.body);
@@ -34,7 +47,10 @@ class ApiService {
   Future<List<dynamic>> obtenerZonas() async {
     try {
       print('🔌 Intentando conectar a: ${ApiConfig.zonas}');
-      final response = await http.get(Uri.parse(ApiConfig.zonas));
+      final response = await http.get(
+        Uri.parse(ApiConfig.zonas),
+        headers: _ngrokHeaders,
+      );
       print('📨 Respuesta recibida: ${response.statusCode}');
       print('📦 Body: ${response.body}');
 
@@ -53,7 +69,10 @@ class ApiService {
   Future<List<dynamic>> obtenerCategorias() async {
     try {
       print('🔌 Intentando conectar a: ${ApiConfig.categorias}');
-      final response = await http.get(Uri.parse(ApiConfig.categorias));
+      final response = await http.get(
+        Uri.parse(ApiConfig.categorias),
+        headers: _ngrokHeaders,
+      );
       print('📨 Respuesta recibida: ${response.statusCode}');
 
       if (response.statusCode == 200) {
@@ -71,7 +90,10 @@ class ApiService {
   Future<List<dynamic>> obtenerProductos() async {
     try {
       print('🔌 Intentando conectar a: ${ApiConfig.productos}');
-      final response = await http.get(Uri.parse(ApiConfig.productos));
+      final response = await http.get(
+        Uri.parse(ApiConfig.productos),
+        headers: _ngrokHeaders,
+      );
       print('📨 Respuesta recibida: ${response.statusCode}');
 
       if (response.statusCode == 200) {
@@ -90,7 +112,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse(ApiConfig.categorias),
-        headers: {'Content-Type': 'application/json'},
+        headers: {'Content-Type': 'application/json', ..._ngrokHeaders},
         body: json.encode({'nombre': nombre}),
       );
 
@@ -109,6 +131,7 @@ class ApiService {
     try {
       final response = await http.delete(
         Uri.parse('${ApiConfig.categorias}/$id'),
+        headers: _ngrokHeaders,
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -121,7 +144,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse(ApiConfig.productos),
-        headers: {'Content-Type': 'application/json'},
+        headers: {'Content-Type': 'application/json', ..._ngrokHeaders},
         body: json.encode(datos),
       );
 
@@ -140,6 +163,7 @@ class ApiService {
     try {
       final response = await http.delete(
         Uri.parse('${ApiConfig.productos}/$id'),
+        headers: _ngrokHeaders,
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -156,7 +180,7 @@ class ApiService {
 
     try {
       print('🔍 Intentando obtener mesas para zona: $nombreZona en $url');
-      final response = await http.get(url);
+      final response = await http.get(url, headers: _ngrokHeaders);
       print('📨 Respuesta recibida para mesas: ${response.statusCode}');
 
       if (response.statusCode == 200) {
@@ -184,7 +208,7 @@ class ApiService {
       ).replace(queryParameters: {'ubicacion': ubicacion});
 
       print('📍 URL generada: $url');
-      final response = await http.get(url);
+      final response = await http.get(url, headers: _ngrokHeaders);
 
       print('📨 Respuesta recibida: ${response.statusCode}');
       print('📦 Body: ${response.body}');
@@ -215,6 +239,7 @@ class ApiService {
       final encodedUbicacion = Uri.encodeComponent(ubicacion);
       final response = await http.get(
         Uri.parse('${ApiConfig.baseUrl}/api/zonas/$ubicacion/stats'),
+        headers: _ngrokHeaders,
       );
 
       if (response.statusCode == 200) {
@@ -235,7 +260,7 @@ class ApiService {
     try {
       final response = await http.put(
         Uri.parse('${ApiConfig.mesas}/$mesaId'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {'Content-Type': 'application/json', ..._ngrokHeaders},
         body: json.encode(datos),
       );
 
@@ -254,7 +279,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse(ApiConfig.pedidos),
-        headers: {'Content-Type': 'application/json'},
+        headers: {'Content-Type': 'application/json', ..._ngrokHeaders},
         body: json.encode(pedido),
       );
 
@@ -273,7 +298,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse(ApiConfig.mesas),
-        headers: {'Content-Type': 'application/json'},
+        headers: {'Content-Type': 'application/json', ..._ngrokHeaders},
         body: json.encode(datos),
       );
 
@@ -292,6 +317,7 @@ class ApiService {
     try {
       final response = await http.delete(
         Uri.parse('${ApiConfig.mesas}/$mesaId'),
+        headers: _ngrokHeaders,
       );
 
       return response.statusCode == 200;
@@ -306,7 +332,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse(ApiConfig.zonas),
-        headers: {'Content-Type': 'application/json'},
+        headers: {'Content-Type': 'application/json', ..._ngrokHeaders},
         body: json.encode(zona),
       );
 
@@ -326,6 +352,7 @@ class ApiService {
     try {
       final response = await http.delete(
         Uri.parse('${ApiConfig.zonas}/$ubicacion'),
+        headers: _ngrokHeaders,
       );
 
       return response.statusCode == 200;
@@ -341,6 +368,7 @@ class ApiService {
       // Endpoint aproximado: ajusta según tu backend real
       final response = await http.get(
         Uri.parse('${ApiConfig.pedidos}/mesa/$mesaId/activo'),
+        headers: _ngrokHeaders,
       );
       if (response.statusCode == 200) {
         return json.decode(response.body);
@@ -356,6 +384,7 @@ class ApiService {
     try {
       final response = await http.get(
         Uri.parse('${ApiConfig.pedidos}/$pedidoId/detalles'),
+        headers: _ngrokHeaders,
       );
       if (response.statusCode == 200) {
         return json.decode(response.body);
@@ -371,7 +400,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('${ApiConfig.pedidos}/mesa/$mesaId/agregar-producto'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {'Content-Type': 'application/json', ..._ngrokHeaders},
         body: json.encode({'productoId': productoId}),
       );
       if (response.statusCode != 200 && response.statusCode != 201) {
@@ -386,6 +415,7 @@ class ApiService {
     try {
       final response = await http.delete(
         Uri.parse('${ApiConfig.pedidos}/detalles/$detalleId'),
+        headers: _ngrokHeaders,
       );
       if (response.statusCode != 200 && response.statusCode != 204) {
         throw Exception('Error ${response.statusCode}');
@@ -400,7 +430,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/api/auth/login'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {'Content-Type': 'application/json', ..._ngrokHeaders},
         body: json.encode({'username': username, 'password': password}),
       );
 

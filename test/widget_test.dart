@@ -8,12 +8,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:provider/provider.dart';
+import 'package:log_in/visual_settings_provider.dart';
 import 'package:log_in/main.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const LogIn());
+    await tester.pumpWidget(
+      ChangeNotifierProvider(
+        create: (_) => VisualSettingsProvider(),
+        child: const EzBarApp(),
+      ),
+    );
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);
