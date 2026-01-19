@@ -5,7 +5,7 @@ class ApiConfig {
   // 0 = Web / Localhost
   // 1 = APK / Ngrok Remoto
   // 2 = Mock / Offline (Sin backend)
-  static const int mode = 2;
+  static const int mode = 1;
 
   // Inicialmente vacio o fallback según el modo
   static String baseUrl = mode == 0

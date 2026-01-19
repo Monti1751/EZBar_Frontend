@@ -212,10 +212,10 @@ class _ZoneWidgetState extends State<ZoneWidget> {
   Future<void> _cargarMesasDeZona() async {
     try {
       final mesas = await _apiService.obtenerMesasPorZona(widget.zone.name);
-      
+
       // Obtener lista negra de mesas eliminadas
       final deletedIds = await _localStorage.getDeletedTables();
-      
+
       if (mounted) {
         setState(() {
           // Filtrar mesas eliminadas
@@ -223,6 +223,14 @@ class _ZoneWidgetState extends State<ZoneWidget> {
               .where((m) => !deletedIds.contains(m['mesa_id']))
               .map((m) => Mesa.fromJson(m))
               .toList();
+
+          // Actualizar contador para evitar duplicados (409 Conflict)
+          if (widget.zone.tables.isNotEmpty) {
+            final maxNumero = widget.zone.tables
+                .map((m) => m.numeroMesa)
+                .reduce((curr, next) => curr > next ? curr : next);
+            _tableCounter = maxNumero + 1;
+          }
         });
         // Guardar en almacenamiento local después de cargar del backend
         await _guardarMesasLocalmente();
@@ -270,6 +278,14 @@ class _ZoneWidgetState extends State<ZoneWidget> {
               estado: m.estado,
             );
           }).toList();
+
+          // Actualizar contador para evitar duplicados
+          if (widget.zone.tables.isNotEmpty) {
+            final maxNumero = widget.zone.tables
+                .map((m) => m.numeroMesa)
+                .reduce((curr, next) => curr > next ? curr : next);
+            _tableCounter = maxNumero + 1;
+          }
         });
       }
     } catch (e) {
@@ -330,12 +346,14 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                 try {
                   final mesaData = nuevaMesa.toJson();
                   final response = await _apiService.crearMesa(mesaData);
-                  
+
                   // Actualizar con el ID del backend
                   if (response['mesa_id'] != null) {
                     nuevaMesa.id = response['mesa_id'];
+                  } else if (response['id'] != null) {
+                    nuevaMesa.id = response['id'];
                   }
-                  
+
                   print('✅ Mesa creada en backend con ID: ${nuevaMesa.id}');
                 } catch (e) {
                   print('⚠️ Error creando mesa en backend: $e');
@@ -446,11 +464,10 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) =>
-                                        CuentaMesaPage(
-                                          nombreMesa: table.name,
-                                          nombreZona: widget.zone.name,
-                                        ),
+                                    builder: (context) => CuentaMesaPage(
+                                      nombreMesa: table.name,
+                                      nombreZona: widget.zone.name,
+                                    ),
                                   ),
                                 );
                               },
@@ -508,17 +525,19 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                                             });
                                             // Guardar cambios de estado
                                             await _guardarMesasLocalmente();
-                                            
+
                                             // Intentar actualizar en backend
                                             try {
                                               if (table.id != null) {
-                                                await _apiService.actualizarMesa(
-                                                  table.id!,
-                                                  {'estado': table.estado},
-                                                );
+                                                await _apiService
+                                                    .actualizarMesa(table.id!, {
+                                                      'estado': table.estado,
+                                                    });
                                               }
                                             } catch (e) {
-                                              print('Error actualizando mesa en backend: $e');
+                                              print(
+                                                'Error actualizando mesa en backend: $e',
+                                              );
                                             }
                                           },
                                           itemBuilder: (_) => const [
@@ -591,26 +610,34 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                                                       // Intentar eliminar del backend
                                                       try {
                                                         if (table.id != null) {
-                                                          await _apiService.eliminarMesa(table.id!);
+                                                          await _apiService
+                                                              .eliminarMesa(
+                                                                table.id!,
+                                                              );
                                                         }
                                                       } catch (e) {
-                                                        print('Error eliminando mesa del backend: $e');
+                                                        print(
+                                                          'Error eliminando mesa del backend: $e',
+                                                        );
                                                       }
-                                                      
+
                                                       // Añadir a lista negra local
                                                       if (table.id != null) {
-                                                        await _localStorage.addDeletedTable(table.id!);
+                                                        await _localStorage
+                                                            .addDeletedTable(
+                                                              table.id!,
+                                                            );
                                                       }
-                                                      
+
                                                       // Eliminar de la lista local
                                                       setState(() {
                                                         widget.zone.tables
                                                             .remove(table);
                                                       });
-                                                      
+
                                                       // Guardar cambios localmente
                                                       await _guardarMesasLocalmente();
-                                                      
+
                                                       Navigator.of(ctx).pop();
                                                     },
                                                     child: const Text(
@@ -761,11 +788,13 @@ class _MainMenuState extends State<MainMenu> {
         _showAddZoneField = false;
       });
       await _guardarZonasLocalmente();
-      
+
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Zona guardada localmente (backend no disponible)')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Zona guardada localmente (backend no disponible)'),
+          ),
+        );
       }
     }
   }
@@ -779,15 +808,15 @@ class _MainMenuState extends State<MainMenu> {
     } catch (e) {
       print('Error eliminando zona del backend: $e');
     }
-    
+
     // Eliminar de la lista local
     setState(() {
       zones.remove(zona);
     });
-    
+
     // Guardar cambios localmente
     await _guardarZonasLocalmente();
-    
+
     // Eliminar mesas asociadas del almacenamiento local
     await _localStorage.removeTables(zona.name);
   }
