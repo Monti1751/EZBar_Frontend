@@ -1,12 +1,23 @@
 import 'package:flutter/material.dart';
-import 'pantalla_principal.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'pantallas/pantalla_principal.dart';
 import 'package:provider/provider.dart';
-import 'visual_settings_provider.dart';
+import 'providers/visual_settings_provider.dart';
+import 'providers/localization_provider.dart';
+import 'services/api_service.dart';
+import 'l10n/app_localizations.dart';
+import 'services/localization_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await LocalizationService().init();
+
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => VisualSettingsProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => VisualSettingsProvider()),
+        ChangeNotifierProvider(create: (_) => LocalizationProvider()),
+      ],
       child: const LogIn(),
     ),
   );
@@ -18,10 +29,19 @@ class LogIn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final settings = Provider.of<VisualSettingsProvider>(context);
+    final localization = Provider.of<LocalizationProvider>(context);
 
     return MaterialApp(
       title: 'EZBar',
       debugShowCheckedModeBanner: false,
+      locale: localization.currentLocale,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: localization.localizationService.supportedLocales,
       themeMode: settings.darkMode ? ThemeMode.dark : ThemeMode.light,
       theme: ThemeData(
         brightness: Brightness.light,
@@ -57,6 +77,7 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final ApiService _apiService = ApiService(); // Instancia del servicio
 
   @override
   void dispose() {
@@ -68,22 +89,63 @@ class _LoginPageState extends State<LoginPage> {
   final RegExp usernameRegex = RegExp(r'^(?=.{3,})([a-zA-Z0-9_]+)$');
   final RegExp passwordRegex = RegExp(r'^.{8,}$');
 
-  void _login() {
+  Future<void> _login() async {
     if (_formKey.currentState?.validate() ?? false) {
+      // Mostrar indicador de carga
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Conectando...'),
           backgroundColor: Color(0xFF7BA238),
-          duration: Duration(seconds: 2),
+          duration: Duration(seconds: 1),
         ),
       );
 
-      Future.delayed(const Duration(seconds: 2), () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const PantallaPrincipal()),
+      try {
+        final response = await _apiService.login(
+          _usernameController.text,
+          _passwordController.text,
         );
-      });
+
+        if (response['status'] == 'OK') {
+          // Login exitoso
+          if (!mounted) return;
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('¡Login exitoso!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          // Aquí podrías guardar el token si lo necesitas para futuras peticiones
+          // final token = response['data']['token'];
+
+          if (!mounted) return;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const PantallaPrincipal(),
+            ),
+          );
+        } else {
+          // Error controlado (aunque el catch debería atraparlo si lanza excepción)
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: ${response['message']}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        if (!mounted) return;
+        // Limpiar el mensaje de la excepción para que sea amigable
+        // e.toString() suele ser "Exception: Mensaje"
+        final mensaje = e.toString().replaceAll('Exception: ', '');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(mensaje), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
@@ -104,7 +166,7 @@ class _LoginPageState extends State<LoginPage> {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF4A4025).withOpacity(0.2),
+                      color: const Color(0xFF4A4025).withValues(alpha: 0.2),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -116,9 +178,9 @@ class _LoginPageState extends State<LoginPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const SizedBox(height: 6),
-                      const Text(
-                        'Bienvenido',
-                        style: TextStyle(
+                      Text(
+                        AppLocalizations.of(context).translate('welcome'),
+                        style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF4A4025),
@@ -128,11 +190,17 @@ class _LoginPageState extends State<LoginPage> {
                       TextFormField(
                         controller: _usernameController,
                         decoration: InputDecoration(
-                          hintText: 'Nombre de usuario...',
-                          prefixIcon: Icon(Icons.person_outlined, color: Color(0xFF4A4025)),
+                          hintText: AppLocalizations.of(context).translate('username_hint'),
+                          prefixIcon: const Icon(
+                            Icons.person_outlined,
+                            color: Color(0xFF4A4025),
+                          ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Color(0xFF4A4025),  width: 1.5,),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF4A4025),
+                              width: 1.5,
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -144,10 +212,10 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Por favor, ingresa tu usuario';
+                            return AppLocalizations.of(context).translate('please_enter_username');
                           }
                           if (!usernameRegex.hasMatch(value)) {
-                            return 'Usuario inválido (mín. 3 caracteres, solo letras, números y _)';
+                            return AppLocalizations.of(context).translate('invalid_username');
                           }
                           return null;
                         },
@@ -157,11 +225,17 @@ class _LoginPageState extends State<LoginPage> {
                         controller: _passwordController,
                         obscureText: true,
                         decoration: InputDecoration(
-                          hintText: 'Contraseña...',
-                          prefixIcon: Icon(Icons.lock_outline, color: Color(0xFF4A4025)),
+                          hintText: AppLocalizations.of(context).translate('password_hint'),
+                          prefixIcon: const Icon(
+                            Icons.lock_outline,
+                            color: Color(0xFF4A4025),
+                          ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Color(0xFF4A4025), width: 1.5,),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF4A4025),
+                              width: 1.5,
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -173,10 +247,10 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Por favor, ingresa la contraseña';
+                            return AppLocalizations.of(context).translate('please_enter_password');
                           }
                           if (!passwordRegex.hasMatch(value)) {
-                            return 'La contraseña debe tener al menos 8 caracteres';
+                            return AppLocalizations.of(context).translate('password_min_8');
                           }
                           return null;
                         },
@@ -193,9 +267,12 @@ class _LoginPageState extends State<LoginPage> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text(
-                            'Iniciar sesión',
-                            style: TextStyle(fontSize: 18, color: Color(0xFFECF0D5)),
+                          child: Text(
+                            AppLocalizations.of(context).translate('login'),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              color: Color(0xFFECF0D5),
+                            ),
                           ),
                         ),
                       ),
@@ -207,15 +284,12 @@ class _LoginPageState extends State<LoginPage> {
                 decoration: BoxDecoration(
                   color: const Color(0xFFECF0D5),
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: const Color(0xFF4A4025),
-                    width: 6,
-                  ),
+                  border: Border.all(color: const Color(0xFF4A4025), width: 6),
                 ),
                 padding: const EdgeInsets.all(8),
                 child: ClipOval(
                   child: Image.asset(
-                    'logo_bueno.png',
+                    'logo_bueno.PNG',
                     height: 130,
                     width: 130,
                     fit: BoxFit.cover,
