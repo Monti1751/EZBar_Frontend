@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:log_in/plato.dart';
-import 'visual_settings_provider.dart';
+import 'package:log_in/models/plato.dart';
+import '../providers/visual_settings_provider.dart';
 import 'settings_menu.dart';
-import 'services/api_service.dart';
-import 'services/local_storage_service.dart';
+import '../services/api_service.dart';
+import '../services/local_storage_service.dart';
+import '../l10n/app_localizations.dart';
 
 /// Helper para InputDecoration consistente
 InputDecoration loginInputDecoration(String hint, IconData icon) {
@@ -63,7 +64,7 @@ class _CartaPageState extends State<CartaPage> {
     try {
       final cats = await _apiService.obtenerCategorias();
       final prods = await _apiService.obtenerProductos();
-      
+
       // Obtener lista negra de categorías eliminadas
       final deletedCategoryIds = await _localStorage.getDeletedCategories();
 
@@ -73,7 +74,7 @@ class _CartaPageState extends State<CartaPage> {
         if (deletedCategoryIds.contains(c['categoria_id'])) {
           continue;
         }
-        
+
         Seccion s = Seccion(id: c['categoria_id'], nombre: c['nombre']);
         var pList = prods.where((p) {
           if (p['categoria'] != null && p['categoria'] is Map) {
@@ -89,13 +90,9 @@ class _CartaPageState extends State<CartaPage> {
           final precio = precioRaw is String
               ? (double.tryParse(precioRaw) ?? 0.0)
               : (precioRaw as num).toDouble();
-          
+
           s.platos.add(
-            Plato(
-              id: p['producto_id'],
-              nombre: p['nombre'],
-              precio: precio,
-            ),
+            Plato(id: p['producto_id'], nombre: p['nombre'], precio: precio),
           );
         }
         loaded.add(s);
@@ -104,7 +101,7 @@ class _CartaPageState extends State<CartaPage> {
         secciones = loaded;
       });
     } catch (e) {
-      print("Error loading data: $e");
+      // print("Error loading data: $e");
     }
   }
 
@@ -133,7 +130,7 @@ class _CartaPageState extends State<CartaPage> {
     }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text("Añadido a la cuenta: ${plato.nombre}"),
+        content: Text("${AppLocalizations.of(context).translate('added_to_bill')}${plato.nombre}"),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
       ),
@@ -183,7 +180,7 @@ class _CartaPageState extends State<CartaPage> {
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: TextField(
-              decoration: loginInputDecoration("Buscar...", Icons.search),
+              decoration: loginInputDecoration(AppLocalizations.of(context).translate('search_hint'), Icons.search),
               style: TextStyle(color: textoGeneral, fontSize: fontSize),
             ),
           ),
@@ -237,28 +234,36 @@ class _CartaPageState extends State<CartaPage> {
                                         TextButton(
                                           onPressed: () =>
                                               Navigator.of(ctx).pop(),
-                                          child: const Text("Cancelar"),
+                                          child: Text(AppLocalizations.of(context).translate('cancel')),
                                         ),
                                         TextButton(
-                                          onPressed: () async {
+                                          onPressed: () {
+                                            final popContext = ctx;
                                             if (seccion.id != null) {
-                                              // Intentar eliminar del backend
-                                              try {
-                                                await _apiService
-                                                    .eliminarCategoria(
-                                                      seccion.id!,
-                                                    );
-                                              } catch (e) {
-                                                print('Error eliminando categoría del backend: $e');
-                                              }
-                                              
-                                              // Añadir a lista negra local
-                                              await _localStorage.addDeletedCategory(seccion.id!);
+                                              _apiService
+                                                  .eliminarCategoria(
+                                                    seccion.id!,
+                                                  )
+                                                  .then((_) {
+                                                _localStorage.addDeletedCategory(
+                                                  seccion.id!,
+                                                );
+                                              }).then((_) {
+                                                setState(() {
+                                                  secciones.remove(seccion);
+                                                });
+                                                // ignore: use_build_context_synchronously
+                                                Navigator.of(popContext).pop();
+                                              }).catchError((e) {
+                                                // print('Error: $e');
+                                              });
+                                            } else {
+                                              setState(() {
+                                                secciones.remove(seccion);
+                                              });
+                                              // ignore: use_build_context_synchronously
+                                              Navigator.of(popContext).pop();
                                             }
-                                            setState(() {
-                                              secciones.remove(seccion);
-                                            });
-                                            Navigator.of(ctx).pop();
                                           },
                                           child: const Text(
                                             "Eliminar",
@@ -339,9 +344,11 @@ class _CartaPageState extends State<CartaPage> {
                                                       'categoria_id':
                                                           seccion.id,
                                                     },
-                                                    'ingredientes': nuevoPlato.ingredientes,
+                                                    'ingredientes':
+                                                        nuevoPlato.ingredientes,
                                                     'extras': nuevoPlato.extras,
-                                                    'alergenos': nuevoPlato.alergenos,
+                                                    'alergenos':
+                                                        nuevoPlato.alergenos,
                                                   };
                                                   final res = await _apiService
                                                       .crearProducto(data);
@@ -353,9 +360,9 @@ class _CartaPageState extends State<CartaPage> {
                                                     );
                                                   });
                                                 } catch (e) {
-                                                  print(
-                                                    "Error creating product: $e",
-                                                  );
+                                                  // print(
+                                                  //   "Error creating product: $e",
+                                                  // );
                                                 }
                                               }
                                               _platoController.clear();
@@ -509,25 +516,30 @@ class _CartaPageState extends State<CartaPage> {
                                                                     ),
                                                                   ),
                                                                   TextButton(
-                                                                    onPressed: () async {
-                                                                      if (plato
-                                                                              .id !=
-                                                                          null) {
-                                                                        await _apiService.eliminarProducto(
-                                                                          plato
-                                                                              .id!,
+                                                                    onPressed: () {
+                                                                      final popContext = ctx;
+                                                                      if (plato.id != null) {
+                                                                        _apiService
+                                                                            .eliminarProducto(
+                                                                              plato.id!,
+                                                                            )
+                                                                            .then((_) {
+                                                                          setState(() {
+                                                                            seccion.platos.remove(plato);
+                                                                          });
+                                                                          // ignore: use_build_context_synchronously
+                                                                          Navigator.of(popContext).pop();
+                                                                        }).catchError(
+                                                                          (e) {
+                                                                            // Error
+                                                                          },
                                                                         );
+                                                                      } else {
+                                                                        setState(() {
+                                                                          seccion.platos.remove(plato);
+                                                                        });
+                                                                        Navigator.of(popContext).pop();
                                                                       }
-                                                                      setState(() {
-                                                                        seccion
-                                                                            .platos
-                                                                            .remove(
-                                                                              plato,
-                                                                            );
-                                                                      });
-                                                                      Navigator.of(
-                                                                        ctx,
-                                                                      ).pop();
                                                                     },
                                                                     child: const Text(
                                                                       "Eliminar",
@@ -579,7 +591,7 @@ class _CartaPageState extends State<CartaPage> {
               ),
               icon: const Icon(Icons.add, color: Colors.white),
               label: Text(
-                "Agregar sección...",
+                AppLocalizations.of(context).translate('add_section'),
                 style: TextStyle(fontSize: fontSize, color: Colors.white),
               ),
               onPressed: () {
@@ -587,26 +599,28 @@ class _CartaPageState extends State<CartaPage> {
                 showDialog(
                   context: context,
                   builder: (ctx) => AlertDialog(
-                    title: const Text("Nueva sección"),
+                    title: Text(AppLocalizations.of(context).translate('new_section')),
                     content: TextField(
                       controller: _seccionController,
                       decoration: loginInputDecoration(
-                        "Nombre de la sección",
+                        AppLocalizations.of(context).translate('section_name_hint'),
                         Icons.list,
                       ),
                     ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(ctx),
-                        child: const Text("Cancelar"),
+                        child: Text(AppLocalizations.of(context).translate('cancel')),
                       ),
                       TextButton(
-                        onPressed: () async {
+                        onPressed: () {
+                          final popContext = ctx;
                           if (_seccionController.text.isNotEmpty) {
-                            try {
-                              final nueva = await _apiService.crearCategoria(
-                                _seccionController.text,
-                              );
+                            _apiService
+                                .crearCategoria(
+                                  _seccionController.text,
+                                )
+                                .then((nueva) {
                               setState(() {
                                 secciones.add(
                                   Seccion(
@@ -615,13 +629,18 @@ class _CartaPageState extends State<CartaPage> {
                                   ),
                                 );
                               });
-                            } catch (e) {
-                              print("Error creating category: $e");
-                            }
+                              // ignore: use_build_context_synchronously
+                              Navigator.pop(popContext);
+                            }).catchError((e) {
+                              // print("Error creating category: $e");
+                              // ignore: use_build_context_synchronously
+                              Navigator.pop(popContext);
+                            });
+                          } else {
+                            Navigator.pop(popContext);
                           }
-                          Navigator.pop(ctx);
                         },
-                        child: const Text("Agregar"),
+                        child: Text(AppLocalizations.of(context).translate('add')),
                       ),
                     ],
                   ),

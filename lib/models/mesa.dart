@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../visual_settings_provider.dart';
+import '../providers/visual_settings_provider.dart';
 
 /// === MODELO DE MESA ===
 class Mesa {

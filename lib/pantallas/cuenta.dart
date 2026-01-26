@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'settings_menu.dart';
-import 'visual_settings_provider.dart';
-import 'package:log_in/CartaPage.dart'; // 👈 Importamos la pantalla de la carta
-import 'services/api_service.dart';
+import '../providers/visual_settings_provider.dart';
+import 'package:log_in/pantallas/carta_page.dart'; // 👈 Importamos la pantalla de la carta
+import '../services/api_service.dart';
 
 class CuentaMesaPage extends StatefulWidget {
   final String nombreMesa;
@@ -40,15 +40,16 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
             RegExp(r'[^0-9]'),
             '',
           );
-          final nombreCoincide = (numeroEnNombre.isNotEmpty && numeroStr == numeroEnNombre) ||
+          final nombreCoincide =
+              (numeroEnNombre.isNotEmpty && numeroStr == numeroEnNombre) ||
               (m['nombre'] != null && m['nombre'] == widget.nombreMesa);
-          
+
           // Si hay zona especificada, también debe coincidir
           if (widget.nombreZona != null) {
             final zonaCoincide = m['ubicacion'] == widget.nombreZona;
             return nombreCoincide && zonaCoincide;
           }
-          
+
           return nombreCoincide;
         }, orElse: () => null);
 
@@ -77,7 +78,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
         }
       }
     } catch (e) {
-      print('Error cargando cuenta: $e');
+      // print('Error cargando cuenta: $e');
     }
   }
 
@@ -115,34 +116,34 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
         }
       });
     } catch (e) {
-      print('Error cargando detalles: $e');
+      // print('Error cargando detalles: $e');
     }
   }
 
   // 👇 Método para abrir la carta
   void _abrirCarta() {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (ctx) => CartaPage(
-        onAddToCuenta: (plato) async {
-          if (_mesaId != null && plato.id != null) {
-            try {
-              // 1. Llamada al API para persistir el dato
-              await _apiService.agregarProductoAMesa(_mesaId!, plato.id!);
-              
-              // 2. Refrescar los datos del servidor para obtener la lista actualizada
-              // con los IDs de detalle correctos y cantidades.
-              await _cargarCuenta(); 
-            } catch (e) {
-              print("Error adding product: $e");
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => CartaPage(
+          onAddToCuenta: (plato) async {
+            if (_mesaId != null && plato.id != null) {
+              try {
+                // 1. Llamada al API para persistir el dato
+                await _apiService.agregarProductoAMesa(_mesaId!, plato.id!);
+
+                // 2. Refrescar los datos del servidor para obtener la lista actualizada
+                // con los IDs de detalle correctos y cantidades.
+                await _cargarCuenta();
+              } catch (e) {
+                // print("Error adding product: $e");
+              }
             }
-          }
-        },
+          },
+        ),
       ),
-    ),
-  ).then((_) => _cargarCuenta()); // Sincronización final al cerrar la carta
-}
+    ).then((_) => _cargarCuenta()); // Sincronización final al cerrar la carta
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -242,33 +243,55 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                                 itemBuilder: (ctx, i) {
                                   final item = _detalles[i];
                                   final producto = item['producto'];
-                                  
+
                                   // Extraer datos con fallbacks de seguridad y conversión de tipos
-                                  final nombre = producto?['nombre'] ?? item['nombre'] ?? 'Producto';
+                                  final nombre =
+                                      producto?['nombre'] ??
+                                      item['nombre'] ??
+                                      'Producto';
                                   final cantidad = item['cantidad'] ?? 1;
-                                  
+
                                   // Convertir precio unitario (puede ser String o num)
-                                  final precioRaw = producto?['precio'] ?? item['precio_unitario'] ?? 0;
-                                  final precioUnitario = precioRaw is String 
+                                  final precioRaw =
+                                      producto?['precio'] ??
+                                      item['precio_unitario'] ??
+                                      0;
+                                  final precioUnitario = precioRaw is String
                                       ? (double.tryParse(precioRaw) ?? 0.0)
                                       : (precioRaw as num).toDouble();
-                                  
+
                                   // Convertir subtotal (puede ser String o num)
-                                  final subtotalRaw = item['total_linea'] ?? (precioUnitario * cantidad);
+                                  final subtotalRaw =
+                                      item['total_linea'] ??
+                                      (precioUnitario * cantidad);
                                   final subtotalLinea = subtotalRaw is String
                                       ? (double.tryParse(subtotalRaw) ?? 0.0)
                                       : (subtotalRaw as num).toDouble();
 
                                   return ListTile(
                                     leading: CircleAvatar(
-                                      backgroundColor: barraSuperior.withOpacity(0.2),
-                                      child: Text("${cantidad}x", style: TextStyle(color: textoGeneral, fontWeight: FontWeight.bold)),
+                                      backgroundColor: barraSuperior.withValues(
+                                        alpha: 0.2,
+                                      ),
+                                      child: Text(
+                                        "${cantidad}x",
+                                        style: TextStyle(
+                                          color: textoGeneral,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                     ),
                                     title: Text(
                                       nombre,
-                                      style: TextStyle(color: textoGeneral, fontSize: fontSize, fontWeight: FontWeight.w500),
+                                      style: TextStyle(
+                                        color: textoGeneral,
+                                        fontSize: fontSize,
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     ),
-                                    subtitle: Text("${precioUnitario.toStringAsFixed(2)} €/ud"),
+                                    subtitle: Text(
+                                      "${precioUnitario.toStringAsFixed(2)} €/ud",
+                                    ),
                                     trailing: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
@@ -281,12 +304,16 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                                           ),
                                         ),
                                         IconButton(
-                                          icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                          icon: const Icon(
+                                            Icons.delete_outline,
+                                            color: Colors.red,
+                                          ),
                                           onPressed: () async {
                                             final id = item['detalle_id'];
                                             if (id != null) {
-                                              await _apiService.eliminarDetallePedido(id);
-                                              _cargarCuenta(); 
+                                              await _apiService
+                                                  .eliminarDetallePedido(id);
+                                              _cargarCuenta();
                                             }
                                           },
                                         ),

@@ -6,12 +6,12 @@ class ApiService {
   // Health check para verificar si el servidor está activo
   Future<bool> verificarConexion() async {
     try {
-      print('🔍 Verificando conexión a: http://localhost:3000');
+      // print('🔍 Verificando conexión a: http://localhost:3000');
       final response = await http.get(Uri.parse('http://localhost:3000'));
-      print('✅ Servidor respondió con status: ${response.statusCode}');
+      // print('✅ Servidor respondió con status: ${response.statusCode}');
       return response.statusCode == 200 || response.statusCode == 404;
     } catch (e) {
-      print('❌ No hay conexión: $e');
+      // print('❌ No hay conexión: $e');
       return false;
     }
   }
@@ -33,10 +33,10 @@ class ApiService {
 
   Future<List<dynamic>> obtenerZonas() async {
     try {
-      print('🔌 Intentando conectar a: ${ApiConfig.zonas}');
+      // print('🔌 Intentando conectar a: ${ApiConfig.zonas}');
       final response = await http.get(Uri.parse(ApiConfig.zonas));
-      print('📨 Respuesta recibida: ${response.statusCode}');
-      print('📦 Body: ${response.body}');
+      // print('📨 Respuesta recibida: ${response.statusCode}');
+      // print('📦 Body: ${response.body}');
 
       if (response.statusCode == 200) {
         return json.decode(response.body); // ✅ Devuelve List<dynamic>
@@ -44,7 +44,7 @@ class ApiService {
         throw Exception('Error HTTP ${response.statusCode}: ${response.body}');
       }
     } catch (e) {
-      print('❌ Error: $e');
+      // print('❌ Error: $e');
       throw Exception('Error de conexión: $e');
     }
   }
@@ -52,9 +52,9 @@ class ApiService {
   // Obtener todas las categorías
   Future<List<dynamic>> obtenerCategorias() async {
     try {
-      print('🔌 Intentando conectar a: ${ApiConfig.categorias}');
+      // print('🔌 Intentando conectar a: ${ApiConfig.categorias}');
       final response = await http.get(Uri.parse(ApiConfig.categorias));
-      print('📨 Respuesta recibida: ${response.statusCode}');
+      // print('📨 Respuesta recibida: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         return json.decode(response.body);
@@ -62,7 +62,7 @@ class ApiService {
         throw Exception('Error al cargar categorías: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ Error: $e');
+      // print('❌ Error: $e');
       throw Exception('Error de conexión: $e');
     }
   }
@@ -70,9 +70,9 @@ class ApiService {
   // Obtener todos los productos
   Future<List<dynamic>> obtenerProductos() async {
     try {
-      print('🔌 Intentando conectar a: ${ApiConfig.productos}');
+      // print('🔌 Intentando conectar a: ${ApiConfig.productos}');
       final response = await http.get(Uri.parse(ApiConfig.productos));
-      print('📨 Respuesta recibida: ${response.statusCode}');
+      // print('📨 Respuesta recibida: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         return json.decode(response.body);
@@ -80,7 +80,7 @@ class ApiService {
         throw Exception('Error al cargar productos: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ Error: $e');
+      // print('❌ Error: $e');
       throw Exception('Error de conexión: $e');
     }
   }
@@ -155,9 +155,9 @@ class ApiService {
     final url = Uri.parse('${ApiConfig.mesas}?ubicacion=$nombreZona');
 
     try {
-      print('🔍 Intentando obtener mesas para zona: $nombreZona en $url');
+      // print('🔍 Intentando obtener mesas para zona: $nombreZona en $url');
       final response = await http.get(url);
-      print('📨 Respuesta recibida para mesas: ${response.statusCode}');
+      // print('📨 Respuesta recibida para mesas: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         // Asegúrate de que el body es una lista JSON, lo cual es lo habitual para colecciones
@@ -168,7 +168,7 @@ class ApiService {
         );
       }
     } catch (e) {
-      print('❌ Error de conexión al cargar mesas por zona: $e');
+      // print('❌ Error de conexión al cargar mesas por zona: $e');
       throw Exception('Error de conexión: $e');
     }
   }
@@ -176,18 +176,18 @@ class ApiService {
   // Obtener estadísticas de una zona
   Future<Map<String, dynamic>> obtenerEstadisticasZona(String ubicacion) async {
     try {
-      print('🔍 Intentando obtener mesas para zona: $ubicacion');
+      // print('🔍 Intentando obtener mesas para zona: $ubicacion');
 
       // Usar Uri.http para codificar correctamente los parámetros
       final url = Uri.parse(
         ApiConfig.mesas,
       ).replace(queryParameters: {'ubicacion': ubicacion});
 
-      print('📍 URL generada: $url');
+      // print('📍 URL generada: $url');
       final response = await http.get(url);
 
-      print('📨 Respuesta recibida: ${response.statusCode}');
-      print('📦 Body: ${response.body}');
+      // print('📨 Respuesta recibida: ${response.statusCode}');
+      // print('📦 Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -202,7 +202,7 @@ class ApiService {
         );
       }
     } catch (e) {
-      print('❌ Error de conexión al cargar mesas por zona: $e');
+      // print('❌ Error de conexión al cargar mesas por zona: $e');
       throw Exception('Error de conexión: $e');
     }
   }
@@ -212,7 +212,6 @@ class ApiService {
     String ubicacion,
   ) async {
     try {
-      final encodedUbicacion = Uri.encodeComponent(ubicacion);
       final response = await http.get(
         Uri.parse('${ApiConfig.baseUrl}/api/zonas/$ubicacion/stats'),
       );
@@ -347,7 +346,7 @@ class ApiService {
       }
       return null;
     } catch (e) {
-      print('Error al obtener pedido activo: $e');
+      // print('Error al obtener pedido activo: $e');
       return null;
     }
   }
@@ -362,7 +361,7 @@ class ApiService {
       }
       return [];
     } catch (e) {
-      print('Error al obtener detalles: $e');
+      // print('Error al obtener detalles: $e');
       return [];
     }
   }
@@ -392,6 +391,45 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Error al eliminar detalle: $e');
+    }
+  }
+
+  // --- Login ---
+  Future<Map<String, dynamic>> login(String username, String password) async {
+    try {
+      final uri = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
+      final body = json.encode({'username': username, 'password': password});
+      // print('🔐 POST $uri');
+      // print('📤 Body: $body');
+
+      final response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
+
+      // print('📥 Status: ${response.statusCode}');
+      // print('📥 Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else if (response.statusCode == 401) {
+        final serverMsg = response.body.isNotEmpty
+            ? response.body
+            : 'Credenciales incorrectas';
+        throw Exception('Credenciales incorrectas: $serverMsg');
+      } else if (response.statusCode == 403) {
+        final serverMsg = response.body.isNotEmpty
+            ? response.body
+            : 'Usuario desactivado';
+        throw Exception('Usuario desactivado: $serverMsg');
+      } else {
+        throw Exception(
+          'Error en el servidor: ${response.statusCode}: ${response.body}',
+        );
+      }
+    } catch (e) {
+      throw Exception('$e'); // Propagar el mensaje de error directamente
     }
   }
 }

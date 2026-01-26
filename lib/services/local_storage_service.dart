@@ -30,7 +30,7 @@ class LocalStorageService {
       final List<dynamic> decodedData = json.decode(encodedData);
       return decodedData.map((item) => Zona.fromJson(item)).toList();
     } catch (e) {
-      print("Error decoding local zones: $e");
+      // print("Error decoding local zones: $e");
       return [];
     }
   }
@@ -61,7 +61,7 @@ class LocalStorageService {
       final List<dynamic> decodedData = json.decode(encodedData);
       return decodedData.map((item) => Mesa.fromJson(item)).toList();
     } catch (e) {
-      print("Error decoding local tables for $zoneName: $e");
+      // print("Error decoding local tables for $zoneName: $e");
       return [];
     }
   }

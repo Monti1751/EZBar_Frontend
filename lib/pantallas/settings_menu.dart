@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'main.dart';
-import 'ajustes_visuales.dart';
-import 'visual_settings_provider.dart';
+import '../main.dart';
+import '../providers/ajustes_visuales.dart';
+import '../providers/visual_settings_provider.dart';
 import 'pantalla_principal.dart';
-import 'CartaPage.dart'; 
+import 'carta_page.dart';
+import '../l10n/app_localizations.dart';
 
 class SettingsMenu extends StatelessWidget {
   const SettingsMenu({super.key});
@@ -15,25 +16,25 @@ class SettingsMenu extends StatelessWidget {
 
     // Colores dinámicos según ajustes
     final Color fondo = settings.darkMode ? Colors.black : Colors.white;
-    final Color encabezado = settings.colorBlindMode ? Colors.blue : const Color(0xFF7BA238);
+    final Color encabezado = settings.colorBlindMode
+        ? Colors.blue
+        : const Color(0xFF7BA238);
     final Color textoGeneral = settings.darkMode ? Colors.white : Colors.black;
 
     // Tamaños dinámicos
     final double fontSize = settings.currentFontSize;
 
-    final double headerFontSize =
-        settings.fontSize == FontSizeOption.small
-            ? 18
-            : settings.fontSize == FontSizeOption.medium
-                ? 22
-                : 26;
+    final double headerFontSize = settings.fontSize == FontSizeOption.small
+        ? 18
+        : settings.fontSize == FontSizeOption.medium
+        ? 22
+        : 26;
 
-    final double logoutFontSize =
-        settings.fontSize == FontSizeOption.small
-            ? 14
-            : settings.fontSize == FontSizeOption.medium
-                ? 16
-                : 18;
+    final double logoutFontSize = settings.fontSize == FontSizeOption.small
+        ? 14
+        : settings.fontSize == FontSizeOption.medium
+        ? 16
+        : 18;
 
     return Drawer(
       child: SafeArea(
@@ -45,7 +46,7 @@ class SettingsMenu extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               color: encabezado,
               child: Text(
-                "Ajustes",
+                AppLocalizations.of(context).translate('settings_header'),
                 style: TextStyle(
                   fontSize: headerFontSize,
                   fontWeight: FontWeight.bold,
@@ -62,14 +63,14 @@ class SettingsMenu extends StatelessWidget {
                   children: [
                     _menuItem(
                       icon: Icons.person_pin,
-                      text: "Administrar roles",
+                      text: AppLocalizations.of(context).translate('manage_roles'),
                       onTap: () {},
                       textoColor: textoGeneral,
                       fontSize: fontSize,
                     ),
                     _menuItem(
                       icon: Icons.menu_book,
-                      text: "Editar carta",
+                      text: AppLocalizations.of(context).translate('edit_menu'),
                       onTap: () {
                         Navigator.push(
                           context,
@@ -83,21 +84,24 @@ class SettingsMenu extends StatelessWidget {
                     ),
                     _menuItem(
                       icon: Icons.group,
-                      text: "Editar usuarios",
-                      onTap: () {},
+                      text: AppLocalizations.of(context).translate('edit_users'),
+                      onTap: () {
+                        // TODO: Implementar página de editar/crear usuarios
+                      },
                       textoColor: textoGeneral,
                       fontSize: fontSize,
                     ),
+
                     _menuItem(
                       icon: Icons.inventory,
-                      text: "Editar inventario",
+                      text: AppLocalizations.of(context).translate('edit_inventory'),
                       onTap: () {},
                       textoColor: textoGeneral,
                       fontSize: fontSize,
                     ),
                     _menuItem(
                       icon: Icons.brush,
-                      text: "Ajustes visuales",
+                      text: AppLocalizations.of(context).translate('settings_header'),
                       onTap: () {
                         Navigator.push(
                           context,
@@ -111,11 +115,13 @@ class SettingsMenu extends StatelessWidget {
                     ),
                     _menuItem(
                       icon: Icons.approval,
-                      text: "Acceso Menú Principal",
+                      text: AppLocalizations.of(context).translate('main_menu_access'),
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => PantallaPrincipal()),
+                          MaterialPageRoute(
+                            builder: (context) => PantallaPrincipal(),
+                          ),
                         );
                       },
                       textoColor: textoGeneral,
@@ -143,14 +149,18 @@ class SettingsMenu extends StatelessWidget {
                   },
                   icon: Icon(
                     Icons.logout,
-                    color: settings.colorBlindMode ? Colors.orange : const Color(0xFFC63425),
+                    color: settings.colorBlindMode
+                        ? Colors.orange
+                        : const Color(0xFFC63425),
                   ),
                   label: Text(
-                    "Cerrar sesión",
+                    AppLocalizations.of(context).translate('logout'),
                     style: TextStyle(
                       fontSize: logoutFontSize,
                       fontWeight: FontWeight.bold,
-                      color: settings.colorBlindMode ? Colors.orange : const Color(0xFFC63425),
+                      color: settings.colorBlindMode
+                          ? Colors.orange
+                          : const Color(0xFFC63425),
                     ),
                   ),
                 ),
@@ -172,7 +182,10 @@ class SettingsMenu extends StatelessWidget {
   }) {
     return ListTile(
       leading: Icon(icon, size: 26, color: textoColor),
-      title: Text(text, style: TextStyle(fontSize: fontSize, color: textoColor)),
+      title: Text(
+        text,
+        style: TextStyle(fontSize: fontSize, color: textoColor),
+      ),
       onTap: onTap,
       trailing: Icon(Icons.arrow_forward_ios, size: 16, color: textoColor),
     );
