@@ -5,12 +5,14 @@
 *.swp
 .DS_Store
 .atom/
-.build/
 .buildlog/
 .history
 .svn/
-.swiftpm/
 migrate_working_dir/
+
+# Log files specific to this project
+build_log.txt
+analysis_output.txt
 
 # IntelliJ related
 *.iml
@@ -18,20 +20,23 @@ migrate_working_dir/
 *.iws
 .idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+# VS Code related
+.vscode/
 
 # Flutter/Dart/Pub related
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
+.packages
 .pub-cache/
 .pub/
 /build/
 /coverage/
+
+# Web related
+lib/generated_plugin_registrant.dart
 
 # Symbolication related
 app.*.symbols
@@ -44,6 +49,7 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Large SDK folders
-android_sdk/
-android_sdk_temp/
+# Standard Android
+/android/.gradle
+/android/local.properties
+/android/key.properties
