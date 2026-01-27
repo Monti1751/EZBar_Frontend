@@ -6,8 +6,8 @@ class ApiService {
   // Health check para verificar si el servidor está activo
   Future<bool> verificarConexion() async {
     try {
-      // print('🔍 Verificando conexión a: http://localhost:3000');
-      final response = await http.get(Uri.parse('http://localhost:3000'));
+      // print('🔍 Verificando conexión a: https://euphoniously-subpatellar-chandra.ngrok-free.dev');
+      final response = await http.get(Uri.parse('https://euphoniously-subpatellar-chandra.ngrok-free.dev'));
       // print('✅ Servidor respondió con status: ${response.statusCode}');
       return response.statusCode == 200 || response.statusCode == 404;
     } catch (e) {
