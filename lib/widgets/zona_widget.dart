@@ -19,22 +19,24 @@ class ZoneWidget extends StatefulWidget {
 }
 
 class _ZoneWidgetState extends State<ZoneWidget> {
+  bool _mesasCargadas = false;
   bool _isExpanded = false;
   final TextEditingController _tableController = TextEditingController();
   final ApiService _apiService = ApiService();
   final LocalStorageService _localStorage = LocalStorageService();
   List<Mesa> _mesas = [];
   int _tableCounter = 1;
+  bool _mesasCargadasUnaVez = false;
 
   @override
   void initState() {
     super.initState();
-    _cargarMesasDeZona();
   }
 
   @override
   void dispose() {
     _tableController.dispose();
+    _mesas.clear(); //Nos aseguuramos de liberar memoria limpiando las mesesas que no se usan
     super.dispose();
   }
 
@@ -185,10 +187,21 @@ class _ZoneWidgetState extends State<ZoneWidget> {
       child: Column(
         children: [
           InkWell(
-            onTap: () {
+            onTap: () async { // Expandir/colapsar zona Lo que hacemos con esta funcion, sirve para ahorrar memoria y que no pille todas las mesas que tenemos creadas.
               setState(() {
                 _isExpanded = !_isExpanded;
               });
+              // Si se abre la zona y no hay mesas cargadas, cargar mesas
+              if (_isExpanded && !_mesasCargadasUnaVez) {
+               await _cargarMesasDeZona();
+               _mesasCargadasUnaVez = true; //Con esto nos aseguramos de que solo se carguen una vez las mesas
+              }
+              // Si se cierra la zona, liberar memoria
+              if (!_isExpanded){
+                setState(() {
+                  _mesas.clear();
+                });
+              }
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
