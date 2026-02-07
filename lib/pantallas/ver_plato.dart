@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:flutter/foundation.dart';
 import '../l10n/app_localizations.dart';
 
 //Pantalla de prueba para ver un plato en detalle (sin posibilidad de editar)
 class VerPlato {
   String nombre;
   double precio;
-  File? imagen;
+  XFile? imagen;
   List<String> ingredientes;
   List<String> extras;
   List<String> alergenos; // Nuevo campo
@@ -49,7 +51,9 @@ class PlatoDetallePage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 image: plato.imagen != null
                     ? DecorationImage(
-                        image: FileImage(plato.imagen!),
+                        image: kIsWeb 
+                          ? NetworkImage(plato.imagen!.path) as ImageProvider
+                          : FileImage(File(plato.imagen!.path)),
                         fit: BoxFit.cover,
                       )
                     : null,

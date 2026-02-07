@@ -1,6 +1,7 @@
 class ApiConfig {
   // URL base de la API Node.js
-  static const String baseUrl = 'https://euphoniously-subpatellar-chandra.ngrok-free.dev';  
+  // static const String baseUrl = 'https://euphoniously-subpatellar-chandra.ngrok-free.dev';
+  static const String baseUrl = 'http://localhost:3000'; // Local Node.js API
 
   // Para dispositivos Android (emulador)
   // static const String baseUrl = 'http://10.0.2.2:3000';

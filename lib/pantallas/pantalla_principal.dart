@@ -148,33 +148,27 @@ class _MainMenuState extends State<MainMenu> {
                             child: CircularProgressIndicator(color: barraSuperior))
                         : LayoutBuilder(
                             builder: (context, constraints) {
-                              if (constraints.maxWidth > 600) {
-                                // Tablet / Desktop -> Grid
-                                return GridView.extent(
-                                  maxCrossAxisExtent: 400,
-                                  childAspectRatio: 1.2,
-                                  mainAxisSpacing: 12,
-                                  crossAxisSpacing: 12,
-                                  children: zones
-                                      .map((z) => ZoneWidget(
-                                            zona: z,
-                                            onDelete: () => _eliminarZona(z),
-                                          ))
-                                      .toList(),
-                                );
-                              } else {
-                                // Mobile -> List
-                                return ListView(
-                                  children: zones
-                                      .map(
-                                        (z) => ZoneWidget(
+                              return SingleChildScrollView(
+                                child: Center(
+                                  child: Wrap(
+                                    spacing: 12,
+                                    runSpacing: 12,
+                                    alignment: WrapAlignment.start,
+                                    children: zones.map((z) {
+                                      return SizedBox(
+                                        width: constraints.maxWidth > 600
+                                            ? (constraints.maxWidth / 2) -
+                                                18 // 2 columns minus spacing
+                                            : constraints.maxWidth, // 1 column
+                                        child: ZoneWidget(
                                           zona: z,
                                           onDelete: () => _eliminarZona(z),
                                         ),
-                                      )
-                                      .toList(),
-                                );
-                              }
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
+                              );
                             },
                           ),
                   ),
