@@ -135,6 +135,25 @@ class ApiService {
     }
   }
 
+  // Actualizar producto
+  Future<Map<String, dynamic>> actualizarProducto(int id, Map<String, dynamic> datos) async {
+    try {
+      final response = await http.put(
+        Uri.parse('${ApiConfig.productos}/$id'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(datos),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Error al actualizar producto: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
   // Eliminar producto
   Future<bool> eliminarProducto(int id) async {
     try {

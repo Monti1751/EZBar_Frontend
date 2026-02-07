@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'dart:convert';
+import 'dart:typed_data';
+import 'package:provider/provider.dart';
+import '../providers/visual_settings_provider.dart';
 import '../l10n/app_localizations.dart';
 
 class Plato {
   int? id;
   String nombre;
   double precio;
-  File? imagen;
+  XFile? imagen; // Local file picked by user
+  String? imagenUrl; // URL if hosted remotely
+  String? imagenBlob; // Base64 string if stored incorrectly as blob
   List<String> ingredientes;
   List<String> extras;
   List<String> alergenos;
@@ -17,6 +24,8 @@ class Plato {
     required this.nombre,
     required this.precio,
     this.imagen,
+    this.imagenUrl,
+    this.imagenBlob,
     List<String>? ingredientes,
     List<String>? extras,
     List<String>? alergenos,
@@ -26,33 +35,40 @@ class Plato {
 }
 
 /// Helper para InputDecoration consistente
-InputDecoration loginInputDecoration(String hint, IconData icon) {
+InputDecoration loginInputDecoration(String hint, IconData icon, {bool darkMode = false, Color? iconColor}) {
   return InputDecoration(
     hintText: hint,
-    prefixIcon: Icon(icon, color: const Color(0xFF4A4025)),
+    hintStyle: TextStyle(color: darkMode ? Colors.grey[400] : Colors.grey[600]),
+    prefixIcon: Icon(icon, color: iconColor ?? const Color(0xFF4A4025)),
     filled: true,
-    fillColor: const Color(0xFFFFFFFF),
-    enabledBorder: const OutlineInputBorder(
-      borderRadius: BorderRadius.all(Radius.circular(12)),
-      borderSide: BorderSide(color: Color(0xFF4A4025), width: 1.5),
+    fillColor: darkMode ? Colors.grey[800] : const Color(0xFFFFFFFF),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: const BorderRadius.all(Radius.circular(12)),
+      borderSide: BorderSide(color: iconColor ?? const Color(0xFF4A4025), width: 1.5),
     ),
-    focusedBorder: const OutlineInputBorder(
-      borderRadius: BorderRadius.all(Radius.circular(12)),
-      borderSide: BorderSide(color: Color(0xFF7BA238), width: 2.2),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: const BorderRadius.all(Radius.circular(12)),
+      borderSide: BorderSide(color: darkMode ? Colors.greenAccent : const Color(0xFF7BA238), width: 2.2),
     ),
   );
 }
 
 class PlatoEditorPage extends StatefulWidget {
   final Plato plato;
-  const PlatoEditorPage({super.key, required this.plato});
+  final Future<void> Function(Plato)? onSave; // Callback for persistence
+
+  const PlatoEditorPage({super.key, required this.plato, this.onSave});
 
   @override
   State<PlatoEditorPage> createState() => _PlatoEditorPageState();
 }
 
 class _PlatoEditorPageState extends State<PlatoEditorPage> {
-  File? _imagenPlato;
+  XFile? _imagenPlato; // Better for cross-platform
+  String? _imagenUrl; 
+  String? _imagenBlob; 
+  bool _isSaving = false; 
+
   late TextEditingController _nombreController;
   late TextEditingController _precioController;
   late List<String> _ingredientes;
@@ -69,6 +85,9 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
   void initState() {
     super.initState();
     _imagenPlato = widget.plato.imagen;
+    _imagenUrl = widget.plato.imagenUrl;
+    _imagenBlob = widget.plato.imagenBlob;
+
     _nombreController = TextEditingController(text: widget.plato.nombre);
     _precioController = TextEditingController(
       text: widget.plato.precio.toString(),
@@ -89,16 +108,32 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
   }
 
   Future<void> _seleccionarImagen() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    final pickedFile = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800, // Limit size to avoid huge base64 strings
+        maxHeight: 800,
+        imageQuality: 70);
     if (pickedFile != null) {
-      setState(() => _imagenPlato = File(pickedFile.path));
+      setState(() {
+        _imagenPlato = pickedFile;
+        _imagenUrl = null;
+        _imagenBlob = null;
+      });
     }
   }
 
   Future<void> _tomarFoto() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.camera);
+    final pickedFile = await _picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 70);
     if (pickedFile != null) {
-      setState(() => _imagenPlato = File(pickedFile.path));
+      setState(() {
+        _imagenPlato = pickedFile;
+        _imagenUrl = null;
+        _imagenBlob = null;
+      });
     }
   }
 
@@ -155,29 +190,149 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
     );
   }
 
-  void _guardarPlato() {
+  Future<void> _guardarPlato() async {
+    // 1. Prepare data in the object
     widget.plato.nombre = _nombreController.text.trim();
     String precioStr = _precioController.text.trim().replaceAll(',', '.');
     widget.plato.precio = double.tryParse(precioStr) ?? 0.0;
-    widget.plato.imagen = _imagenPlato;
-    widget.plato.ingredientes = _ingredientes;
-    widget.plato.extras = _extras;
-    widget.plato.alergenos = _alergenos;
-    Navigator.pop(context, widget.plato);
+    
+    widget.plato.ingredientes = List.from(_ingredientes);
+    widget.plato.extras = List.from(_extras);
+    widget.plato.alergenos = List.from(_alergenos);
+
+    if (_imagenPlato != null) {
+        // widget.plato.imagen = File(_imagenPlato!.path); // Only if you really need the File object
+        final bytes = await _imagenPlato!.readAsBytes();
+        String base64Image = base64Encode(bytes);
+        widget.plato.imagenBlob = base64Image;
+        widget.plato.imagenUrl = null; 
+    }
+
+    if (widget.onSave != null) {
+      // Save and Stay logic
+      try {
+        setState(() => _isSaving = true);
+        await widget.onSave!(widget.plato);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context).translate('added')),
+              backgroundColor: Colors.green,
+            ),
+          );
+          setState(() {
+            _isSaving = false;
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isSaving = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+          );
+        }
+      }
+    } else {
+      // Traditional Save and Pop logic (for new items)
+      if (!mounted) return;
+      Navigator.pop(context, widget.plato);
+    }
   }
 
   void _cancelar() {
     Navigator.pop(context, null);
   }
 
+  bool get _hasChanges {
+    final nombreChanged = _nombreController.text.trim() != widget.plato.nombre;
+    final precioStr = _precioController.text.trim().replaceAll(',', '.');
+    final precioVal = double.tryParse(precioStr) ?? 0.0;
+    final precioChanged = (precioVal - widget.plato.precio).abs() > 0.01;
+    
+    final imagenChanged = _imagenPlato?.path != widget.plato.imagen?.path;
+    
+    // Comparación de listas (orden y contenido)
+    final ingredientesChanged = !_listEquals(_ingredientes, widget.plato.ingredientes);
+    final extrasChanged = !_listEquals(_extras, widget.plato.extras);
+    final alergenosChanged = !_listEquals(_alergenos, widget.plato.alergenos);
+
+    return !_isSaving && (nombreChanged ||
+        precioChanged ||
+        imagenChanged ||
+        ingredientesChanged ||
+        extrasChanged ||
+        alergenosChanged);
+  }
+
+  bool _listEquals(List<String> list1, List<String> list2) {
+    if (list1.length != list2.length) return false;
+    for (int i = 0; i < list1.length; i++) {
+        if (list1[i] != list2[i]) return false;
+    }
+    return true;
+  }
+  
+  // Helper to build image widget
+  Widget _buildImageWidget(bool darkMode) {
+    if (_imagenPlato != null) {
+      if (kIsWeb) {
+        return Image.network(_imagenPlato!.path, fit: BoxFit.cover);
+      }
+      return Image.file(File(_imagenPlato!.path), fit: BoxFit.cover);
+    } else if (_imagenBlob != null && _imagenBlob!.isNotEmpty) {
+      try {
+        // Handle data:image/png;base64, prefix if present
+        String cleanBase64 = _imagenBlob!;
+        if (cleanBase64.contains(',')) {
+          cleanBase64 = cleanBase64.split(',').last;
+        }
+        Uint8List decoded = base64Decode(cleanBase64);
+        return Image.memory(decoded, fit: BoxFit.cover);
+      } catch (e) {
+        return const Icon(Icons.error);
+      }
+    } else if (_imagenUrl != null && _imagenUrl!.isNotEmpty) {
+      return Image.network(
+        _imagenUrl!,
+        fit: BoxFit.cover,
+        errorBuilder: (ctx, err, stack) => const Icon(Icons.broken_image),
+      );
+    }
+    return Icon(Icons.add_a_photo,
+        size: 50, color: darkMode ? Colors.grey : Colors.black54);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final verde = const Color(0xFF7BA238);
+    // We need to inject VisualSettingsProvider here or reuse the one from context if available
+    // Since this file didn't import it before, I added the import.
+    // If provider is not found, we use defaults.
+    
+    bool darkMode = false;
+    bool colorBlind = false;
+    
+    try {
+        final settings = Provider.of<VisualSettingsProvider>(context);
+        darkMode = settings.darkMode;
+        colorBlind = settings.colorBlindMode;
+    } catch (_) {}
+
+    final primaryColor = colorBlind ? Colors.blue : const Color(0xFF7BA238);
+    final backgroundColor = darkMode ? Colors.black87 : Colors.white;
+    final textColor = darkMode ? Colors.white : Colors.black;
+    final cardColor = darkMode ? Colors.grey[900] : Colors.white;
+
+    // Colores para el botón de guardar (bloqueado vs activo)
+    final saveButtonColor = primaryColor;
+    final saveButtonDisabledColor = darkMode ? Colors.grey[700] : Colors.grey[400];
+    final saveButtonTextColor = Colors.white;
+    final saveButtonDisabledTextColor = darkMode ? Colors.white38 : Colors.black38;
 
     return Scaffold(
+      backgroundColor: backgroundColor,
       appBar: AppBar(
         title: Text(AppLocalizations.of(context).translate('create_edit_dish')),
-        backgroundColor: verde,
+        backgroundColor: primaryColor,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -191,18 +346,15 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
               child: Container(
                 height: 200,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: cardColor,
                   borderRadius: BorderRadius.circular(12),
-                  image: _imagenPlato != null
-                      ? DecorationImage(
-                          image: FileImage(_imagenPlato!),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
+                  border: Border.all(
+                      color: darkMode ? Colors.grey : Colors.transparent),
                 ),
-                child: _imagenPlato == null
-                    ? const Icon(Icons.add_a_photo, size: 50)
-                    : null,
+                child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: _buildImageWidget(darkMode),
+                ),
               ),
             ),
 
@@ -214,9 +366,13 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
                 Expanded(
                   child: TextFormField(
                     controller: _nombreController,
+                    onChanged: (_) => setState(() {}),
+                    style: TextStyle(color: textColor),
                     decoration: loginInputDecoration(
                       "Nombre del plato",
                       Icons.fastfood,
+                      darkMode: darkMode,
+                      iconColor: darkMode ? Colors.white70 : null,
                     ),
                   ),
                 ),
@@ -225,7 +381,14 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
                   child: TextFormField(
                     controller: _precioController,
                     keyboardType: TextInputType.number,
-                    decoration: loginInputDecoration("Precio", Icons.euro),
+                    onChanged: (_) => setState(() {}),
+                    style: TextStyle(color: textColor),
+                    decoration: loginInputDecoration(
+                      "Precio",
+                      Icons.euro,
+                      darkMode: darkMode,
+                      iconColor: darkMode ? Colors.white70 : null,
+                    ),
                   ),
                 ),
               ],
@@ -235,6 +398,7 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
 
             // Alérgenos
             Card(
+              color: cardColor,
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Column(
@@ -244,21 +408,24 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
                         Expanded(
                           child: TextFormField(
                             controller: _alergenoController,
+                            style: TextStyle(color: textColor),
                             decoration: loginInputDecoration(
                               AppLocalizations.of(context).translate('product_default'),
                               Icons.warning,
+                              darkMode: darkMode,
+                              iconColor: darkMode ? Colors.white70 : null,
                             ),
                           ),
                         ),
                         IconButton(
-                          icon: Icon(Icons.add, color: verde),
+                          icon: Icon(Icons.add, color: primaryColor),
                           onPressed: _agregarAlergeno,
                         ),
                       ],
                     ),
                     ..._alergenos.map(
                       (a) => ListTile(
-                        title: Text(a),
+                        title: Text(a, style: TextStyle(color: textColor)),
                         trailing: IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
                           onPressed: () => _confirmarBorrado(a, () {
@@ -276,6 +443,7 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
 
             // Ingredientes
             Card(
+              color: cardColor,
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Column(
@@ -285,21 +453,24 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
                         Expanded(
                           child: TextFormField(
                             controller: _ingredienteController,
+                            style: TextStyle(color: textColor),
                             decoration: loginInputDecoration(
                               AppLocalizations.of(context).translate('product_default'),
                               Icons.restaurant,
+                              darkMode: darkMode,
+                              iconColor: darkMode ? Colors.white70 : null,
                             ),
                           ),
                         ),
                         IconButton(
-                          icon: Icon(Icons.add, color: verde),
+                          icon: Icon(Icons.add, color: primaryColor),
                           onPressed: _agregarIngrediente,
                         ),
                       ],
                     ),
                     ..._ingredientes.map(
                       (i) => ListTile(
-                        title: Text(i),
+                        title: Text(i, style: TextStyle(color: textColor)),
                         trailing: IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
                           onPressed: () => _confirmarBorrado(i, () {
@@ -317,6 +488,7 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
 
             // Extras
             Card(
+              color: cardColor,
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Column(
@@ -326,21 +498,24 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
                         Expanded(
                           child: TextFormField(
                             controller: _extraController,
+                            style: TextStyle(color: textColor),
                             decoration: loginInputDecoration(
                               AppLocalizations.of(context).translate('product_default'),
                               Icons.add_circle_outline,
+                              darkMode: darkMode,
+                              iconColor: darkMode ? Colors.white70 : null,
                             ),
                           ),
                         ),
                         IconButton(
-                          icon: Icon(Icons.add, color: verde),
+                          icon: Icon(Icons.add, color: primaryColor),
                           onPressed: _agregarExtra,
                         ),
                       ],
                     ),
                     ..._extras.map(
                       (e) => ListTile(
-                        title: Text(e),
+                        title: Text(e, style: TextStyle(color: textColor)),
                         trailing: IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
                           onPressed: () => _confirmarBorrado(e, () {
@@ -356,14 +531,16 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
 
             const SizedBox(height: 16),
 
-            // Botones Guardar / Cancelar con texto negro
+            // Botones Guardar / Cancelar
             Row(
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _guardarPlato,
+                    onPressed: _hasChanges ? _guardarPlato : null,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: verde,
+                      backgroundColor: saveButtonColor,
+                      disabledBackgroundColor: saveButtonDisabledColor,
+                      disabledForegroundColor: saveButtonDisabledTextColor,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -371,7 +548,8 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
                     ),
                     child: Text(
                       AppLocalizations.of(context).translate('add'),
-                      style: const TextStyle(color: Colors.black),
+                      style: TextStyle(
+                          color: _hasChanges ? saveButtonTextColor : saveButtonDisabledTextColor),
                     ),
                   ),
                 ),
@@ -388,7 +566,7 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
                     ),
                     child: Text(
                       AppLocalizations.of(context).translate('cancel'),
-                      style: const TextStyle(color: Colors.black),
+                      style: const TextStyle(color: Colors.white),
                     ),
                   ),
                 ),

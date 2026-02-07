@@ -228,219 +228,222 @@ class _ZoneWidgetState extends State<ZoneWidget> {
           ),
 
           if (_isExpanded)
-            SizedBox(
-              height: 400, // Altura fija razonable para contenido interno o usar Constraints
-              child: Container(
-                margin: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.black26),
-                ),
-                padding: const EdgeInsets.all(10),
-                child: Column(
-                  children: [
-                    // Campo para agregar mesa
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _tableController,
-                              decoration: InputDecoration(
-                                hintText: AppLocalizations.of(context).translate('table_name_hint'),
-                                border: OutlineInputBorder(),
-                                prefixIcon: Icon(
-                                  Icons.table_restaurant_outlined,
+          if (_isExpanded)
+            Container(
+              constraints: const BoxConstraints(maxHeight: 400),
+              margin: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: cardColor,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.black26),
+              ),
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Campo para agregar mesa
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _tableController,
+                            decoration: InputDecoration(
+                              hintText: AppLocalizations.of(context)
+                                  .translate('table_name_hint'),
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(
+                                Icons.table_restaurant_outlined,
+                                color: Color(0xFF4A4025),
+                              ),
+                              filled: true,
+                              fillColor: Color(0xFFFFFFFF),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
                                   color: Color(0xFF4A4025),
-                                ),
-                                filled: true,
-                                fillColor: Color(0xFFFFFFFF),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Color(0xFF4A4025),
-                                    width: 1.5,
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Color(0xFF7BA238),
-                                    width: 2.2,
-                                  ),
+                                  width: 1.5,
                                 ),
                               ),
-                              style: TextStyle(color: textColor),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Color(0xFF7BA238),
+                                  width: 2.2,
+                                ),
+                              ),
                             ),
+                            style:
+                                TextStyle(color: Colors.black), // Force input text black as bg is white
                           ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            icon: Icon(Icons.add, color: backgroundColor),
-                            onPressed: _agregarMesa,
-                          ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: Icon(Icons.add, color: backgroundColor),
+                          onPressed: _agregarMesa,
+                        ),
+                      ],
                     ),
+                  ),
 
-                    // Lista de mesas
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: _mesas.length,
-                        itemBuilder: (context, index) {
-                          final mesa = _mesas[index];
-                          return GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => CuentaMesaPage(
-                                    nombreMesa: mesa.name,
-                                    nombreZona: widget.zona.nombre,
+                  // Lista de mesas
+                  Flexible(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: _mesas.length,
+                      itemBuilder: (context, index) {
+                        final mesa = _mesas[index];
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CuentaMesaPage(
+                                  nombreMesa: mesa.name,
+                                  nombreZona: widget.zona.nombre,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(vertical: 6),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: cardColor,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.black26),
+                            ),
+                            child: Row(
+                              mainAxisAlignment:
+                                  MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      mesa.getEstadoBadge(context),
+                                      const SizedBox(width: 10),
+                                      Flexible(
+                                        child: Text(
+                                          mesa.name,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: textColor,
+                                            fontSize: fontSize,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              );
-                            },
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(vertical: 6),
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: cardColor,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: Colors.black26),
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Row(
-                                      children: [
-                                        mesa.getEstadoBadge(context),
-                                        const SizedBox(width: 10),
-                                        Flexible(
-                                          child: Text(
-                                            mesa.name,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: textColor,
-                                              fontSize: fontSize,
-                                            ),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    PopupMenuButton<String>(
+                                      icon: Icon(
+                                        Icons.more_vert,
+                                        color: textColor.withValues(
+                                          alpha: 0.7,
+                                        ),
+                                      ),
+                                      onSelected: (value) {
+                                        _cambiarEstadoMesa(mesa, value);
+                                      },
+                                      itemBuilder: (_) => [
+                                        PopupMenuItem(
+                                          value: 'libre',
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.circle,
+                                                color: settings.colorBlindMode
+                                                    ? Colors.blue
+                                                    : Colors.green,
+                                              ),
+                                              SizedBox(width: 8),
+                                              Text('Libre'),
+                                            ],
+                                          ),
+                                        ),
+                                        PopupMenuItem(
+                                          value: 'reservado',
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.circle,
+                                                color: Colors.orange,
+                                              ),
+                                              SizedBox(width: 8),
+                                              Text('Reservado'),
+                                            ],
+                                          ),
+                                        ),
+                                        PopupMenuItem(
+                                          value: 'ocupado',
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.circle,
+                                                color: settings.colorBlindMode
+                                                    ? Colors.purple
+                                                    : Colors.red,
+                                              ),
+                                              SizedBox(width: 8),
+                                              Text('Ocupado'),
+                                            ],
                                           ),
                                         ),
                                       ],
                                     ),
-                                  ),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      PopupMenuButton<String>(
-                                        icon: Icon(
-                                          Icons.more_vert,
-                                          color: textColor.withValues(
-                                            alpha: 0.7,
-                                          ),
-                                        ),
-                                        onSelected: (value) {
-                                          _cambiarEstadoMesa(mesa, value);
-                                        },
-                                        itemBuilder: (_) => [
-                                          PopupMenuItem(
-                                            value: 'libre',
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.circle,
-                                                  color: settings.colorBlindMode
-                                                      ? Colors.blue
-                                                      : Colors.green,
-                                                ),
-                                                SizedBox(width: 8),
-                                                Text('Libre'),
-                                              ],
-                                            ),
-                                          ),
-                                          PopupMenuItem(
-                                            value: 'reservado',
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.circle,
-                                                  color: Colors.orange,
-                                                ),
-                                                SizedBox(width: 8),
-                                                Text('Reservado'),
-                                              ],
-                                            ),
-                                          ),
-                                          PopupMenuItem(
-                                            value: 'ocupado',
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.circle,
-                                                  color: settings.colorBlindMode
-                                                      ? Colors.purple
-                                                      : Colors.red,
-                                                ),
-                                                SizedBox(width: 8),
-                                                Text('Ocupado'),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.delete_outline,
+                                        color: Colors.red,
                                       ),
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.delete_outline,
-                                          color: Colors.red,
-                                        ),
-                                        onPressed: () {
-                                          showDialog(
-                                            context: context,
-                                            builder: (ctx) => AlertDialog(
-                                              title: const Text(
-                                                'Eliminar mesa',
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (ctx) => AlertDialog(
+                                            title: const Text(
+                                              'Eliminar mesa',
+                                            ),
+                                            content: Text(
+                                              '¿Eliminar "${mesa.name}"?',
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.pop(ctx),
+                                                child: const Text('Cancelar'),
                                               ),
-                                              content: Text(
-                                                '¿Eliminar "${mesa.name}"?',
-                                              ),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () =>
-                                                      Navigator.pop(ctx),
-                                                  child: const Text('Cancelar'),
-                                                ),
-                                                TextButton(
-                                                  onPressed: () {
-                                                    _eliminarMesa(mesa);
-                                                    Navigator.pop(ctx);
-                                                  },
-                                                  child: const Text(
-                                                    'Eliminar',
-                                                    style: TextStyle(
-                                                      color: Colors.red,
-                                                    ),
+                                              TextButton(
+                                                onPressed: () {
+                                                  _eliminarMesa(mesa);
+                                                  Navigator.pop(ctx);
+                                                },
+                                                child: const Text(
+                                                  'Eliminar',
+                                                  style: TextStyle(
+                                                    color: Colors.red,
                                                   ),
                                                 ),
-                                              ],
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                          );
-                        },
-                      ),
+                          ),
+                        );
+                      },
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
         ],

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:io';
+import 'dart:convert';
 import 'package:provider/provider.dart';
 import 'package:log_in/models/plato.dart';
 import '../providers/visual_settings_provider.dart';
@@ -92,7 +95,13 @@ class _CartaPageState extends State<CartaPage> {
               : (precioRaw as num).toDouble();
 
           s.platos.add(
-            Plato(id: p['producto_id'], nombre: p['nombre'], precio: precio),
+            Plato(
+              id: p['producto_id'],
+              nombre: p['nombre'],
+              precio: precio,
+              imagenUrl: p['imagenUrl'],
+              imagenBlob: p['imagenBlob'],
+            ),
           );
         }
         loaded.add(s);
@@ -134,6 +143,39 @@ class _CartaPageState extends State<CartaPage> {
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
       ),
+    );
+  }
+
+  Widget _buildListImage(Plato plato) {
+    if (plato.imagen != null) {
+      if (kIsWeb) {
+        return Image.network(plato.imagen!.path, fit: BoxFit.cover);
+      }
+      return Image.file(File(plato.imagen!.path), fit: BoxFit.cover);
+    } else if (plato.imagenBlob != null && plato.imagenBlob!.isNotEmpty) {
+      try {
+        String cleanBase64 = plato.imagenBlob!;
+        if (cleanBase64.contains(',')) {
+          cleanBase64 = cleanBase64.split(',').last;
+        }
+        return Image.memory(
+          base64Decode(cleanBase64),
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
+        );
+      } catch (e) {
+        return const Icon(Icons.error);
+      }
+    } else if (plato.imagenUrl != null && plato.imagenUrl!.isNotEmpty) {
+      return Image.network(
+        plato.imagenUrl!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
+      );
+    }
+    return Container(
+      color: Colors.grey[300],
+      child: const Icon(Icons.image, color: Colors.black26),
     );
   }
 
@@ -350,6 +392,8 @@ class _CartaPageState extends State<CartaPage> {
                                                   'extras': nuevoPlato.extras,
                                                   'alergenos':
                                                       nuevoPlato.alergenos,
+                                                  'imagenUrl': nuevoPlato.imagenUrl,
+                                                  'imagenBlob': nuevoPlato.imagenBlob,
                                                 };
                                                 final res = await _apiService
                                                     .crearProducto(data);
@@ -391,16 +435,32 @@ class _CartaPageState extends State<CartaPage> {
                                           context,
                                         ),
                                         child: InkWell(
-                                          onTap: () {
-                                            Navigator.push(
+                                          onTap: () async {
+                                            await Navigator.push<Plato>(
                                               context,
                                               MaterialPageRoute(
-                                                builder: (ctx) =>
-                                                    PlatoEditorPage(
-                                                      plato: plato,
-                                                    ),
+                                                builder: (ctx) => PlatoEditorPage(
+                                                  plato: plato,
+                                                  onSave: (platoEditado) async {
+                                                    final data = {
+                                                      'nombre': platoEditado.nombre,
+                                                      'precio': platoEditado.precio,
+                                                      'categoria': {
+                                                        'categoria_id': seccion.id,
+                                                      },
+                                                      'ingredientes': platoEditado.ingredientes,
+                                                      'extras': platoEditado.extras,
+                                                      'alergenos': platoEditado.alergenos,
+                                                      'imagenUrl': platoEditado.imagenUrl,
+                                                      'imagenBlob': platoEditado.imagenBlob,
+                                                    };
+                                                    await _apiService.actualizarProducto(platoEditado.id!, data);
+                                                    setState(() {}); 
+                                                  },
+                                                ),
                                               ),
                                             );
+                                            setState(() {});
                                           },
                                           child: Padding(
                                             padding: const EdgeInsets.all(
@@ -415,46 +475,15 @@ class _CartaPageState extends State<CartaPage> {
                                                 Expanded(
                                                   child: Row(
                                                     children: [
-                                                      if (plato.imagen !=
-                                                          null)
-                                                        ClipRRect(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                8,
-                                                              ),
-                                                          child: Image.file(
-                                                            plato.imagen!,
-                                                            width: 50,
-                                                            height: 50,
-                                                            fit: BoxFit
-                                                                .cover,
-                                                          ),
-                                                        )
-                                                      else
-                                                        Container(
+                                                      ClipRRect(
+                                                        borderRadius: BorderRadius.circular(8),
+                                                        child: SizedBox(
                                                           width: 50,
                                                           height: 50,
-                                                          decoration: BoxDecoration(
-                                                            color: Colors
-                                                                .grey[300],
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  8,
-                                                                ),
-                                                            border: Border.all(
-                                                              color: Colors
-                                                                  .black12,
-                                                            ),
-                                                          ),
-                                                          child: const Icon(
-                                                            Icons.image,
-                                                            color: Colors
-                                                                .black26,
-                                                          ),
+                                                          child: _buildListImage(plato),
                                                         ),
-                                                      const SizedBox(
-                                                        width: 10,
                                                       ),
+                                                      const SizedBox(width: 10),
                                                       Expanded(
                                                         child: Text(
                                                           plato.nombre,
@@ -516,48 +545,48 @@ class _CartaPageState extends State<CartaPage> {
                                                                 child: const Text(
                                                                   "Cancelar",
                                                                 ),
-                                                                ),
-                                                                TextButton(
-                                                                  onPressed: () {
-                                                                    final popContext = ctx;
-                                                                    if (plato.id != null) {
-                                                                      _apiService
-                                                                          .eliminarProducto(
-                                                                            plato.id!,
-                                                                          )
-                                                                          .then((_) {
-                                                                        setState(() {
-                                                                          seccion.platos.remove(plato);
-                                                                        });
-                                                                        // ignore: use_build_context_synchronously
-                                                                        Navigator.of(popContext).pop();
-                                                                      }).catchError(
-                                                                        (e) {
-                                                                          // Error
-                                                                        },
-                                                                      );
-                                                                    } else {
+                                                              ),
+                                                              TextButton(
+                                                                onPressed: () {
+                                                                  final popContext = ctx;
+                                                                  if (plato.id != null) {
+                                                                    _apiService
+                                                                        .eliminarProducto(
+                                                                          plato.id!,
+                                                                        )
+                                                                        .then((_) {
                                                                       setState(() {
                                                                         seccion.platos.remove(plato);
                                                                       });
+                                                                      // ignore: use_build_context_synchronously
                                                                       Navigator.of(popContext).pop();
-                                                                    }
-                                                                  },
-                                                                  child: const Text(
-                                                                    "Eliminar",
-                                                                    style: TextStyle(
-                                                                      color: Colors
-                                                                          .red,
-                                                                    ),
+                                                                    }).catchError(
+                                                                      (e) {
+                                                                        // Error
+                                                                      },
+                                                                    );
+                                                                  } else {
+                                                                    setState(() {
+                                                                      seccion.platos.remove(plato);
+                                                                    });
+                                                                    Navigator.of(popContext).pop();
+                                                                  }
+                                                                },
+                                                                child: const Text(
+                                                                  "Eliminar",
+                                                                  style: TextStyle(
+                                                                    color: Colors
+                                                                        .red,
                                                                   ),
                                                                 ),
-                                                              ],
-                                                            ),
-                                                          );
-                                                        },
-                                                      ),
-                                                    ],
-                                                  ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        );
+                                                      },
+                                                    ),
+                                                  ],
+                                                ),
                                               ],
                                             ),
                                           ),
