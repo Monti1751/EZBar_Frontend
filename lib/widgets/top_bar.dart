@@ -18,7 +18,7 @@ class TopBar extends StatelessWidget {
     final Color textoGeneral = settings.darkMode ? Colors.white : Colors.black;
 
     return Container(
-      height: 55,
+      height: kToolbarHeight, // Estándar de flutter
       color: backgroundColor,
       padding: const EdgeInsets.only(right: 10),
       child: Row(

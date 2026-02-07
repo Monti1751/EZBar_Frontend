@@ -144,16 +144,38 @@ class _MainMenuState extends State<MainMenu> {
                   const SizedBox(height: 10),
                   Expanded(
                     child: _isLoading
-                        ? Center(child: CircularProgressIndicator(color: barraSuperior))
-                        : ListView(
-                            children: zones
-                                .map(
-                                  (z) => ZoneWidget(
-                                    zona: z,
-                                    onDelete: () => _eliminarZona(z),
-                                  ),
-                                )
-                                .toList(),
+                        ? Center(
+                            child: CircularProgressIndicator(color: barraSuperior))
+                        : LayoutBuilder(
+                            builder: (context, constraints) {
+                              if (constraints.maxWidth > 600) {
+                                // Tablet / Desktop -> Grid
+                                return GridView.extent(
+                                  maxCrossAxisExtent: 400,
+                                  childAspectRatio: 1.2,
+                                  mainAxisSpacing: 12,
+                                  crossAxisSpacing: 12,
+                                  children: zones
+                                      .map((z) => ZoneWidget(
+                                            zona: z,
+                                            onDelete: () => _eliminarZona(z),
+                                          ))
+                                      .toList(),
+                                );
+                              } else {
+                                // Mobile -> List
+                                return ListView(
+                                  children: zones
+                                      .map(
+                                        (z) => ZoneWidget(
+                                          zona: z,
+                                          onDelete: () => _eliminarZona(z),
+                                        ),
+                                      )
+                                      .toList(),
+                                );
+                              }
+                            },
                           ),
                   ),
                 ],

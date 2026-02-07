@@ -88,14 +88,24 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
   }
 
   Future<void> _seleccionarImagen() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    final pickedFile = await _picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 85,
+    );
     if (pickedFile != null) {
       setState(() => _imagenPlato = File(pickedFile.path));
     }
   }
 
   Future<void> _tomarFoto() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.camera);
+    final pickedFile = await _picker.pickImage(
+      source: ImageSource.camera,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 85,
+    );
     if (pickedFile != null) {
       setState(() => _imagenPlato = File(pickedFile.path));
     }
@@ -169,6 +179,39 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
     Navigator.pop(context, null);
   }
 
+  bool get _hasChanges {
+    final nombreChanged = _nombreController.text.trim() != widget.plato.nombre;
+    final precioStr = _precioController.text.trim().replaceAll(',', '.');
+    final precioVal = double.tryParse(precioStr) ?? 0.0;
+    final precioChanged = precioVal != widget.plato.precio;
+    
+    // Comparación simple de imágenes por path si son archivos
+    // Nota: widget.plato.imagen puede ser null. _imagenPlato también.
+    // Si la imagen original era null y la nueva es null -> no changed
+    // Si differ -> changed.
+    final imagenChanged = _imagenPlato?.path != widget.plato.imagen?.path;
+
+    // Comparación de listas (orden y contenido)
+    final ingredientesChanged = !_listEquals(_ingredientes, widget.plato.ingredientes);
+    final extrasChanged = !_listEquals(_extras, widget.plato.extras);
+    final alergenosChanged = !_listEquals(_alergenos, widget.plato.alergenos);
+
+    return nombreChanged ||
+        precioChanged ||
+        imagenChanged ||
+        ingredientesChanged ||
+        extrasChanged ||
+        alergenosChanged;
+  }
+
+  bool _listEquals(List<String> list1, List<String> list2) {
+    if (list1.length != list2.length) return false;
+    for (int i = 0; i < list1.length; i++) {
+        if (list1[i] != list2[i]) return false;
+    }
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     final verde = const Color(0xFF7BA238);
@@ -213,6 +256,7 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
                 Expanded(
                   child: TextFormField(
                     controller: _nombreController,
+                    onChanged: (_) => setState(() {}),
                     decoration: loginInputDecoration(
                       "Nombre del plato",
                       Icons.fastfood,
@@ -224,6 +268,7 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
                   child: TextFormField(
                     controller: _precioController,
                     keyboardType: TextInputType.number,
+                    onChanged: (_) => setState(() {}),
                     decoration: loginInputDecoration("Precio", Icons.euro),
                   ),
                 ),
@@ -360,17 +405,19 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _guardarPlato,
+                    onPressed: _hasChanges ? _guardarPlato : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: verde,
+                      disabledBackgroundColor: Colors.grey[300],
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       "Guardar plato",
-                      style: TextStyle(color: Colors.black),
+                      style: TextStyle(
+                          color: _hasChanges ? Colors.black : Colors.grey[600]),
                     ),
                   ),
                 ),

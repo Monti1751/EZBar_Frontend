@@ -229,7 +229,7 @@ class _ZoneWidgetState extends State<ZoneWidget> {
 
           if (_isExpanded)
             SizedBox(
-              height: MediaQuery.of(context).size.height * 0.65,
+              height: 400, // Altura fija razonable para contenido interno o usar Constraints
               child: Container(
                 margin: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
