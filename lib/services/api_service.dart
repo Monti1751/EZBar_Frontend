@@ -7,7 +7,8 @@ class ApiService {
   Future<bool> verificarConexion() async {
     try {
       // print('🔍 Verificando conexión a: https://euphoniously-subpatellar-chandra.ngrok-free.dev');
-      final response = await http.get(Uri.parse('https://euphoniously-subpatellar-chandra.ngrok-free.dev'));
+      final response = await http.get(
+          Uri.parse('https://euphoniously-subpatellar-chandra.ngrok-free.dev'));
       // print('✅ Servidor respondió con status: ${response.statusCode}');
       return response.statusCode == 200 || response.statusCode == 404;
     } catch (e) {
@@ -136,7 +137,8 @@ class ApiService {
   }
 
   // Actualizar producto
-  Future<Map<String, dynamic>> actualizarProducto(int id, Map<String, dynamic> datos) async {
+  Future<Map<String, dynamic>> actualizarProducto(
+      int id, Map<String, dynamic> datos) async {
     try {
       final response = await http.put(
         Uri.parse('${ApiConfig.productos}/$id'),
@@ -413,6 +415,19 @@ class ApiService {
     }
   }
 
+  Future<void> finalizarPedido(int pedidoId) async {
+    try {
+      final response = await http.put(
+        Uri.parse('${ApiConfig.pedidos}/$pedidoId/finalizar'),
+      );
+      if (response.statusCode != 200) {
+        throw Exception('Error al finalizar pedido: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
   // --- Login ---
   Future<Map<String, dynamic>> login(String username, String password) async {
     try {
@@ -438,9 +453,8 @@ class ApiService {
             : 'Credenciales incorrectas';
         throw Exception('Credenciales incorrectas: $serverMsg');
       } else if (response.statusCode == 403) {
-        final serverMsg = response.body.isNotEmpty
-            ? response.body
-            : 'Usuario desactivado';
+        final serverMsg =
+            response.body.isNotEmpty ? response.body : 'Usuario desactivado';
         throw Exception('Usuario desactivado: $serverMsg');
       } else {
         throw Exception(

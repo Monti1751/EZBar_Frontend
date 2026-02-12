@@ -378,6 +378,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
 
                   // === TOTAL ===
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
                         'Total: ${total.toStringAsFixed(2)} €',
@@ -386,6 +387,21 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                           fontWeight: FontWeight.bold,
                           color: textoGeneral,
                         ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => _mostrarConfirmacionFinalizar(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: barraSuperior,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: const Text('Finalizar',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            )),
                       ),
                     ],
                   ),
@@ -396,5 +412,61 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
         ],
       ),
     );
+  }
+
+  void _mostrarConfirmacionFinalizar(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('¿Finalizar cuenta?'),
+        content: const Text(
+            'Esta acción marcará el pedido como pagado y liberará la mesa. ¿Estás seguro?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _finalizarCuenta();
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child:
+                const Text('Finalizar', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _finalizarCuenta() async {
+    if (_detalles.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No hay productos en la cuenta')),
+        );
+      }
+      return;
+    }
+
+    final pedidoId = _detalles[0]['pedido_id'];
+    if (pedidoId != null) {
+      try {
+        await _apiService.finalizarPedido(pedidoId);
+        await _cargarCuenta();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Cuenta finalizada correctamente')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e')),
+          );
+        }
+      }
+    }
   }
 }
