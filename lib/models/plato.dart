@@ -410,7 +410,7 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
                             controller: _alergenoController,
                             style: TextStyle(color: textColor),
                             decoration: loginInputDecoration(
-                              AppLocalizations.of(context).translate('product_default'),
+                              AppLocalizations.of(context).translate('allergens'),
                               Icons.warning,
                               darkMode: darkMode,
                               iconColor: darkMode ? Colors.white70 : null,
@@ -455,7 +455,7 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
                             controller: _ingredienteController,
                             style: TextStyle(color: textColor),
                             decoration: loginInputDecoration(
-                              AppLocalizations.of(context).translate('product_default'),
+                              AppLocalizations.of(context).translate('ingredients'),
                               Icons.restaurant,
                               darkMode: darkMode,
                               iconColor: darkMode ? Colors.white70 : null,
@@ -500,7 +500,7 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
                             controller: _extraController,
                             style: TextStyle(color: textColor),
                             decoration: loginInputDecoration(
-                              AppLocalizations.of(context).translate('product_default'),
+                              AppLocalizations.of(context).translate('extras'),
                               Icons.add_circle_outline,
                               darkMode: darkMode,
                               iconColor: darkMode ? Colors.white70 : null,

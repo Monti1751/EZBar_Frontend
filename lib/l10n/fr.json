@@ -57,5 +57,8 @@
   "add_section": "Ajouter une section...",
   "new_section": "Nouvelle section",
   "section_name_hint": "Nom de la section",
-  "add": "Ajouter"
+  "add": "Ajouter",
+  "allergens": "Allergènes",
+  "ingredients": "Ingrédients",
+  "extras": "Suppléments"
 }

@@ -57,5 +57,8 @@
   "add_section": "Add section...",
   "new_section": "New section",
   "section_name_hint": "Section name",
-  "add": "Add"
+  "add": "Add",
+  "allergens": "Allergens",
+  "ingredients": "Ingredients",
+  "extras": "Extras"
 }

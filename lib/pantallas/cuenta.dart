@@ -42,7 +42,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
           );
           final nombreCoincide =
               (numeroEnNombre.isNotEmpty && numeroStr == numeroEnNombre) ||
-              (m['nombre'] != null && m['nombre'] == widget.nombreMesa);
+                  (m['nombre'] != null && m['nombre'] == widget.nombreMesa);
 
           // Si hay zona especificada, también debe coincidir
           if (widget.nombreZona != null) {
@@ -95,8 +95,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
             // The backend returns 'total_linea' or 'precio_unitario'
             // Try multiple field names for robustness (snake_case vs camelCase)
             // and fallback to nested product price
-            final precio =
-                d['total_linea'] ??
+            final precio = d['total_linea'] ??
                 d['totalLinea'] ??
                 d['precio_unitario'] ??
                 d['precioUnitario'] ??
@@ -150,12 +149,10 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
     final settings = Provider.of<VisualSettingsProvider>(context);
 
     // Colores dinámicos según ajustes
-    final Color fondo = settings.darkMode
-        ? Colors.black
-        : const Color(0xFFECF0D5);
-    final Color barraSuperior = settings.colorBlindMode
-        ? Colors.blue
-        : const Color(0xFF7BA238);
+    final Color fondo =
+        settings.darkMode ? Colors.black : const Color(0xFFECF0D5);
+    final Color barraSuperior =
+        settings.colorBlindMode ? Colors.blue : const Color(0xFF7BA238);
     final Color textoGeneral = settings.darkMode ? Colors.white : Colors.black;
 
     // Nuevo sistema de tamaños (pequeño, mediano, grande)
@@ -165,7 +162,6 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
       key: _scaffoldKey,
       drawer: const SettingsMenu(),
       backgroundColor: fondo,
-
       body: Column(
         children: [
           // === BARRA SUPERIOR ===
@@ -222,9 +218,8 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                   // === LISTA DE DETALLES ===
                   Expanded(
                     child: Card(
-                      color: settings.darkMode
-                          ? Colors.grey[850]
-                          : Colors.white,
+                      color:
+                          settings.darkMode ? Colors.grey[850] : Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -245,26 +240,32 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                                   final producto = item['producto'];
 
                                   // Extraer datos con fallbacks de seguridad y conversión de tipos
-                                  final nombre =
-                                      producto?['nombre'] ??
+                                  final nombre = producto?['nombre'] ??
                                       item['nombre'] ??
                                       'Producto';
-                                  final cantidad = item['cantidad'] ?? 1;
+
+                                  // Asegurar que cantidad sea un entero (puede venir como String "1.00" o double 1.0)
+                                  final cantidadRaw = item['cantidad'] ?? 1;
+                                  final int cantidad = cantidadRaw is String
+                                      ? (double.tryParse(cantidadRaw)
+                                              ?.toInt() ??
+                                          1)
+                                      : (cantidadRaw as num).toInt();
 
                                   // Convertir precio unitario (puede ser String o num)
-                                  final precioRaw =
-                                      producto?['precio'] ??
+                                  final precioRaw = producto?['precio'] ??
                                       item['precio_unitario'] ??
                                       0;
-                                  final precioUnitario = precioRaw is String
-                                      ? (double.tryParse(precioRaw) ?? 0.0)
-                                      : (precioRaw as num).toDouble();
+                                  final double precioUnitario =
+                                      precioRaw is String
+                                          ? (double.tryParse(precioRaw) ?? 0.0)
+                                          : (precioRaw as num).toDouble();
 
                                   // Convertir subtotal (puede ser String o num)
-                                  final subtotalRaw =
-                                      item['total_linea'] ??
+                                  final subtotalRaw = item['total_linea'] ??
                                       (precioUnitario * cantidad);
-                                  final subtotalLinea = subtotalRaw is String
+                                  final double subtotalLinea = subtotalRaw
+                                          is String
                                       ? (double.tryParse(subtotalRaw) ?? 0.0)
                                       : (subtotalRaw as num).toDouble();
 
@@ -295,6 +296,24 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                                     trailing: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
+                                        // Botón de Restar (Eliminar uno)
+                                        IconButton(
+                                          icon: Icon(
+                                            cantidad > 1
+                                                ? Icons.remove_circle_outline
+                                                : Icons.delete_outline,
+                                            color: Colors.red,
+                                          ),
+                                          onPressed: () async {
+                                            final id = item['detalle_id'];
+                                            if (id != null) {
+                                              await _apiService
+                                                  .eliminarDetallePedido(id);
+                                              _cargarCuenta();
+                                            }
+                                          },
+                                        ),
+                                        // Cantidad central (opcional, ya la tienes en el leading, pero aquí queda muy intuitivo)
                                         Text(
                                           "${subtotalLinea.toStringAsFixed(2)} €",
                                           style: TextStyle(
@@ -303,16 +322,19 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                                             fontSize: fontSize,
                                           ),
                                         ),
+                                        // Botón de Sumar (Añadir uno)
                                         IconButton(
                                           icon: const Icon(
-                                            Icons.delete_outline,
-                                            color: Colors.red,
+                                            Icons.add_circle_outline,
+                                            color: Colors.green,
                                           ),
                                           onPressed: () async {
-                                            final id = item['detalle_id'];
-                                            if (id != null) {
+                                            if (_mesaId != null &&
+                                                item['producto_id'] != null) {
                                               await _apiService
-                                                  .eliminarDetallePedido(id);
+                                                  .agregarProductoAMesa(
+                                                      _mesaId!,
+                                                      item['producto_id']);
                                               _cargarCuenta();
                                             }
                                           },
