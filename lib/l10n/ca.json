@@ -57,5 +57,8 @@
   "add_section": "Afegir secció...",
   "new_section": "Nova secció",
   "section_name_hint": "Nom de la secció",
-  "add": "Afegir"
+  "add": "Afegir",
+  "allergens": "Al·lèrgens",
+  "ingredients": "Ingredients",
+  "extras": "Extres"
 }

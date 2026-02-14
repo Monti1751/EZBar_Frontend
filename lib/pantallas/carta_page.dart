@@ -454,7 +454,7 @@ class _CartaPageState extends State<CartaPage> {
                                                       'imagenUrl': platoEditado.imagenUrl,
                                                       'imagenBlob': platoEditado.imagenBlob,
                                                     };
-                                                    await _dataService.actualizarProducto(platoEditado.id!, data);
+                                                    await _apiService.actualizarProducto(platoEditado.id!, data);
                                                     setState(() {}); 
                                                   },
                                                 ),
@@ -551,6 +551,7 @@ class _CartaPageState extends State<CartaPage> {
                                                                   final popContext = ctx;
                                                                   if (plato.id != null) {
                                                                     _dataService
+                                                                    _apiService
                                                                         .eliminarProducto(
                                                                           plato.id!,
                                                                         )
