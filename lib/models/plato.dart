@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:provider/provider.dart';
 import '../providers/visual_settings_provider.dart';
 import '../l10n/app_localizations.dart';
@@ -18,6 +17,8 @@ class Plato {
   List<String> ingredientes;
   List<String> extras;
   List<String> alergenos;
+  String syncStatus; // "pendiente" o "sincronizado"
+  String? localId; // ID temporal para productos creados sin conexión
 
   Plato({
     this.id,
@@ -29,9 +30,43 @@ class Plato {
     List<String>? ingredientes,
     List<String>? extras,
     List<String>? alergenos,
+    this.syncStatus = 'sincronizado',
+    this.localId,
   }) : ingredientes = ingredientes ?? [],
        extras = extras ?? [],
        alergenos = alergenos ?? [];
+
+  // Convertir a Map para SQLite
+  Map<String, dynamic> toMap() {
+    return {
+      if (id != null) 'id': id,
+      'nombre': nombre,
+      'precio': precio,
+      if (imagenBlob != null) 'imagen_blob': imagenBlob,
+      if (imagenUrl != null) 'imagen_url': imagenUrl,
+      'ingredientes': ingredientes.join('|'), // Convertir lista a string separado por |
+      'extras': extras.join('|'),
+      'alergenos': alergenos.join('|'),
+      'sync_status': syncStatus,
+      if (localId != null) 'local_id': localId,
+    };
+  }
+
+  // Crear desde Map de SQLite
+  factory Plato.fromMap(Map<String, dynamic> map) {
+    return Plato(
+      id: map['id'] as int?,
+      nombre: map['nombre'] as String? ?? '',
+      precio: (map['precio'] as num?)?.toDouble() ?? 0.0,
+      imagenBlob: map['imagen_blob'] as String?,
+      imagenUrl: map['imagen_url'] as String?,
+      ingredientes: (map['ingredientes'] as String?)?.split('|').where((s) => s.isNotEmpty).toList() ?? [],
+      extras: (map['extras'] as String?)?.split('|').where((s) => s.isNotEmpty).toList() ?? [],
+      alergenos: (map['alergenos'] as String?)?.split('|').where((s) => s.isNotEmpty).toList() ?? [],
+      syncStatus: map['sync_status'] as String? ?? 'sincronizado',
+      localId: map['local_id'] as String?,
+    );
+  }
 }
 
 /// Helper para InputDecoration consistente

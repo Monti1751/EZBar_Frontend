@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/zona.dart';
 import '../models/mesa.dart';
 import '../providers/visual_settings_provider.dart';
-import '../services/api_service.dart';
+import '../services/hybrid_data_service.dart';
 import '../services/local_storage_service.dart';
 import '../pantallas/cuenta.dart';
 import '../l10n/app_localizations.dart';
@@ -21,7 +21,7 @@ class ZoneWidget extends StatefulWidget {
 class _ZoneWidgetState extends State<ZoneWidget> {
   bool _isExpanded = false;
   final TextEditingController _tableController = TextEditingController();
-  final ApiService _apiService = ApiService();
+  final HybridDataService _dataService = HybridDataService();
   final LocalStorageService _localStorage = LocalStorageService();
   List<Mesa> _mesas = [];
   int _tableCounter = 1;
@@ -40,7 +40,7 @@ class _ZoneWidgetState extends State<ZoneWidget> {
 
   Future<void> _cargarMesasDeZona() async {
     try {
-      final mesas = await _apiService.obtenerMesasPorZona(widget.zona.nombre);
+      final mesas = await _dataService.obtenerMesasPorZona(widget.zona.nombre);
       final deletedIds = await _localStorage.getDeletedTables();
 
       if (mounted) {
@@ -111,7 +111,7 @@ class _ZoneWidgetState extends State<ZoneWidget> {
         'capacidad': nuevaMesa.capacidad,
         'estado': nuevaMesa.estado,
       };
-      final response = await _apiService.crearMesa(mesaData);
+      final response = await _dataService.crearMesa(mesaData);
       if (response['mesa_id'] != null) {
         nuevaMesa.id = response['mesa_id'].toString();
       }
@@ -130,7 +130,7 @@ class _ZoneWidgetState extends State<ZoneWidget> {
   Future<void> _eliminarMesa(Mesa mesa) async {
     try {
       if (mesa.id.isNotEmpty && int.tryParse(mesa.id) != null) {
-        await _apiService.eliminarMesa(int.parse(mesa.id));
+        await _dataService.eliminarMesa(int.parse(mesa.id));
         await _localStorage.addDeletedTable(int.parse(mesa.id));
       }
     } catch (e) {
@@ -153,7 +153,7 @@ class _ZoneWidgetState extends State<ZoneWidget> {
 
     try {
       if (mesa.id.isNotEmpty && int.tryParse(mesa.id) != null) {
-        await _apiService.actualizarMesa(int.parse(mesa.id), {
+        await _dataService.actualizarMesa(int.parse(mesa.id), {
           'estado': mesa.estado,
         });
       }
