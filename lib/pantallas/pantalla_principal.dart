@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'settings_menu.dart';
-import '../services/api_service.dart';
+import '../services/hybrid_data_service.dart';
 import '../services/local_storage_service.dart';
 import '../models/zona.dart';
 import '../providers/visual_settings_provider.dart';
@@ -28,7 +28,7 @@ class MainMenu extends StatefulWidget {
 
 class _MainMenuState extends State<MainMenu> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final ApiService _apiService = ApiService();
+  final HybridDataService _dataService = HybridDataService();
   final LocalStorageService _localStorage = LocalStorageService();
 
   bool _showAddZoneField = false;
@@ -44,7 +44,7 @@ class _MainMenuState extends State<MainMenu> {
 
   Future<void> _cargarZonas() async {
     try {
-      final zonasData = await _apiService.obtenerZonas();
+      final zonasData = await _dataService.obtenerZonas();
       setState(() {
         zones = zonasData.map((z) => Zona.fromJson(z)).toList();
         _isLoading = false;
@@ -63,7 +63,7 @@ class _MainMenuState extends State<MainMenu> {
     if (nombre.trim().isEmpty) return;
 
     try {
-      final response = await _apiService.crearZona({'nombre': nombre});
+      final response = await _dataService.crearZona({'nombre': nombre});
       final nueva = Zona.fromJson(response);
 
       setState(() {
@@ -93,7 +93,7 @@ class _MainMenuState extends State<MainMenu> {
 
   Future<void> _eliminarZona(Zona zona) async {
     try {
-      await _apiService.eliminarZona(zona.nombre);
+      await _dataService.eliminarZona(zona.nombre);
     } catch (_) {}
 
     setState(() => zones.remove(zona));

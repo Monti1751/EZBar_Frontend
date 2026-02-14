@@ -10,6 +10,8 @@ class Mesa {
   String ubicacion;
   int numeroMesa;
   int capacidad;
+  String syncStatus; // "pendiente" o "sincronizado"
+  String? localId; // ID temporal para mesas creadas sin conexión
 
   Mesa({
     required this.id,
@@ -18,6 +20,8 @@ class Mesa {
     required this.numeroMesa,
     required this.capacidad,
     this.estado = "libre",
+    this.syncStatus = "sincronizado",
+    this.localId,
   });
 
   // Convertir desde JSON del backend
@@ -29,6 +33,8 @@ class Mesa {
       numeroMesa: json['numero_mesa'] ?? json['numeroMesa'] ?? json['numero'] ?? 0,
       capacidad: json['capacidad'] ?? 4,
       estado: json['estado'] ?? 'libre',
+      syncStatus: 'sincronizado',
+      localId: json['local_id'] as String?,
     );
   }
 
@@ -42,6 +48,34 @@ class Mesa {
       'capacidad': capacidad,
       'estado': estado,
     };
+  }
+
+  // Convertir a Map para SQLite
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'nombre': name,
+      'ubicacion': ubicacion,
+      'numero_mesa': numeroMesa,
+      'capacidad': capacidad,
+      'estado': estado,
+      'sync_status': syncStatus,
+      if (localId != null) 'local_id': localId,
+    };
+  }
+
+  // Crear desde Map de SQLite
+  factory Mesa.fromMap(Map<String, dynamic> map) {
+    return Mesa(
+      id: map['id']?.toString() ?? '',
+      name: map['nombre'] as String? ?? '',
+      ubicacion: map['ubicacion'] as String? ?? '',
+      numeroMesa: map['numero_mesa'] as int? ?? 0,
+      capacidad: map['capacidad'] as int? ?? 4,
+      estado: map['estado'] as String? ?? 'libre',
+      syncStatus: map['sync_status'] as String? ?? 'sincronizado',
+      localId: map['local_id'] as String?,
+    );
   }
 
   void setEstado(int disposicion) {
