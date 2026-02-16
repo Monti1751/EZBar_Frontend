@@ -8,8 +8,7 @@ class ApiService {
   Future<bool> verificarConexion() async {
     try {
       LoggerService.d('Verificando conexion a base URL');
-      final response = await http.get(
-          Uri.parse('https://euphoniously-subpatellar-chandra.ngrok-free.dev'));
+      final response = await http.get(Uri.parse(ApiConfig.baseUrl));
       LoggerService.i('Servidor respondio con status: ${response.statusCode}');
       return response.statusCode == 200 || response.statusCode == 404;
     } catch (e) {
@@ -140,7 +139,8 @@ class ApiService {
   }
 
   // Actualizar producto
-  Future<Map<String, dynamic>> actualizarProducto(int id, Map<String, dynamic> datos) async {
+  Future<Map<String, dynamic>> actualizarProducto(
+      int id, Map<String, dynamic> datos) async {
     try {
       final response = await http.put(
         Uri.parse('${ApiConfig.productos}/$id'),
