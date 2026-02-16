@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'settings_menu.dart';
 import '../providers/visual_settings_provider.dart';
-import 'package:log_in/pantallas/carta_page.dart'; // 👈 Importamos la pantalla de la carta
+import 'package:log_in/pantallas/carta_page.dart'; 
 import '../services/hybrid_data_service.dart';
 
 class CuentaMesaPage extends StatefulWidget {
@@ -119,7 +119,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
     }
   }
 
-  // 👇 Método para abrir la carta
+  //Método para abrir la carta
   void _abrirCarta() {
     Navigator.push(
       context,
@@ -307,7 +307,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                                           onPressed: () async {
                                             final id = item['detalle_id'];
                                             if (id != null) {
-                                              await _apiService
+                                              await _dataService
                                                   .eliminarDetallePedido(id);
                                               _cargarCuenta();
                                             }
@@ -333,9 +333,10 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                                             if (id != null) {
                                               await _dataService
                                                   .eliminarDetallePedido(id);
+                                            }
                                             if (_mesaId != null &&
                                                 item['producto_id'] != null) {
-                                              await _apiService
+                                              await _dataService
                                                   .agregarProductoAMesa(
                                                       _mesaId!,
                                                       item['producto_id']);
@@ -431,10 +432,16 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              _finalizarCuenta();
-            },
+            onPressed: _mesaId != null
+                ? () async {
+                    // Código corregido
+                    await _dataService.finalizarPedido(_mesaId!);
+                    if (mounted) {
+                      Navigator.of(ctx).pop();
+                      _cargarCuenta();
+                    }
+                  }
+                : null,
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child:
                 const Text('Finalizar', style: TextStyle(color: Colors.white)),
@@ -457,7 +464,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
     final pedidoId = _detalles[0]['pedido_id'];
     if (pedidoId != null) {
       try {
-        await _apiService.finalizarPedido(pedidoId);
+        await _dataService.finalizarPedido(pedidoId);
         await _cargarCuenta();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

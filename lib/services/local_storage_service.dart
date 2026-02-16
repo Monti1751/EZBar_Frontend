@@ -8,6 +8,25 @@ class LocalStorageService {
   static const String _tablesKeyPrefix = 'local_tables_';
   static const String _deletedTablesKey = 'deleted_tables';
   static const String _deletedCategoriesKey = 'deleted_categories';
+  static const String _authTokenKey = 'auth_token';
+  static const String _seccionesKey = 'local_secciones';
+
+  // --- AUTH TOKEN ---
+
+  Future<void> saveAuthToken(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_authTokenKey, token);
+  }
+
+  Future<String?> getAuthToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_authTokenKey);
+  }
+
+  Future<void> clearAuthToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_authTokenKey);
+  }
 
   // --- ZONES ---
 
@@ -112,5 +131,47 @@ class LocalStorageService {
     final prefs = await SharedPreferences.getInstance();
     final List<String> deleted = prefs.getStringList(_deletedCategoriesKey) ?? [];
     return deleted.map((id) => int.tryParse(id)).whereType<int>().toSet();
+  }
+
+  // --- SECCIONES (CATEGORÍAS Y PLATOS) ---
+
+  Future<void> saveSecciones(List<dynamic> secciones) async {
+    final prefs = await SharedPreferences.getInstance();
+    try {
+      final String encodedData = json.encode(secciones.map((s) {
+        return {
+          'id': s.id,
+          'nombre': s.nombre,
+          'isOpen': s.isOpen,
+          'platos': s.platos.map((p) => {
+            'id': p.id,
+            'nombre': p.nombre,
+            'precio': p.precio,
+            'imagenUrl': p.imagenUrl,
+            'imagenBlob': p.imagenBlob,
+          }).toList(),
+        };
+      }).toList());
+      await prefs.setString(_seccionesKey, encodedData);
+    } catch (e) {
+      print('❌ Error guardando secciones: $e');
+    }
+  }
+
+  Future<List<dynamic>> getSecciones() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!prefs.containsKey(_seccionesKey)) return [];
+
+    final String? encodedData = prefs.getString(_seccionesKey);
+    if (encodedData == null) return [];
+
+    try {
+      final List<dynamic> decodedData = json.decode(encodedData);
+      // Retornar como está para compatibilidad con CartaPage
+      return decodedData;
+    } catch (e) {
+      print('❌ Error cargando secciones: $e');
+      return [];
+    }
   }
 }

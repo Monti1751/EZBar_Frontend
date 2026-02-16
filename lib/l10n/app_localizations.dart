@@ -7,14 +7,12 @@ class AppLocalizations {
 
   AppLocalizations(this.locale) {
     _localizationService = LocalizationService();
-    // Asegurar que el servicio tiene el locale correcto
     _localizationService.setLocale(locale);
   }
 
   static AppLocalizations of(BuildContext context) {
     final instance = Localizations.of<AppLocalizations>(context, AppLocalizations);
     if (instance == null) {
-      // Si no hay instancia, crear una nueva con el locale por defecto
       return AppLocalizations(const Locale('es'));
     }
     return instance;

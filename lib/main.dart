@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:io';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'pantallas/pantalla_principal.dart';
 import 'package:provider/provider.dart';
@@ -6,12 +8,25 @@ import 'providers/visual_settings_provider.dart';
 import 'providers/localization_provider.dart';
 import 'providers/sync_provider.dart';
 import 'services/hybrid_data_service.dart';
+import 'services/token_manager.dart';
 import 'l10n/app_localizations.dart';
 import 'services/localization_service.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Inicializar SQLite solo en Desktop (Windows, Linux, macOS)
+  // Inicializar SQLite solo en Desktop (Windows, Linux, macOS)
+  if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  }
+  
   await LocalizationService().init();
+  
+  // Cargar token al iniciar la app
+  await TokenManager().loadToken();
 
   runApp(
     MultiProvider(
@@ -119,8 +134,14 @@ class _LoginPageState extends State<LoginPage> {
             ),
           );
 
-          // Aquí podrías guardar el token si lo necesitas para futuras peticiones
-          // final token = response['data']['token'];
+          // Guardar el token para futuras peticiones
+          final token = response['data']?['token'] ?? response['token'];
+          if (token != null && token.isNotEmpty) {
+            await TokenManager().saveToken(token);
+            print('✅ Token guardado: $token');
+          } else {
+            print('⚠️ No se encontró token en la respuesta: $response');
+          }
 
           if (!mounted) return;
           Navigator.pushReplacement(

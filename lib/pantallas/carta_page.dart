@@ -99,8 +99,8 @@ class _CartaPageState extends State<CartaPage> {
               id: p['producto_id'],
               nombre: p['nombre'],
               precio: precio,
-              imagenUrl: p['imagenUrl'],
-              imagenBlob: p['imagenBlob'],
+              imagenUrl: p['imagen_url'],
+              imagenBlob: p['imagen_blob'],
             ),
           );
         }
@@ -109,8 +109,49 @@ class _CartaPageState extends State<CartaPage> {
       setState(() {
         secciones = loaded;
       });
+      
+      // Guardar en localStorage para uso offline
+      await _localStorage.saveSecciones(loaded);
     } catch (e) {
-      // print("Error loading data: $e");
+      print('❌ Error al cargar datos de carta: $e');
+      
+      // Intenta cargar del almacenamiento local
+      try {
+        final seccionesRawData = await _localStorage.getSecciones();
+        
+        List<Seccion> seccionesLocal = [];
+        for (var data in seccionesRawData) {
+          Seccion s = Seccion(
+            id: data['id'],
+            nombre: data['nombre'],
+          );
+          s.isOpen = data['isOpen'] ?? false;
+          
+          if (data['platos'] != null && data['platos'] is List) {
+            for (var p in data['platos']) {
+              s.platos.add(
+                Plato(
+                  id: p['id'],
+                  nombre: p['nombre'],
+                  precio: (p['precio'] as num).toDouble(),
+                  imagenUrl: p['imagenUrl'],
+                  imagenBlob: p['imagenBlob'],
+                ),
+              );
+            }
+          }
+          seccionesLocal.add(s);
+        }
+        
+        setState(() {
+          secciones = seccionesLocal;
+        });
+      } catch (e2) {
+        print('❌ Error cargando desde localStorage: $e2');
+        setState(() {
+          secciones = [];
+        });
+      }
     }
   }
 
@@ -382,17 +423,9 @@ class _CartaPageState extends State<CartaPage> {
                                               try {
                                                 final data = {
                                                   'nombre': nuevoPlato.nombre,
+                                                  'descripcion': '', // sin descripción por ahora
                                                   'precio': nuevoPlato.precio,
-                                                  'categoria': {
-                                                    'categoria_id':
-                                                        seccion.id,
-                                                  },
-                                                  'ingredientes':
-                                                      nuevoPlato.ingredientes,
-                                                  'extras': nuevoPlato.extras,
-                                                  'alergenos':
-                                                      nuevoPlato.alergenos,
-                                                  'imagenUrl': nuevoPlato.imagenUrl,
+                                                  'categoria_id': seccion.id,
                                                   'imagenBlob': nuevoPlato.imagenBlob,
                                                 };
                                                 final res = await _dataService
@@ -444,18 +477,13 @@ class _CartaPageState extends State<CartaPage> {
                                                   onSave: (platoEditado) async {
                                                     final data = {
                                                       'nombre': platoEditado.nombre,
+                                                      'descripcion': '', // sin descripción por ahora
                                                       'precio': platoEditado.precio,
-                                                      'categoria': {
-                                                        'categoria_id': seccion.id,
-                                                      },
-                                                      'ingredientes': platoEditado.ingredientes,
-                                                      'extras': platoEditado.extras,
-                                                      'alergenos': platoEditado.alergenos,
-                                                      'imagenUrl': platoEditado.imagenUrl,
+                                                      'categoria_id': seccion.id,
                                                       'imagenBlob': platoEditado.imagenBlob,
                                                     };
-                                                    await _apiService.actualizarProducto(platoEditado.id!, data);
-                                                    setState(() {}); 
+                                                    await _dataService.actualizarProducto(platoEditado.id!, data);
+                                                    setState(() {});
                                                   },
                                                 ),
                                               ),
@@ -551,7 +579,6 @@ class _CartaPageState extends State<CartaPage> {
                                                                   final popContext = ctx;
                                                                   if (plato.id != null) {
                                                                     _dataService
-                                                                    _apiService
                                                                         .eliminarProducto(
                                                                           plato.id!,
                                                                         )
