@@ -95,7 +95,8 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final HybridDataService _dataService = HybridDataService(); // Servicio híbrido (API + SQLite)
+  final HybridDataService _dataService =
+      HybridDataService(); // Servicio híbrido (API + SQLite)
 
   @override
   void dispose() {
@@ -137,6 +138,10 @@ class _LoginPageState extends State<LoginPage> {
 
           // Aquí podrías guardar el token si lo necesitas para futuras peticiones
           // final token = response['data']['token'];
+
+          // Cargar datos iniciales en SQLite si es la primera vez o hay conexión
+          if (!mounted) return;
+          Provider.of<SyncProvider>(context, listen: false).loadInitialData();
 
           if (!mounted) return;
           Navigator.pushReplacement(
