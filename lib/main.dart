@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'pantallas/pantalla_principal.dart';
 import 'package:provider/provider.dart';
@@ -10,6 +11,7 @@ import 'services/hybrid_data_service.dart';
 import 'l10n/app_localizations.dart';
 import 'services/localization_service.dart';
 import 'services/logger_service.dart';
+import 'config/app_constants.dart';
 
 import 'dart:io';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -18,7 +20,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Inicializar base de datos para escritorio (Windows/Linux)
-  if (Platform.isWindows || Platform.isLinux) {
+  if (!kIsWeb && (Platform.isWindows || Platform.isLinux)) {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
@@ -73,10 +75,10 @@ class LogIn extends StatelessWidget {
       theme: ThemeData(
         brightness: Brightness.light,
         primarySwatch: Colors.green,
-        scaffoldBackgroundColor: const Color(0xFFECF0D5),
+        scaffoldBackgroundColor: AppConstants.backgroundCream,
         inputDecorationTheme: const InputDecorationTheme(
           filled: true,
-          fillColor: Color(0xFFECF0D5),
+          fillColor: AppConstants.backgroundCream,
         ),
       ),
       darkTheme: ThemeData(
@@ -123,8 +125,8 @@ class _LoginPageState extends State<LoginPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Conectando...'),
-          backgroundColor: Color(0xFF7BA238),
-          duration: Duration(seconds: 1),
+          backgroundColor: AppConstants.primaryGreen,
+          duration: AppConstants.snackBarShort,
         ),
       );
 
@@ -141,7 +143,7 @@ class _LoginPageState extends State<LoginPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('¡Login exitoso!'),
-              backgroundColor: Colors.green,
+              backgroundColor: AppConstants.successColor,
             ),
           );
 
@@ -165,7 +167,7 @@ class _LoginPageState extends State<LoginPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error: ${response['message']}'),
-              backgroundColor: Colors.red,
+              backgroundColor: AppConstants.errorColor,
             ),
           );
         }
@@ -175,7 +177,8 @@ class _LoginPageState extends State<LoginPage> {
         // e.toString() suele ser "Exception: Mensaje"
         final mensaje = e.toString().replaceAll('Exception: ', '');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(mensaje), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text(mensaje), backgroundColor: AppConstants.errorColor),
         );
       }
     }
@@ -194,11 +197,12 @@ class _LoginPageState extends State<LoginPage> {
                 margin: const EdgeInsets.only(top: 90),
                 padding: const EdgeInsets.fromLTRB(24, 80, 24, 24),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF7BA238),
-                  borderRadius: BorderRadius.circular(12),
+                  color: AppConstants.primaryGreen,
+                  borderRadius:
+                      BorderRadius.circular(AppConstants.borderRadiusMedium),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF4A4025).withValues(alpha: 0.2),
+                      color: AppConstants.darkBrown.withValues(alpha: 0.2),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -215,7 +219,7 @@ class _LoginPageState extends State<LoginPage> {
                         style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF4A4025),
+                          color: AppConstants.darkBrown,
                         ),
                       ),
                       const SizedBox(height: 30),
@@ -226,20 +230,22 @@ class _LoginPageState extends State<LoginPage> {
                               .translate('username_hint'),
                           prefixIcon: const Icon(
                             Icons.person_outlined,
-                            color: Color(0xFF4A4025),
+                            color: AppConstants.darkBrown,
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(
+                                AppConstants.borderRadiusMedium),
                             borderSide: const BorderSide(
-                              color: Color(0xFF4A4025),
-                              width: 1.5,
+                              color: AppConstants.darkBrown,
+                              width: AppConstants.borderWidthThin,
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(
+                                AppConstants.borderRadiusMedium),
                             borderSide: const BorderSide(
-                              color: Color(0xFFECF0D5),
-                              width: 2.2,
+                              color: AppConstants.backgroundCream,
+                              width: AppConstants.borderWidthThick,
                             ),
                           ),
                         ),
@@ -264,20 +270,22 @@ class _LoginPageState extends State<LoginPage> {
                               .translate('password_hint'),
                           prefixIcon: const Icon(
                             Icons.lock_outline,
-                            color: Color(0xFF4A4025),
+                            color: AppConstants.darkBrown,
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(
+                                AppConstants.borderRadiusMedium),
                             borderSide: const BorderSide(
-                              color: Color(0xFF4A4025),
-                              width: 1.5,
+                              color: AppConstants.darkBrown,
+                              width: AppConstants.borderWidthThin,
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(
+                                AppConstants.borderRadiusMedium),
                             borderSide: const BorderSide(
-                              color: Color(0xFFECF0D5),
-                              width: 2.2,
+                              color: AppConstants.backgroundCream,
+                              width: AppConstants.borderWidthThick,
                             ),
                           ),
                         ),
@@ -299,17 +307,19 @@ class _LoginPageState extends State<LoginPage> {
                         child: ElevatedButton(
                           onPressed: _login,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF4A4025),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            backgroundColor: AppConstants.darkBrown,
+                            padding: const EdgeInsets.symmetric(
+                                vertical: AppConstants.buttonPaddingVertical),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(
+                                  AppConstants.borderRadiusMedium),
                             ),
                           ),
                           child: Text(
                             AppLocalizations.of(context).translate('login'),
                             style: const TextStyle(
                               fontSize: 18,
-                              color: Color(0xFFECF0D5),
+                              color: AppConstants.backgroundCream,
                             ),
                           ),
                         ),
@@ -320,16 +330,18 @@ class _LoginPageState extends State<LoginPage> {
               ),
               Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFFECF0D5),
+                  color: AppConstants.backgroundCream,
                   shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF4A4025), width: 6),
+                  border: Border.all(
+                      color: AppConstants.darkBrown,
+                      width: AppConstants.logoBorderWidth),
                 ),
                 padding: const EdgeInsets.all(8),
                 child: ClipOval(
                   child: Image.asset(
                     'logo_bueno.PNG',
-                    height: 130,
-                    width: 130,
+                    height: AppConstants.logoSizeLarge,
+                    width: AppConstants.logoSizeLarge,
                     fit: BoxFit.cover,
                   ),
                 ),

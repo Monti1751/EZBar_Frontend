@@ -32,19 +32,21 @@ class Plato {
     List<String>? alergenos,
     this.syncStatus = 'sincronizado',
     this.localId,
-  }) : ingredientes = ingredientes ?? [],
-       extras = extras ?? [],
-       alergenos = alergenos ?? [];
+  })  : ingredientes = ingredientes ?? [],
+        extras = extras ?? [],
+        alergenos = alergenos ?? [];
 
-  // Convertir a Map para SQLite
+  // Convertir a Map para SQLite / JSON
   Map<String, dynamic> toMap() {
     return {
       if (id != null) 'id': id,
+      if (id != null) 'producto_id': id,
       'nombre': nombre,
       'precio': precio,
       if (imagenBlob != null) 'imagen_blob': imagenBlob,
       if (imagenUrl != null) 'imagen_url': imagenUrl,
-      'ingredientes': ingredientes.join('|'), // Convertir lista a string separado por |
+      'ingredientes':
+          ingredientes.join('|'), // Convertir lista a string separado por |
       'extras': extras.join('|'),
       'alergenos': alergenos.join('|'),
       'sync_status': syncStatus,
@@ -52,17 +54,29 @@ class Plato {
     };
   }
 
-  // Crear desde Map de SQLite
+  // Crear desde Map de SQLite / JSON
   factory Plato.fromMap(Map<String, dynamic> map) {
     return Plato(
-      id: map['id'] as int?,
+      id: map['id'] as int? ?? map['producto_id'] as int?,
       nombre: map['nombre'] as String? ?? '',
       precio: (map['precio'] as num?)?.toDouble() ?? 0.0,
       imagenBlob: map['imagen_blob'] as String?,
       imagenUrl: map['imagen_url'] as String?,
-      ingredientes: (map['ingredientes'] as String?)?.split('|').where((s) => s.isNotEmpty).toList() ?? [],
-      extras: (map['extras'] as String?)?.split('|').where((s) => s.isNotEmpty).toList() ?? [],
-      alergenos: (map['alergenos'] as String?)?.split('|').where((s) => s.isNotEmpty).toList() ?? [],
+      ingredientes: (map['ingredientes'] as String?)
+              ?.split('|')
+              .where((s) => s.isNotEmpty)
+              .toList() ??
+          [],
+      extras: (map['extras'] as String?)
+              ?.split('|')
+              .where((s) => s.isNotEmpty)
+              .toList() ??
+          [],
+      alergenos: (map['alergenos'] as String?)
+              ?.split('|')
+              .where((s) => s.isNotEmpty)
+              .toList() ??
+          [],
       syncStatus: map['sync_status'] as String? ?? 'sincronizado',
       localId: map['local_id'] as String?,
     );
@@ -70,7 +84,8 @@ class Plato {
 }
 
 /// Helper para InputDecoration consistente
-InputDecoration loginInputDecoration(String hint, IconData icon, {bool darkMode = false, Color? iconColor}) {
+InputDecoration loginInputDecoration(String hint, IconData icon,
+    {bool darkMode = false, Color? iconColor}) {
   return InputDecoration(
     hintText: hint,
     hintStyle: TextStyle(color: darkMode ? Colors.grey[400] : Colors.grey[600]),
@@ -79,11 +94,14 @@ InputDecoration loginInputDecoration(String hint, IconData icon, {bool darkMode 
     fillColor: darkMode ? Colors.grey[800] : const Color(0xFFFFFFFF),
     enabledBorder: OutlineInputBorder(
       borderRadius: const BorderRadius.all(Radius.circular(12)),
-      borderSide: BorderSide(color: iconColor ?? const Color(0xFF4A4025), width: 1.5),
+      borderSide:
+          BorderSide(color: iconColor ?? const Color(0xFF4A4025), width: 1.5),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: const BorderRadius.all(Radius.circular(12)),
-      borderSide: BorderSide(color: darkMode ? Colors.greenAccent : const Color(0xFF7BA238), width: 2.2),
+      borderSide: BorderSide(
+          color: darkMode ? Colors.greenAccent : const Color(0xFF7BA238),
+          width: 2.2),
     ),
   );
 }
@@ -100,9 +118,9 @@ class PlatoEditorPage extends StatefulWidget {
 
 class _PlatoEditorPageState extends State<PlatoEditorPage> {
   XFile? _imagenPlato; // Better for cross-platform
-  String? _imagenUrl; 
-  String? _imagenBlob; 
-  bool _isSaving = false; 
+  String? _imagenUrl;
+  String? _imagenBlob;
+  bool _isSaving = false;
 
   late TextEditingController _nombreController;
   late TextEditingController _precioController;
@@ -206,8 +224,10 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(AppLocalizations.of(context).translate('confirm_delete_title')),
-        content: Text("${AppLocalizations.of(context).translate('confirm_delete_message')} '$item'?"),
+        title: Text(
+            AppLocalizations.of(context).translate('confirm_delete_title')),
+        content: Text(
+            "${AppLocalizations.of(context).translate('confirm_delete_message')} '$item'?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
@@ -218,7 +238,8 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
               onDelete();
               Navigator.of(ctx).pop();
             },
-            child: Text(AppLocalizations.of(context).translate('delete'), style: const TextStyle(color: Colors.red)),
+            child: Text(AppLocalizations.of(context).translate('delete'),
+                style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -230,17 +251,17 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
     widget.plato.nombre = _nombreController.text.trim();
     String precioStr = _precioController.text.trim().replaceAll(',', '.');
     widget.plato.precio = double.tryParse(precioStr) ?? 0.0;
-    
+
     widget.plato.ingredientes = List.from(_ingredientes);
     widget.plato.extras = List.from(_extras);
     widget.plato.alergenos = List.from(_alergenos);
 
     if (_imagenPlato != null) {
-        // widget.plato.imagen = File(_imagenPlato!.path); // Only if you really need the File object
-        final bytes = await _imagenPlato!.readAsBytes();
-        String base64Image = base64Encode(bytes);
-        widget.plato.imagenBlob = base64Image;
-        widget.plato.imagenUrl = null; 
+      // widget.plato.imagen = File(_imagenPlato!.path); // Only if you really need the File object
+      final bytes = await _imagenPlato!.readAsBytes();
+      String base64Image = base64Encode(bytes);
+      widget.plato.imagenBlob = base64Image;
+      widget.plato.imagenUrl = null;
     }
 
     if (widget.onSave != null) {
@@ -283,30 +304,32 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
     final precioStr = _precioController.text.trim().replaceAll(',', '.');
     final precioVal = double.tryParse(precioStr) ?? 0.0;
     final precioChanged = (precioVal - widget.plato.precio).abs() > 0.01;
-    
+
     final imagenChanged = _imagenPlato?.path != widget.plato.imagen?.path;
-    
+
     // Comparación de listas (orden y contenido)
-    final ingredientesChanged = !_listEquals(_ingredientes, widget.plato.ingredientes);
+    final ingredientesChanged =
+        !_listEquals(_ingredientes, widget.plato.ingredientes);
     final extrasChanged = !_listEquals(_extras, widget.plato.extras);
     final alergenosChanged = !_listEquals(_alergenos, widget.plato.alergenos);
 
-    return !_isSaving && (nombreChanged ||
-        precioChanged ||
-        imagenChanged ||
-        ingredientesChanged ||
-        extrasChanged ||
-        alergenosChanged);
+    return !_isSaving &&
+        (nombreChanged ||
+            precioChanged ||
+            imagenChanged ||
+            ingredientesChanged ||
+            extrasChanged ||
+            alergenosChanged);
   }
 
   bool _listEquals(List<String> list1, List<String> list2) {
     if (list1.length != list2.length) return false;
     for (int i = 0; i < list1.length; i++) {
-        if (list1[i] != list2[i]) return false;
+      if (list1[i] != list2[i]) return false;
     }
     return true;
   }
-  
+
   // Helper to build image widget
   Widget _buildImageWidget(bool darkMode) {
     if (_imagenPlato != null) {
@@ -342,14 +365,14 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
     // We need to inject VisualSettingsProvider here or reuse the one from context if available
     // Since this file didn't import it before, I added the import.
     // If provider is not found, we use defaults.
-    
+
     bool darkMode = false;
     bool colorBlind = false;
-    
+
     try {
-        final settings = Provider.of<VisualSettingsProvider>(context);
-        darkMode = settings.darkMode;
-        colorBlind = settings.colorBlindMode;
+      final settings = Provider.of<VisualSettingsProvider>(context);
+      darkMode = settings.darkMode;
+      colorBlind = settings.colorBlindMode;
     } catch (_) {}
 
     final primaryColor = colorBlind ? Colors.blue : const Color(0xFF7BA238);
@@ -359,9 +382,11 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
 
     // Colores para el botón de guardar (bloqueado vs activo)
     final saveButtonColor = primaryColor;
-    final saveButtonDisabledColor = darkMode ? Colors.grey[700] : Colors.grey[400];
+    final saveButtonDisabledColor =
+        darkMode ? Colors.grey[700] : Colors.grey[400];
     final saveButtonTextColor = Colors.white;
-    final saveButtonDisabledTextColor = darkMode ? Colors.white38 : Colors.black38;
+    final saveButtonDisabledTextColor =
+        darkMode ? Colors.white38 : Colors.black38;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -387,8 +412,8 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
                       color: darkMode ? Colors.grey : Colors.transparent),
                 ),
                 child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: _buildImageWidget(darkMode),
+                  borderRadius: BorderRadius.circular(12),
+                  child: _buildImageWidget(darkMode),
                 ),
               ),
             ),
@@ -445,7 +470,8 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
                             controller: _alergenoController,
                             style: TextStyle(color: textColor),
                             decoration: loginInputDecoration(
-                              AppLocalizations.of(context).translate('allergens'),
+                              AppLocalizations.of(context)
+                                  .translate('allergens'),
                               Icons.warning,
                               darkMode: darkMode,
                               iconColor: darkMode ? Colors.white70 : null,
@@ -490,7 +516,8 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
                             controller: _ingredienteController,
                             style: TextStyle(color: textColor),
                             decoration: loginInputDecoration(
-                              AppLocalizations.of(context).translate('ingredients'),
+                              AppLocalizations.of(context)
+                                  .translate('ingredients'),
                               Icons.restaurant,
                               darkMode: darkMode,
                               iconColor: darkMode ? Colors.white70 : null,
@@ -584,7 +611,9 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
                     child: Text(
                       AppLocalizations.of(context).translate('add'),
                       style: TextStyle(
-                          color: _hasChanges ? saveButtonTextColor : saveButtonDisabledTextColor),
+                          color: _hasChanges
+                              ? saveButtonTextColor
+                              : saveButtonDisabledTextColor),
                     ),
                   ),
                 ),

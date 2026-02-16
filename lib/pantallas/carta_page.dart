@@ -4,26 +4,31 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:provider/provider.dart';
 import 'package:log_in/models/plato.dart';
+import 'package:log_in/models/categoria.dart';
 import '../providers/visual_settings_provider.dart';
 import 'settings_menu.dart';
 import '../services/hybrid_data_service.dart';
 import '../services/local_storage_service.dart';
 import '../l10n/app_localizations.dart';
+import '../config/app_constants.dart';
 
 /// Helper para InputDecoration consistente
 InputDecoration loginInputDecoration(String hint, IconData icon) {
   return InputDecoration(
     hintText: hint,
-    prefixIcon: Icon(icon, color: const Color(0xFF4A4025)),
+    prefixIcon: Icon(icon, color: AppConstants.darkBrown),
     filled: true,
-    fillColor: const Color(0xFFFFFFFF),
+    fillColor: Colors.white,
     enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: Color(0xFF4A4025), width: 1.5),
+      borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+      borderSide: const BorderSide(
+          color: AppConstants.darkBrown, width: AppConstants.borderWidthThin),
     ),
     focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: Color(0xFF7BA238), width: 2.2),
+      borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+      borderSide: const BorderSide(
+          color: AppConstants.primaryGreen,
+          width: AppConstants.borderWidthThick),
     ),
   );
 }
@@ -73,36 +78,25 @@ class _CartaPageState extends State<CartaPage> {
 
       List<Seccion> loaded = [];
       for (var c in cats) {
+        final categoria = Categoria.fromJson(c as Map<String, dynamic>);
+
         // Filtrar categorías eliminadas
-        if (deletedCategoryIds.contains(c['categoria_id'])) {
+        if (deletedCategoryIds.contains(categoria.id)) {
           continue;
         }
 
-        Seccion s = Seccion(id: c['categoria_id'], nombre: c['nombre']);
+        Seccion s = Seccion(id: categoria.id, nombre: categoria.nombre);
         var pList = prods.where((p) {
           if (p['categoria'] != null && p['categoria'] is Map) {
-            return p['categoria']['categoria_id'] == c['categoria_id'];
+            final catId =
+                p['categoria']['id'] ?? p['categoria']['categoria_id'];
+            return catId == categoria.id;
           }
-          // Fallback
           return false;
         });
 
         for (var p in pList) {
-          // Convertir precio (puede ser String o num)
-          final precioRaw = p['precio'];
-          final precio = precioRaw is String
-              ? (double.tryParse(precioRaw) ?? 0.0)
-              : (precioRaw as num).toDouble();
-
-          s.platos.add(
-            Plato(
-              id: p['producto_id'],
-              nombre: p['nombre'],
-              precio: precio,
-              imagenUrl: p['imagenUrl'],
-              imagenBlob: p['imagenBlob'],
-            ),
-          );
+          s.platos.add(Plato.fromMap(p as Map<String, dynamic>));
         }
         loaded.add(s);
       }
@@ -121,7 +115,7 @@ class _CartaPageState extends State<CartaPage> {
     );
     return BoxDecoration(
       color: settings.darkMode ? Colors.grey[850] : Colors.white,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmallMedium),
       border: Border.all(color: Colors.black26),
     );
   }
@@ -142,7 +136,7 @@ class _CartaPageState extends State<CartaPage> {
         content: Text(
             "${AppLocalizations.of(context).translate('added_to_bill')}${plato.nombre}"),
         behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
+        duration: AppConstants.snackBarMedium,
       ),
     );
   }
@@ -185,9 +179,9 @@ class _CartaPageState extends State<CartaPage> {
     final settings = Provider.of<VisualSettingsProvider>(context);
 
     final Color fondo =
-        settings.darkMode ? Colors.black : const Color(0xFFECF0D5);
+        settings.darkMode ? Colors.black : AppConstants.backgroundCream;
     final Color barraSuperior =
-        settings.colorBlindMode ? Colors.blue : const Color(0xFF7BA238);
+        settings.colorBlindMode ? Colors.blue : AppConstants.primaryGreen;
     final Color textoGeneral = settings.darkMode ? Colors.white : Colors.black;
     final double fontSize = settings.currentFontSize;
 
@@ -199,18 +193,21 @@ class _CartaPageState extends State<CartaPage> {
         children: [
           // Barra superior
           Container(
-            height: 55,
+            height: AppConstants.appBarHeight,
             color: barraSuperior,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppConstants.paddingMedium),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 IconButton(
-                  icon: Icon(Icons.arrow_back, color: textoGeneral, size: 28),
+                  icon: Icon(Icons.arrow_back,
+                      color: textoGeneral, size: AppConstants.defaultIconSize),
                   onPressed: () => Navigator.pop(context),
                 ),
                 IconButton(
-                  icon: Icon(Icons.menu, color: textoGeneral, size: 28),
+                  icon: Icon(Icons.menu,
+                      color: textoGeneral, size: AppConstants.defaultIconSize),
                   onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                 ),
               ],
@@ -236,12 +233,13 @@ class _CartaPageState extends State<CartaPage> {
                 final seccion = secciones[index];
                 return Container(
                   margin: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
+                    horizontal: AppConstants.paddingLarge,
+                    vertical: AppConstants.paddingSmall,
                   ),
                   decoration: BoxDecoration(
                     color: barraSuperior,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(
+                        AppConstants.borderRadiusSmallMedium),
                     border: Border.all(color: Colors.black54),
                   ),
                   child: Column(
@@ -336,9 +334,11 @@ class _CartaPageState extends State<CartaPage> {
                         SizedBox(
                           height: MediaQuery.of(context).size.height * 0.65,
                           child: Container(
-                            margin: const EdgeInsets.all(10),
+                            margin: const EdgeInsets.all(
+                                AppConstants.paddingMedium),
                             decoration: _cardDecoration(context),
-                            padding: const EdgeInsets.all(10),
+                            padding: const EdgeInsets.all(
+                                AppConstants.paddingMedium),
                             child: Column(
                               children: [
                                 // Añadir plato (solo nombre) -> abre editor y añade al volver
@@ -353,7 +353,8 @@ class _CartaPageState extends State<CartaPage> {
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
+                                    const SizedBox(
+                                        width: AppConstants.paddingSmall),
                                     IconButton(
                                       icon: const Icon(
                                         Icons.add,
@@ -429,8 +430,9 @@ class _CartaPageState extends State<CartaPage> {
                                       final plato = seccion.platos[platoIndex];
                                       return Container(
                                         margin: const EdgeInsets.symmetric(
-                                          vertical: 6,
-                                          horizontal: 4,
+                                          vertical: AppConstants.paddingXXSmall,
+                                          horizontal:
+                                              AppConstants.paddingXXSmall,
                                         ),
                                         decoration: _cardDecoration(
                                           context,
@@ -478,8 +480,7 @@ class _CartaPageState extends State<CartaPage> {
                                           },
                                           child: Padding(
                                             padding: const EdgeInsets.all(
-                                              12,
-                                            ),
+                                                AppConstants.paddingLarge),
                                             child: Row(
                                               mainAxisAlignment:
                                                   MainAxisAlignment
@@ -490,9 +491,9 @@ class _CartaPageState extends State<CartaPage> {
                                                   child: Row(
                                                     children: [
                                                       ClipRRect(
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(8),
+                                                        borderRadius: BorderRadius
+                                                            .circular(AppConstants
+                                                                .borderRadiusSmall),
                                                         child: SizedBox(
                                                           width: 50,
                                                           height: 50,
@@ -501,7 +502,9 @@ class _CartaPageState extends State<CartaPage> {
                                                                   plato),
                                                         ),
                                                       ),
-                                                      const SizedBox(width: 10),
+                                                      const SizedBox(
+                                                          width: AppConstants
+                                                              .paddingMedium),
                                                       Expanded(
                                                         child: Text(
                                                           plato.nombre,
@@ -645,11 +648,12 @@ class _CartaPageState extends State<CartaPage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: barraSuperior,
                 padding: const EdgeInsets.symmetric(
-                  vertical: 14,
-                  horizontal: 20,
+                  vertical: AppConstants.buttonPaddingVertical,
+                  horizontal: AppConstants.paddingXXLarge,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius:
+                      BorderRadius.circular(AppConstants.borderRadiusMedium),
                 ),
               ),
               icon: const Icon(Icons.add, color: Colors.white),
@@ -688,10 +692,11 @@ class _CartaPageState extends State<CartaPage> {
                             )
                                 .then((nueva) {
                               setState(() {
+                                final cat = Categoria.fromJson(nueva);
                                 secciones.add(
                                   Seccion(
-                                    id: nueva['categoria_id'],
-                                    nombre: nueva['nombre'],
+                                    id: cat.id,
+                                    nombre: cat.nombre,
                                   ),
                                 );
                               });
