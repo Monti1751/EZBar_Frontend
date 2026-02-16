@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'settings_menu.dart';
 import '../providers/visual_settings_provider.dart';
 import 'package:log_in/pantallas/carta_page.dart'; // 👈 Importamos la pantalla de la carta
-import '../services/api_service.dart';
+import '../services/hybrid_data_service.dart';
 
 class CuentaMesaPage extends StatefulWidget {
   final String nombreMesa;
@@ -19,7 +19,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
   double total = 0.0;
   int? _mesaId;
   List<dynamic> _detalles = []; // Lista para guardar los productos
-  final ApiService _apiService = ApiService();
+  final HybridDataService _dataService = HybridDataService();
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -32,7 +32,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
   Future<void> _cargarCuenta() async {
     try {
       if (_mesaId == null) {
-        final mesas = await _apiService.obtenerMesas();
+        final mesas = await _dataService.obtenerMesas();
         final mesaEncontrada = mesas.firstWhere((m) {
           // Primero verificar que coincida el nombre o número
           final numeroStr = m['numero_mesa'].toString();
@@ -59,7 +59,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
       }
 
       if (_mesaId != null) {
-        final pedido = await _apiService.obtenerPedidoActivoMesa(_mesaId!);
+        final pedido = await _dataService.obtenerPedidoActivoMesa(_mesaId!);
         if (pedido != null) {
           // Primero actualizamos el total del pedido
           setState(() {
@@ -84,7 +84,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
 
   Future<void> _cargarDetalles(int pedidoId) async {
     try {
-      final detalles = await _apiService.obtenerDetallesPedido(pedidoId);
+      final detalles = await _dataService.obtenerDetallesPedido(pedidoId);
       setState(() {
         _detalles = detalles;
         // Recalcular total desde detalles para asegurar sincronización
@@ -129,7 +129,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
             if (_mesaId != null && plato.id != null) {
               try {
                 // 1. Llamada al API para persistir el dato
-                await _apiService.agregarProductoAMesa(_mesaId!, plato.id!);
+                await _dataService.agregarProductoAMesa(_mesaId!, plato.id!);
 
                 // 2. Refrescar los datos del servidor para obtener la lista actualizada
                 // con los IDs de detalle correctos y cantidades.
@@ -329,6 +329,10 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                                             color: Colors.green,
                                           ),
                                           onPressed: () async {
+                                            final id = item['detalle_id'];
+                                            if (id != null) {
+                                              await _dataService
+                                                  .eliminarDetallePedido(id);
                                             if (_mesaId != null &&
                                                 item['producto_id'] != null) {
                                               await _apiService

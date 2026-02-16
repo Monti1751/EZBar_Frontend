@@ -5,7 +5,8 @@ import 'pantallas/pantalla_principal.dart';
 import 'package:provider/provider.dart';
 import 'providers/visual_settings_provider.dart';
 import 'providers/localization_provider.dart';
-import 'services/api_service.dart';
+import 'providers/sync_provider.dart';
+import 'services/hybrid_data_service.dart';
 import 'l10n/app_localizations.dart';
 import 'services/localization_service.dart';
 import 'services/logger_service.dart';
@@ -33,6 +34,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => VisualSettingsProvider()),
         ChangeNotifierProvider(create: (_) => LocalizationProvider()),
+        ChangeNotifierProvider(create: (_) => SyncProvider()),
       ],
       child: const LogIn(),
     ),
@@ -93,7 +95,7 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final ApiService _apiService = ApiService(); // Instancia del servicio
+  final HybridDataService _dataService = HybridDataService(); // Servicio híbrido (API + SQLite)
 
   @override
   void dispose() {
@@ -117,7 +119,7 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       try {
-        final response = await _apiService.login(
+        final response = await _dataService.login(
           _usernameController.text,
           _passwordController.text,
         );

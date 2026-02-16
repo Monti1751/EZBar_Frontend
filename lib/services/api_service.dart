@@ -140,8 +140,7 @@ class ApiService {
   }
 
   // Actualizar producto
-  Future<Map<String, dynamic>> actualizarProducto(
-      int id, Map<String, dynamic> datos) async {
+  Future<Map<String, dynamic>> actualizarProducto(int id, Map<String, dynamic> datos) async {
     try {
       final response = await http.put(
         Uri.parse('${ApiConfig.productos}/$id'),

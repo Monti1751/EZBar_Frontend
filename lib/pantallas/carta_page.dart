@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:log_in/models/plato.dart';
 import '../providers/visual_settings_provider.dart';
 import 'settings_menu.dart';
-import '../services/api_service.dart';
+import '../services/hybrid_data_service.dart';
 import '../services/local_storage_service.dart';
 import '../l10n/app_localizations.dart';
 
@@ -52,7 +52,7 @@ class _CartaPageState extends State<CartaPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _seccionController = TextEditingController();
   final TextEditingController _platoController = TextEditingController();
-  final ApiService _apiService = ApiService();
+  final HybridDataService _dataService = HybridDataService();
 
   List<Seccion> secciones = [];
   final LocalStorageService _localStorage = LocalStorageService();
@@ -65,8 +65,8 @@ class _CartaPageState extends State<CartaPage> {
 
   Future<void> _cargarDatos() async {
     try {
-      final cats = await _apiService.obtenerCategorias();
-      final prods = await _apiService.obtenerProductos();
+      final cats = await _dataService.obtenerCategorias();
+      final prods = await _dataService.obtenerProductos();
 
       // Obtener lista negra de categorías eliminadas
       final deletedCategoryIds = await _localStorage.getDeletedCategories();
@@ -283,7 +283,7 @@ class _CartaPageState extends State<CartaPage> {
                                         onPressed: () {
                                           final popContext = ctx;
                                           if (seccion.id != null) {
-                                            _apiService
+                                            _dataService
                                                 .eliminarCategoria(
                                                   seccion.id!,
                                                 )
@@ -395,7 +395,7 @@ class _CartaPageState extends State<CartaPage> {
                                                   'imagenUrl': nuevoPlato.imagenUrl,
                                                   'imagenBlob': nuevoPlato.imagenBlob,
                                                 };
-                                                final res = await _apiService
+                                                final res = await _dataService
                                                     .crearProducto(data);
                                                 nuevoPlato.id =
                                                     res['producto_id'];
@@ -550,6 +550,7 @@ class _CartaPageState extends State<CartaPage> {
                                                                 onPressed: () {
                                                                   final popContext = ctx;
                                                                   if (plato.id != null) {
+                                                                    _dataService
                                                                     _apiService
                                                                         .eliminarProducto(
                                                                           plato.id!,
@@ -647,7 +648,7 @@ class _CartaPageState extends State<CartaPage> {
                         onPressed: () {
                           final popContext = ctx;
                           if (_seccionController.text.isNotEmpty) {
-                            _apiService
+                            _dataService
                                 .crearCategoria(
                                   _seccionController.text,
                                 )
