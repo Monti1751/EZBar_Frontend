@@ -193,10 +193,10 @@ packages:
     dependency: transitive
     description:
       name: image_picker_ios
-      sha256: b9c4a438a9ff4f60808c9cf0039b93a42bb6c2211ef6ebb647394b2b3fa84588
+      sha256: "956c16a42c0c708f914021666ffcd8265dde36e673c9fa68c81f7d085d9774ad"
       url: "https://pub.dev"
     source: hosted
-    version: "0.8.13+6"
+    version: "0.8.13+3"
   image_picker_linux:
     dependency: transitive
     description:
@@ -466,6 +466,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.5.6"
+  sqflite_common_ffi:
+    dependency: "direct main"
+    description:
+      name: sqflite_common_ffi
+      sha256: "8d7b8749a516cbf6e9057f9b480b716ad14fc4f3d3873ca6938919cc626d9025"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.3.7+1"
   sqflite_darwin:
     dependency: transitive
     description:
@@ -482,6 +490,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.4.0"
+  sqlite3:
+    dependency: transitive
+    description:
+      name: sqlite3
+      sha256: "3145bd74dcdb4fd6f5c6dda4d4e4490a8087d7f286a14dee5d37087290f0f8a2"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.9.4"
+  sqlite3_flutter_libs:
+    dependency: "direct main"
+    description:
+      name: sqlite3_flutter_libs
+      sha256: "1e800ebe7f85a80a66adacaa6febe4d5f4d8b75f244e9838a27cb2ffc7aec08d"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.5.41"
   stack_trace:
     dependency: transitive
     description:
@@ -571,5 +595,5 @@ packages:
     source: hosted
     version: "1.1.0"
 sdks:
-  dart: ">=3.10.0 <4.0.0"
-  flutter: ">=3.38.0"
+  dart: ">=3.9.0 <4.0.0"
+  flutter: ">=3.35.0"

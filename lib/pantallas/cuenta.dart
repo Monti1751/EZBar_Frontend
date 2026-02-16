@@ -4,6 +4,7 @@ import 'settings_menu.dart';
 import '../providers/visual_settings_provider.dart';
 import 'package:log_in/pantallas/carta_page.dart'; // 👈 Importamos la pantalla de la carta
 import '../services/hybrid_data_service.dart';
+import '../config/app_constants.dart';
 
 class CuentaMesaPage extends StatefulWidget {
   final String nombreMesa;
@@ -150,9 +151,9 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
 
     // Colores dinámicos según ajustes
     final Color fondo =
-        settings.darkMode ? Colors.black : const Color(0xFFECF0D5);
+        settings.darkMode ? Colors.black : AppConstants.backgroundCream;
     final Color barraSuperior =
-        settings.colorBlindMode ? Colors.blue : const Color(0xFF7BA238);
+        settings.colorBlindMode ? Colors.blue : AppConstants.primaryGreen;
     final Color textoGeneral = settings.darkMode ? Colors.white : Colors.black;
 
     // Nuevo sistema de tamaños (pequeño, mediano, grande)
@@ -166,18 +167,21 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
         children: [
           // === BARRA SUPERIOR ===
           Container(
-            height: 55,
+            height: AppConstants.appBarHeight,
             color: barraSuperior,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppConstants.paddingSmall),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 IconButton(
-                  icon: Icon(Icons.arrow_back, color: textoGeneral, size: 28),
+                  icon: Icon(Icons.arrow_back,
+                      color: textoGeneral, size: AppConstants.defaultIconSize),
                   onPressed: () => Navigator.pop(context),
                 ),
                 IconButton(
-                  icon: Icon(Icons.menu, color: textoGeneral, size: 28),
+                  icon: Icon(Icons.menu,
+                      color: textoGeneral, size: AppConstants.defaultIconSize),
                   onPressed: () {
                     _scaffoldKey.currentState?.openDrawer();
                   },
@@ -195,7 +199,8 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                   Card(
                     color: settings.darkMode ? Colors.grey[850] : Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(
+                          AppConstants.borderRadiusMedium),
                     ),
                     elevation: 4,
                     child: Padding(
@@ -213,7 +218,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                     ),
                   ),
 
-                  const SizedBox(height: 10),
+                  const SizedBox(height: AppConstants.paddingSmall),
 
                   // === LISTA DE DETALLES ===
                   Expanded(
@@ -221,7 +226,8 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                       color:
                           settings.darkMode ? Colors.grey[850] : Colors.white,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(
+                            AppConstants.borderRadiusMedium),
                       ),
                       elevation: 4,
                       child: Padding(
@@ -307,7 +313,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                                           onPressed: () async {
                                             final id = item['detalle_id'];
                                             if (id != null) {
-                                              await _apiService
+                                              await _dataService
                                                   .eliminarDetallePedido(id);
                                               _cargarCuenta();
                                             }
@@ -329,13 +335,9 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                                             color: Colors.green,
                                           ),
                                           onPressed: () async {
-                                            final id = item['detalle_id'];
-                                            if (id != null) {
-                                              await _dataService
-                                                  .eliminarDetallePedido(id);
                                             if (_mesaId != null &&
                                                 item['producto_id'] != null) {
-                                              await _apiService
+                                              await _dataService
                                                   .agregarProductoAMesa(
                                                       _mesaId!,
                                                       item['producto_id']);
@@ -356,11 +358,13 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: barraSuperior,
                                   padding: const EdgeInsets.symmetric(
-                                    vertical: 18,
+                                    vertical:
+                                        AppConstants.buttonPaddingVerticalLarge,
                                     horizontal: 50,
                                   ),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(
+                                        AppConstants.borderRadiusMedium),
                                   ),
                                 ),
                                 child: Text(
@@ -378,7 +382,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: AppConstants.paddingLarge),
 
                   // === TOTAL ===
                   Row(
@@ -397,7 +401,8 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: barraSuperior,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(
+                                AppConstants.borderRadiusMedium),
                           ),
                           elevation: 2,
                         ),
@@ -457,7 +462,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
     final pedidoId = _detalles[0]['pedido_id'];
     if (pedidoId != null) {
       try {
-        await _apiService.finalizarPedido(pedidoId);
+        await _dataService.finalizarPedido(pedidoId);
         await _cargarCuenta();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

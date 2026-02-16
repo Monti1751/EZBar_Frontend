@@ -12,7 +12,7 @@ class Categoria {
   // Convertir desde JSON del backend
   factory Categoria.fromJson(Map<String, dynamic> json) {
     return Categoria(
-      id: json['id'] as int?,
+      id: json['id'] as int? ?? json['categoria_id'] as int?,
       nombre: json['nombre'] as String? ?? '',
       syncStatus: 'sincronizado',
     );
@@ -22,6 +22,7 @@ class Categoria {
   Map<String, dynamic> toJson() {
     return {
       if (id != null) 'id': id,
+      if (id != null) 'categoria_id': id,
       'nombre': nombre,
     };
   }
