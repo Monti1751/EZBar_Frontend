@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'pantallas/pantalla_principal.dart';
@@ -8,9 +9,24 @@ import 'providers/sync_provider.dart';
 import 'services/hybrid_data_service.dart';
 import 'l10n/app_localizations.dart';
 import 'services/localization_service.dart';
+import 'services/logger_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Configurar captura de errores globales de Flutter
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    LoggerService.e('Flutter Error', details.exception, details.stack);
+  };
+
+  // Configurar captura de errores asíncronos fuera de Flutter
+  PlatformDispatcher.instance.onError = (error, stack) {
+    LoggerService.e('Asynchronous Error', error, stack);
+    return true;
+  };
+
+  LoggerService.i('Iniciando aplicacion EZBar...');
   await LocalizationService().init();
 
   runApp(
@@ -192,7 +208,8 @@ class _LoginPageState extends State<LoginPage> {
                       TextFormField(
                         controller: _usernameController,
                         decoration: InputDecoration(
-                          hintText: AppLocalizations.of(context).translate('username_hint'),
+                          hintText: AppLocalizations.of(context)
+                              .translate('username_hint'),
                           prefixIcon: const Icon(
                             Icons.person_outlined,
                             color: Color(0xFF4A4025),
@@ -214,10 +231,12 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return AppLocalizations.of(context).translate('please_enter_username');
+                            return AppLocalizations.of(context)
+                                .translate('please_enter_username');
                           }
                           if (!usernameRegex.hasMatch(value)) {
-                            return AppLocalizations.of(context).translate('invalid_username');
+                            return AppLocalizations.of(context)
+                                .translate('invalid_username');
                           }
                           return null;
                         },
@@ -227,7 +246,8 @@ class _LoginPageState extends State<LoginPage> {
                         controller: _passwordController,
                         obscureText: true,
                         decoration: InputDecoration(
-                          hintText: AppLocalizations.of(context).translate('password_hint'),
+                          hintText: AppLocalizations.of(context)
+                              .translate('password_hint'),
                           prefixIcon: const Icon(
                             Icons.lock_outline,
                             color: Color(0xFF4A4025),
@@ -249,10 +269,12 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return AppLocalizations.of(context).translate('please_enter_password');
+                            return AppLocalizations.of(context)
+                                .translate('please_enter_password');
                           }
                           if (!passwordRegex.hasMatch(value)) {
-                            return AppLocalizations.of(context).translate('password_min_8');
+                            return AppLocalizations.of(context)
+                                .translate('password_min_8');
                           }
                           return null;
                         },

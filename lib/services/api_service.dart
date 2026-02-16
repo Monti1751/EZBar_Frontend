@@ -1,18 +1,19 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
+import 'logger_service.dart';
 
 class ApiService {
   // Health check para verificar si el servidor está activo
   Future<bool> verificarConexion() async {
     try {
-      // print('🔍 Verificando conexión a: https://euphoniously-subpatellar-chandra.ngrok-free.dev');
+      LoggerService.d('Verificando conexion a base URL');
       final response = await http.get(
           Uri.parse('https://euphoniously-subpatellar-chandra.ngrok-free.dev'));
-      // print('✅ Servidor respondió con status: ${response.statusCode}');
+      LoggerService.i('Servidor respondio con status: ${response.statusCode}');
       return response.statusCode == 200 || response.statusCode == 404;
     } catch (e) {
-      // print('❌ No hay conexión: $e');
+      LoggerService.e('No hay conexion', e);
       return false;
     }
   }
@@ -25,27 +26,29 @@ class ApiService {
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {
+        LoggerService.w('Error al cargar mesas: ${response.statusCode}');
         throw Exception('Error al cargar mesas: ${response.statusCode}');
       }
-    } catch (e) {
+    } catch (e, stack) {
+      LoggerService.e('Error de conexión al obtener mesas', e, stack);
       throw Exception('Error de conexión: $e');
     }
   }
 
   Future<List<dynamic>> obtenerZonas() async {
     try {
-      // print('🔌 Intentando conectar a: ${ApiConfig.zonas}');
+      LoggerService.d('Intentando conectar a: ${ApiConfig.zonas}');
       final response = await http.get(Uri.parse(ApiConfig.zonas));
-      // print('📨 Respuesta recibida: ${response.statusCode}');
-      // print('📦 Body: ${response.body}');
+      LoggerService.i('Respuesta recibida: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         return json.decode(response.body); // ✅ Devuelve List<dynamic>
       } else {
+        LoggerService.w('Error HTTP ${response.statusCode}: ${response.body}');
         throw Exception('Error HTTP ${response.statusCode}: ${response.body}');
       }
-    } catch (e) {
-      // print('❌ Error: $e');
+    } catch (e, stack) {
+      LoggerService.e('Error al obtener zonas', e, stack);
       throw Exception('Error de conexión: $e');
     }
   }
@@ -432,8 +435,7 @@ class ApiService {
     try {
       final uri = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
       final body = json.encode({'username': username, 'password': password});
-      // print('🔐 POST $uri');
-      // print('📤 Body: $body');
+      LoggerService.d('Intentando login en $uri');
 
       final response = await http.post(
         uri,
@@ -441,26 +443,31 @@ class ApiService {
         body: body,
       );
 
-      // print('📥 Status: ${response.statusCode}');
-      // print('📥 Response body: ${response.body}');
+      LoggerService.i('Status de login: ${response.statusCode}');
 
       if (response.statusCode == 200) {
+        LoggerService.i('Login exitoso para usuario: $username');
         return json.decode(response.body);
       } else if (response.statusCode == 401) {
+        LoggerService.w('Credenciales incorrectas para: $username');
         final serverMsg = response.body.isNotEmpty
             ? response.body
             : 'Credenciales incorrectas';
         throw Exception('Credenciales incorrectas: $serverMsg');
       } else if (response.statusCode == 403) {
+        LoggerService.w('Usuario desactivado: $username');
         final serverMsg =
             response.body.isNotEmpty ? response.body : 'Usuario desactivado';
         throw Exception('Usuario desactivado: $serverMsg');
       } else {
+        LoggerService.e(
+            'Error de servidor en login (${response.statusCode}): ${response.body}');
         throw Exception(
           'Error en el servidor: ${response.statusCode}: ${response.body}',
         );
       }
-    } catch (e) {
+    } catch (e, stack) {
+      LoggerService.e('Excepción durante proceso de login', e, stack);
       throw Exception('$e'); // Propagar el mensaje de error directamente
     }
   }
