@@ -11,8 +11,17 @@ import 'l10n/app_localizations.dart';
 import 'services/localization_service.dart';
 import 'services/logger_service.dart';
 
+import 'dart:io';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicializar base de datos para escritorio (Windows/Linux)
+  if (Platform.isWindows || Platform.isLinux) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  }
 
   // Configurar captura de errores globales de Flutter
   FlutterError.onError = (details) {
