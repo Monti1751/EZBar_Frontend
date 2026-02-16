@@ -139,7 +139,8 @@ class _CartaPageState extends State<CartaPage> {
     }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text("${AppLocalizations.of(context).translate('added_to_bill')}${plato.nombre}"),
+        content: Text(
+            "${AppLocalizations.of(context).translate('added_to_bill')}${plato.nombre}"),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
       ),
@@ -183,12 +184,10 @@ class _CartaPageState extends State<CartaPage> {
   Widget build(BuildContext context) {
     final settings = Provider.of<VisualSettingsProvider>(context);
 
-    final Color fondo = settings.darkMode
-        ? Colors.black
-        : const Color(0xFFECF0D5);
-    final Color barraSuperior = settings.colorBlindMode
-        ? Colors.blue
-        : const Color(0xFF7BA238);
+    final Color fondo =
+        settings.darkMode ? Colors.black : const Color(0xFFECF0D5);
+    final Color barraSuperior =
+        settings.colorBlindMode ? Colors.blue : const Color(0xFF7BA238);
     final Color textoGeneral = settings.darkMode ? Colors.white : Colors.black;
     final double fontSize = settings.currentFontSize;
 
@@ -222,7 +221,9 @@ class _CartaPageState extends State<CartaPage> {
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: TextField(
-              decoration: loginInputDecoration(AppLocalizations.of(context).translate('search_hint'), Icons.search),
+              decoration: loginInputDecoration(
+                  AppLocalizations.of(context).translate('search_hint'),
+                  Icons.search),
               style: TextStyle(color: textoGeneral, fontSize: fontSize),
             ),
           ),
@@ -277,7 +278,8 @@ class _CartaPageState extends State<CartaPage> {
                                       TextButton(
                                         onPressed: () =>
                                             Navigator.of(ctx).pop(),
-                                        child: Text(AppLocalizations.of(context).translate('cancel')),
+                                        child: Text(AppLocalizations.of(context)
+                                            .translate('cancel')),
                                       ),
                                       TextButton(
                                         onPressed: () {
@@ -285,8 +287,8 @@ class _CartaPageState extends State<CartaPage> {
                                           if (seccion.id != null) {
                                             _dataService
                                                 .eliminarCategoria(
-                                                  seccion.id!,
-                                                )
+                                              seccion.id!,
+                                            )
                                                 .then((_) {
                                               _localStorage.addDeletedCategory(
                                                 seccion.id!,
@@ -330,7 +332,6 @@ class _CartaPageState extends State<CartaPage> {
                           setState(() => seccion.isOpen = !seccion.isOpen);
                         },
                       ),
-
                       if (seccion.isOpen)
                         SizedBox(
                           height: MediaQuery.of(context).size.height * 0.65,
@@ -360,22 +361,21 @@ class _CartaPageState extends State<CartaPage> {
                                       ),
                                       tooltip: "Crear plato",
                                       onPressed: () async {
-                                        final nombre = _platoController.text
-                                            .trim();
+                                        final nombre =
+                                            _platoController.text.trim();
                                         if (nombre.isNotEmpty) {
                                           final nuevoPlato =
                                               await Navigator.push<Plato>(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (ctx) =>
-                                                      PlatoEditorPage(
-                                                        plato: Plato(
-                                                          nombre: nombre,
-                                                          precio: 0.0,
-                                                        ),
-                                                      ),
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (ctx) => PlatoEditorPage(
+                                                plato: Plato(
+                                                  nombre: nombre,
+                                                  precio: 0.0,
                                                 ),
-                                              );
+                                              ),
+                                            ),
+                                          );
 
                                           if (nuevoPlato != null) {
                                             if (seccion.id != null) {
@@ -384,16 +384,17 @@ class _CartaPageState extends State<CartaPage> {
                                                   'nombre': nuevoPlato.nombre,
                                                   'precio': nuevoPlato.precio,
                                                   'categoria': {
-                                                    'categoria_id':
-                                                        seccion.id,
+                                                    'categoria_id': seccion.id,
                                                   },
                                                   'ingredientes':
                                                       nuevoPlato.ingredientes,
                                                   'extras': nuevoPlato.extras,
                                                   'alergenos':
                                                       nuevoPlato.alergenos,
-                                                  'imagenUrl': nuevoPlato.imagenUrl,
-                                                  'imagenBlob': nuevoPlato.imagenBlob,
+                                                  'imagenUrl':
+                                                      nuevoPlato.imagenUrl,
+                                                  'imagenBlob':
+                                                      nuevoPlato.imagenBlob,
                                                 };
                                                 final res = await _dataService
                                                     .crearProducto(data);
@@ -439,23 +440,36 @@ class _CartaPageState extends State<CartaPage> {
                                             await Navigator.push<Plato>(
                                               context,
                                               MaterialPageRoute(
-                                                builder: (ctx) => PlatoEditorPage(
+                                                builder: (ctx) =>
+                                                    PlatoEditorPage(
                                                   plato: plato,
                                                   onSave: (platoEditado) async {
                                                     final data = {
-                                                      'nombre': platoEditado.nombre,
-                                                      'precio': platoEditado.precio,
+                                                      'nombre':
+                                                          platoEditado.nombre,
+                                                      'precio':
+                                                          platoEditado.precio,
                                                       'categoria': {
-                                                        'categoria_id': seccion.id,
+                                                        'categoria_id':
+                                                            seccion.id,
                                                       },
-                                                      'ingredientes': platoEditado.ingredientes,
-                                                      'extras': platoEditado.extras,
-                                                      'alergenos': platoEditado.alergenos,
-                                                      'imagenUrl': platoEditado.imagenUrl,
-                                                      'imagenBlob': platoEditado.imagenBlob,
+                                                      'ingredientes':
+                                                          platoEditado
+                                                              .ingredientes,
+                                                      'extras':
+                                                          platoEditado.extras,
+                                                      'alergenos': platoEditado
+                                                          .alergenos,
+                                                      'imagenUrl': platoEditado
+                                                          .imagenUrl,
+                                                      'imagenBlob': platoEditado
+                                                          .imagenBlob,
                                                     };
-                                                    await _apiService.actualizarProducto(platoEditado.id!, data);
-                                                    setState(() {}); 
+                                                    await _dataService
+                                                        .actualizarProducto(
+                                                            platoEditado.id!,
+                                                            data);
+                                                    setState(() {});
                                                   },
                                                 ),
                                               ),
@@ -476,11 +490,15 @@ class _CartaPageState extends State<CartaPage> {
                                                   child: Row(
                                                     children: [
                                                       ClipRRect(
-                                                        borderRadius: BorderRadius.circular(8),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(8),
                                                         child: SizedBox(
                                                           width: 50,
                                                           height: 50,
-                                                          child: _buildListImage(plato),
+                                                          child:
+                                                              _buildListImage(
+                                                                  plato),
                                                         ),
                                                       ),
                                                       const SizedBox(width: 10),
@@ -488,14 +506,11 @@ class _CartaPageState extends State<CartaPage> {
                                                         child: Text(
                                                           plato.nombre,
                                                           style: TextStyle(
-                                                            fontSize:
-                                                                fontSize,
-                                                            color:
-                                                                textoGeneral,
+                                                            fontSize: fontSize,
+                                                            color: textoGeneral,
                                                           ),
-                                                          overflow:
-                                                              TextOverflow
-                                                                  .ellipsis,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
                                                         ),
                                                       ),
                                                     ],
@@ -508,28 +523,26 @@ class _CartaPageState extends State<CartaPage> {
                                                     IconButton(
                                                       icon: Icon(
                                                         Icons.add_circle,
-                                                        color:
-                                                            barraSuperior,
+                                                        color: barraSuperior,
                                                       ),
                                                       tooltip:
                                                           "Añadir a la cuenta",
                                                       onPressed: () =>
                                                           _addPlatoToCuenta(
-                                                            plato,
-                                                          ),
+                                                        plato,
+                                                      ),
                                                     ),
                                                     IconButton(
                                                       icon: const Icon(
-                                                        Icons
-                                                            .delete_outline,
+                                                        Icons.delete_outline,
                                                         color: Colors.red,
                                                       ),
-                                                      tooltip:
-                                                          "Eliminar plato",
+                                                      tooltip: "Eliminar plato",
                                                       onPressed: () {
                                                         showDialog(
                                                           context: context,
-                                                          builder: (ctx) => AlertDialog(
+                                                          builder: (ctx) =>
+                                                              AlertDialog(
                                                             title: const Text(
                                                               "Confirmar eliminación",
                                                             ),
@@ -539,43 +552,61 @@ class _CartaPageState extends State<CartaPage> {
                                                             actions: [
                                                               TextButton(
                                                                 onPressed: () =>
-                                                                    Navigator.of(
-                                                                      ctx,
-                                                                    ).pop(),
-                                                                child: const Text(
+                                                                    Navigator
+                                                                        .of(
+                                                                  ctx,
+                                                                ).pop(),
+                                                                child:
+                                                                    const Text(
                                                                   "Cancelar",
                                                                 ),
                                                               ),
                                                               TextButton(
                                                                 onPressed: () {
-                                                                  final popContext = ctx;
-                                                                  if (plato.id != null) {
+                                                                  final popContext =
+                                                                      ctx;
+                                                                  if (plato
+                                                                          .id !=
+                                                                      null) {
                                                                     _dataService
-                                                                    _apiService
                                                                         .eliminarProducto(
-                                                                          plato.id!,
-                                                                        )
-                                                                        .then((_) {
-                                                                      setState(() {
-                                                                        seccion.platos.remove(plato);
+                                                                      plato.id!,
+                                                                    )
+                                                                        .then(
+                                                                            (_) {
+                                                                      setState(
+                                                                          () {
+                                                                        seccion
+                                                                            .platos
+                                                                            .remove(plato);
                                                                       });
                                                                       // ignore: use_build_context_synchronously
-                                                                      Navigator.of(popContext).pop();
+                                                                      Navigator.of(
+                                                                              popContext)
+                                                                          .pop();
                                                                     }).catchError(
                                                                       (e) {
                                                                         // Error
                                                                       },
                                                                     );
                                                                   } else {
-                                                                    setState(() {
-                                                                      seccion.platos.remove(plato);
+                                                                    setState(
+                                                                        () {
+                                                                      seccion
+                                                                          .platos
+                                                                          .remove(
+                                                                              plato);
                                                                     });
-                                                                    Navigator.of(popContext).pop();
+                                                                    Navigator.of(
+                                                                            popContext)
+                                                                        .pop();
                                                                   }
                                                                 },
-                                                                child: const Text(
+                                                                child:
+                                                                    const Text(
                                                                   "Eliminar",
-                                                                  style: TextStyle(
+                                                                  style:
+                                                                      TextStyle(
                                                                     color: Colors
                                                                         .red,
                                                                   ),
@@ -631,18 +662,21 @@ class _CartaPageState extends State<CartaPage> {
                 showDialog(
                   context: context,
                   builder: (ctx) => AlertDialog(
-                    title: Text(AppLocalizations.of(context).translate('new_section')),
+                    title: Text(
+                        AppLocalizations.of(context).translate('new_section')),
                     content: TextField(
                       controller: _seccionController,
                       decoration: loginInputDecoration(
-                        AppLocalizations.of(context).translate('section_name_hint'),
+                        AppLocalizations.of(context)
+                            .translate('section_name_hint'),
                         Icons.list,
                       ),
                     ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(ctx),
-                        child: Text(AppLocalizations.of(context).translate('cancel')),
+                        child: Text(
+                            AppLocalizations.of(context).translate('cancel')),
                       ),
                       TextButton(
                         onPressed: () {
@@ -650,8 +684,8 @@ class _CartaPageState extends State<CartaPage> {
                           if (_seccionController.text.isNotEmpty) {
                             _dataService
                                 .crearCategoria(
-                                  _seccionController.text,
-                                )
+                              _seccionController.text,
+                            )
                                 .then((nueva) {
                               setState(() {
                                 secciones.add(
@@ -672,7 +706,8 @@ class _CartaPageState extends State<CartaPage> {
                             Navigator.pop(popContext);
                           }
                         },
-                        child: Text(AppLocalizations.of(context).translate('add')),
+                        child:
+                            Text(AppLocalizations.of(context).translate('add')),
                       ),
                     ],
                   ),

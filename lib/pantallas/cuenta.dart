@@ -307,7 +307,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                                           onPressed: () async {
                                             final id = item['detalle_id'];
                                             if (id != null) {
-                                              await _apiService
+                                              await _dataService
                                                   .eliminarDetallePedido(id);
                                               _cargarCuenta();
                                             }
@@ -329,13 +329,9 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                                             color: Colors.green,
                                           ),
                                           onPressed: () async {
-                                            final id = item['detalle_id'];
-                                            if (id != null) {
-                                              await _dataService
-                                                  .eliminarDetallePedido(id);
                                             if (_mesaId != null &&
                                                 item['producto_id'] != null) {
-                                              await _apiService
+                                              await _dataService
                                                   .agregarProductoAMesa(
                                                       _mesaId!,
                                                       item['producto_id']);
@@ -457,7 +453,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
     final pedidoId = _detalles[0]['pedido_id'];
     if (pedidoId != null) {
       try {
-        await _apiService.finalizarPedido(pedidoId);
+        await _dataService.finalizarPedido(pedidoId);
         await _cargarCuenta();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
