@@ -18,7 +18,7 @@ class HybridDataService {
   Future<List<dynamic>> obtenerMesas() async {
     try {
       final isOnline = await _apiService.verificarConexion();
-      
+
       if (isOnline) {
         try {
           // Intentar obtener desde API
@@ -61,7 +61,7 @@ class HybridDataService {
   Future<List<dynamic>> obtenerMesasPorZona(String nombreZona) async {
     try {
       final isOnline = await _apiService.verificarConexion();
-      
+
       if (isOnline) {
         try {
           final mesas = await _apiService.obtenerMesasPorZona(nombreZona);
@@ -91,7 +91,7 @@ class HybridDataService {
 
   Future<Map<String, dynamic>> crearMesa(Map<String, dynamic> datos) async {
     final isOnline = await _apiService.verificarConexion();
-    
+
     if (isOnline) {
       try {
         final resultado = await _apiService.crearMesa(datos);
@@ -112,17 +112,19 @@ class HybridDataService {
       final mesa = Mesa.fromJson(datos);
       mesa.syncStatus = 'pendiente';
       mesa.localId = DateTime.now().millisecondsSinceEpoch.toString();
-      
+
       await _dbService.insertMesa(mesa);
-      await _dbService.addToSyncQueue('CREATE', 'mesas', json.decode(json.encode(datos)));
-      
+      await _dbService.addToSyncQueue(
+          'CREATE', 'mesas', json.decode(json.encode(datos)));
+
       return mesa.toJson();
     }
   }
 
-  Future<Map<String, dynamic>> actualizarMesa(int mesaId, Map<String, dynamic> datos) async {
+  Future<Map<String, dynamic>> actualizarMesa(
+      int mesaId, Map<String, dynamic> datos) async {
     final isOnline = await _apiService.verificarConexion();
-    
+
     if (isOnline) {
       try {
         final resultado = await _apiService.actualizarMesa(mesaId, datos);
@@ -138,15 +140,16 @@ class HybridDataService {
       datos['sync_status'] = 'pendiente';
       final mesa = Mesa.fromJson(datos);
       await _dbService.updateMesa(mesa);
-      await _dbService.addToSyncQueue('UPDATE', 'mesas', json.decode(json.encode(datos)));
-      
+      await _dbService.addToSyncQueue(
+          'UPDATE', 'mesas', json.decode(json.encode(datos)));
+
       return mesa.toJson();
     }
   }
 
   Future<bool> eliminarMesa(int mesaId) async {
     final isOnline = await _apiService.verificarConexion();
-    
+
     if (isOnline) {
       try {
         final resultado = await _apiService.eliminarMesa(mesaId);
@@ -169,8 +172,9 @@ class HybridDataService {
   Future<List<dynamic>> obtenerZonas() async {
     try {
       final isOnline = await _apiService.verificarConexion();
-      
+
       if (isOnline) {
+<<<<<<< HEAD
         try {
           final zonas = await _apiService.obtenerZonas();
           
@@ -191,6 +195,16 @@ class HybridDataService {
           }
           rethrow;
         }
+=======
+        final zonas = await _apiService.obtenerZonas();
+
+        for (var zonaJson in zonas) {
+          final zona = Zona.fromJson(zonaJson as Map<String, dynamic>);
+          await _dbService.insertZona(zona);
+        }
+
+        return zonas;
+>>>>>>> eaa51ddc53f8c9a4df82ede5db214e5d451dbe4d
       } else {
         // Sin conexión - usar SQLite (solo si no es Web)
         if (!kIsWeb) {
@@ -213,7 +227,7 @@ class HybridDataService {
   Future<List<dynamic>> obtenerProductos() async {
     try {
       final isOnline = await _apiService.verificarConexion();
-      
+
       if (isOnline) {
         try {
           final productos = await _apiService.obtenerProductos();
@@ -254,7 +268,7 @@ class HybridDataService {
 
   Future<Map<String, dynamic>> crearProducto(Map<String, dynamic> datos) async {
     final isOnline = await _apiService.verificarConexion();
-    
+
     if (isOnline) {
       try {
         final resultado = await _apiService.crearProducto(datos);
@@ -269,17 +283,19 @@ class HybridDataService {
       final producto = Plato.fromMap(datos);
       producto.syncStatus = 'pendiente';
       producto.localId = DateTime.now().millisecondsSinceEpoch.toString();
-      
+
       await _dbService.insertProducto(producto);
-      await _dbService.addToSyncQueue('CREATE', 'productos', json.decode(json.encode(datos)));
-      
+      await _dbService.addToSyncQueue(
+          'CREATE', 'productos', json.decode(json.encode(datos)));
+
       return producto.toMap();
     }
   }
 
-  Future<Map<String, dynamic>> actualizarProducto(int id, Map<String, dynamic> datos) async {
+  Future<Map<String, dynamic>> actualizarProducto(
+      int id, Map<String, dynamic> datos) async {
     final isOnline = await _apiService.verificarConexion();
-    
+
     if (isOnline) {
       try {
         final resultado = await _apiService.actualizarProducto(id, datos);
@@ -294,15 +310,16 @@ class HybridDataService {
       datos['sync_status'] = 'pendiente';
       final producto = Plato.fromMap(datos);
       await _dbService.updateProducto(producto);
-      await _dbService.addToSyncQueue('UPDATE', 'productos', json.decode(json.encode(datos)));
-      
+      await _dbService.addToSyncQueue(
+          'UPDATE', 'productos', json.decode(json.encode(datos)));
+
       return producto.toMap();
     }
   }
 
   Future<bool> eliminarProducto(int id) async {
     final isOnline = await _apiService.verificarConexion();
-    
+
     if (isOnline) {
       try {
         final resultado = await _apiService.eliminarProducto(id);
@@ -324,7 +341,7 @@ class HybridDataService {
   Future<List<dynamic>> obtenerCategorias() async {
     try {
       final isOnline = await _apiService.verificarConexion();
-      
+
       if (isOnline) {
         try {
           final categorias = await _apiService.obtenerCategorias();
@@ -365,7 +382,7 @@ class HybridDataService {
 
   Future<Map<String, dynamic>> crearCategoria(String nombre) async {
     final isOnline = await _apiService.verificarConexion();
-    
+
     if (isOnline) {
       try {
         final resultado = await _apiService.crearCategoria(nombre);
@@ -379,15 +396,16 @@ class HybridDataService {
       if (kIsWeb) return {'nombre': nombre};
       final categoria = Categoria(nombre: nombre, syncStatus: 'pendiente');
       await _dbService.insertCategoria(categoria);
-      await _dbService.addToSyncQueue('CREATE', 'categorias', {'nombre': nombre});
-      
+      await _dbService
+          .addToSyncQueue('CREATE', 'categorias', {'nombre': nombre});
+
       return categoria.toJson();
     }
   }
 
   Future<bool> eliminarCategoria(int id) async {
     final isOnline = await _apiService.verificarConexion();
-    
+
     if (isOnline) {
       try {
         final resultado = await _apiService.eliminarCategoria(id);
@@ -410,6 +428,15 @@ class HybridDataService {
     return await _apiService.verificarConexion();
   }
 
+  // Delegar otros métodos directamente al API service
+  Future<Map<String, dynamic>> obtenerEstadisticasZona(String ubicacion) async {
+    return await _apiService.obtenerEstadisticasZona(ubicacion);
+  }
+
+  Future<Map<String, dynamic>> obtenerDatosEstadisticosZona(
+      String ubicacion) async {
+    return await _apiService.obtenerDatosEstadisticosZona(ubicacion);
+  }
   Future<Map<String, dynamic>?> obtenerPedidoActivoMesa(int mesaId) async {
     try {
       final isOnline = await _apiService.verificarConexion();
@@ -573,5 +600,9 @@ class HybridDataService {
 
   Future<Map<String, dynamic>> login(String username, String password) async {
     return await _apiService.login(username, password);
+  }
+
+  Future<void> finalizarPedido(int pedidoId) async {
+    return await _apiService.finalizarPedido(pedidoId);
   }
 }

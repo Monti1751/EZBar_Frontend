@@ -1,7 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
+<<<<<<< HEAD
 import '../services/token_manager.dart';
+=======
+import '../config/app_constants.dart';
+import 'logger_service.dart';
+>>>>>>> eaa51ddc53f8c9a4df82ede5db214e5d451dbe4d
 
 class ApiService {
   final TokenManager _tokenManager = TokenManager();
@@ -22,13 +27,13 @@ class ApiService {
   // Health check para verificar si el servidor está activo
   Future<bool> verificarConexion() async {
     try {
-      // print('🔍 Verificando conexión a: https://euphoniously-subpatellar-chandra.ngrok-free.dev');
-      final response = await http.get(
-          Uri.parse('https://euphoniously-subpatellar-chandra.ngrok-free.dev'));
-      // print('✅ Servidor respondió con status: ${response.statusCode}');
-      return response.statusCode == 200 || response.statusCode == 404;
+      LoggerService.d('Verificando conexion a base URL');
+      final response = await http.get(Uri.parse(ApiConfig.baseUrl));
+      LoggerService.i('Servidor respondio con status: ${response.statusCode}');
+      return response.statusCode == AppConstants.httpOk ||
+          response.statusCode == AppConstants.httpNotFound;
     } catch (e) {
-      // print('❌ No hay conexión: $e');
+      LoggerService.e('No hay conexion', e);
       return false;
     }
   }
@@ -39,31 +44,40 @@ class ApiService {
       final headers = await _getHeaders();
       final response = await http.get(Uri.parse(ApiConfig.mesas), headers: headers);
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == AppConstants.httpOk) {
         return json.decode(response.body);
       } else {
+        LoggerService.w('Error al cargar mesas: ${response.statusCode}');
         throw Exception('Error al cargar mesas: ${response.statusCode}');
       }
-    } catch (e) {
+    } catch (e, stack) {
+      LoggerService.e('Error de conexión al obtener mesas', e, stack);
       throw Exception('Error de conexión: $e');
     }
   }
 
   Future<List<dynamic>> obtenerZonas() async {
     try {
+<<<<<<< HEAD
       // print('🔌 Intentando conectar a: ${ApiConfig.zonas}');
       final headers = await _getHeaders();
       final response = await http.get(Uri.parse(ApiConfig.zonas), headers: headers);
       // print('📨 Respuesta recibida: ${response.statusCode}');
       // print('📦 Body: ${response.body}');
+=======
+      LoggerService.d('Intentando conectar a: ${ApiConfig.zonas}');
+      final response = await http.get(Uri.parse(ApiConfig.zonas));
+      LoggerService.i('Respuesta recibida: ${response.statusCode}');
+>>>>>>> eaa51ddc53f8c9a4df82ede5db214e5d451dbe4d
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == AppConstants.httpOk) {
         return json.decode(response.body); // ✅ Devuelve List<dynamic>
       } else {
+        LoggerService.w('Error HTTP ${response.statusCode}: ${response.body}');
         throw Exception('Error HTTP ${response.statusCode}: ${response.body}');
       }
-    } catch (e) {
-      // print('❌ Error: $e');
+    } catch (e, stack) {
+      LoggerService.e('Error al obtener zonas', e, stack);
       throw Exception('Error de conexión: $e');
     }
   }
@@ -76,7 +90,7 @@ class ApiService {
       final response = await http.get(Uri.parse(ApiConfig.categorias), headers: headers);
       // print('📨 Respuesta recibida: ${response.statusCode}');
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == AppConstants.httpOk) {
         return json.decode(response.body);
       } else {
         throw Exception('Error al cargar categorías: ${response.statusCode}');
@@ -95,7 +109,7 @@ class ApiService {
       final response = await http.get(Uri.parse(ApiConfig.productos), headers: headers);
       // print('📨 Respuesta recibida: ${response.statusCode}');
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == AppConstants.httpOk) {
         return json.decode(response.body);
       } else {
         throw Exception('Error al cargar productos: ${response.statusCode}');
@@ -116,7 +130,8 @@ class ApiService {
         body: json.encode({'nombre': nombre}),
       );
 
-      if (response.statusCode == 201 || response.statusCode == 200) {
+      if (response.statusCode == AppConstants.httpCreated ||
+          response.statusCode == AppConstants.httpOk) {
         return json.decode(response.body);
       } else {
         throw Exception('Error al crear categoría: ${response.statusCode}');
@@ -134,7 +149,7 @@ class ApiService {
         Uri.parse('${ApiConfig.categorias}/$id'),
         headers: headers,
       );
-      return response.statusCode == 200;
+      return response.statusCode == AppConstants.httpOk;
     } catch (e) {
       throw Exception('Error de conexión: $e');
     }
@@ -150,7 +165,8 @@ class ApiService {
         body: json.encode(datos),
       );
 
-      if (response.statusCode == 201 || response.statusCode == 200) {
+      if (response.statusCode == AppConstants.httpCreated ||
+          response.statusCode == AppConstants.httpOk) {
         return json.decode(response.body);
       } else {
         throw Exception('Error al crear producto: ${response.statusCode}');
@@ -161,7 +177,8 @@ class ApiService {
   }
 
   // Actualizar producto
-  Future<Map<String, dynamic>> actualizarProducto(int id, Map<String, dynamic> datos) async {
+  Future<Map<String, dynamic>> actualizarProducto(
+      int id, Map<String, dynamic> datos) async {
     try {
       final headers = await _getHeaders();
       final response = await http.put(
@@ -170,7 +187,7 @@ class ApiService {
         body: json.encode(datos),
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == AppConstants.httpOk) {
         return json.decode(response.body);
       } else {
         throw Exception('Error al actualizar producto: ${response.statusCode}');
@@ -188,7 +205,7 @@ class ApiService {
         Uri.parse('${ApiConfig.productos}/$id'),
         headers: headers,
       );
-      return response.statusCode == 200;
+      return response.statusCode == AppConstants.httpOk;
     } catch (e) {
       throw Exception('Error de conexión: $e');
     }
@@ -207,7 +224,7 @@ class ApiService {
       final response = await http.get(url, headers: headers);
       // print('📨 Respuesta recibida para mesas: ${response.statusCode}');
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == AppConstants.httpOk) {
         // Asegúrate de que el body es una lista JSON, lo cual es lo habitual para colecciones
         return json.decode(response.body);
       } else {
@@ -238,7 +255,7 @@ class ApiService {
       // print('📨 Respuesta recibida: ${response.statusCode}');
       // print('📦 Body: ${response.body}');
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == AppConstants.httpOk) {
         final data = json.decode(response.body);
         // Si el backend devuelve {mesas: [...]} en lugar de [...]
         if (data is Map && data.containsKey('mesas')) {
@@ -267,7 +284,7 @@ class ApiService {
         headers: headers,
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == AppConstants.httpOk) {
         return json.decode(response.body);
       } else {
         throw Exception('Error al cargar estadísticas');
@@ -290,7 +307,7 @@ class ApiService {
         body: json.encode(datos),
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == AppConstants.httpOk) {
         return json.decode(response.body);
       } else {
         throw Exception('Error al actualizar mesa: ${response.statusCode}');
@@ -310,7 +327,8 @@ class ApiService {
         body: json.encode(pedido),
       );
 
-      if (response.statusCode == 201 || response.statusCode == 200) {
+      if (response.statusCode == AppConstants.httpCreated ||
+          response.statusCode == AppConstants.httpOk) {
         return json.decode(response.body);
       } else {
         throw Exception('Error al crear pedido: ${response.statusCode}');
@@ -330,7 +348,8 @@ class ApiService {
         body: json.encode(datos),
       );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      if (response.statusCode == AppConstants.httpOk ||
+          response.statusCode == AppConstants.httpCreated) {
         return json.decode(response.body);
       } else {
         throw Exception('Error al crear mesa: ${response.statusCode}');
@@ -349,7 +368,7 @@ class ApiService {
         headers: headers,
       );
 
-      return response.statusCode == 200;
+      return response.statusCode == AppConstants.httpOk;
     } catch (e) {
       throw Exception('Error de conexión: $e');
     }
@@ -366,7 +385,8 @@ class ApiService {
         body: json.encode(zona),
       );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      if (response.statusCode == AppConstants.httpOk ||
+          response.statusCode == AppConstants.httpCreated) {
         return json.decode(response.body);
       } else {
         throw Exception('Error al crear zona: ${response.statusCode}');
@@ -386,7 +406,7 @@ class ApiService {
         headers: headers,
       );
 
-      return response.statusCode == 200;
+      return response.statusCode == AppConstants.httpOk;
     } catch (e) {
       throw Exception('Error de conexión: $e');
     }
@@ -402,7 +422,7 @@ class ApiService {
         Uri.parse('${ApiConfig.pedidos}/mesa/$mesaId/activo'),
         headers: headers,
       );
-      if (response.statusCode == 200) {
+      if (response.statusCode == AppConstants.httpOk) {
         return json.decode(response.body);
       }
       return null;
@@ -419,7 +439,7 @@ class ApiService {
         Uri.parse('${ApiConfig.pedidos}/$pedidoId/detalles'),
         headers: headers,
       );
-      if (response.statusCode == 200) {
+      if (response.statusCode == AppConstants.httpOk) {
         return json.decode(response.body);
       }
       return [];
@@ -437,7 +457,8 @@ class ApiService {
         headers: headers,
         body: json.encode({'productoId': productoId}),
       );
-      if (response.statusCode != 200 && response.statusCode != 201) {
+      if (response.statusCode != AppConstants.httpOk &&
+          response.statusCode != AppConstants.httpCreated) {
         throw Exception('Error ${response.statusCode}');
       }
     } catch (e) {
@@ -452,7 +473,8 @@ class ApiService {
         Uri.parse('${ApiConfig.pedidos}/detalles/$detalleId'),
         headers: headers,
       );
-      if (response.statusCode != 200 && response.statusCode != 204) {
+      if (response.statusCode != AppConstants.httpOk &&
+          response.statusCode != AppConstants.httpNoContent) {
         throw Exception('Error ${response.statusCode}');
       }
     } catch (e) {
@@ -467,7 +489,7 @@ class ApiService {
         Uri.parse('${ApiConfig.pedidos}/$pedidoId/finalizar'),
         headers: headers,
       );
-      if (response.statusCode != 200) {
+      if (response.statusCode != AppConstants.httpOk) {
         throw Exception('Error al finalizar pedido: ${response.statusCode}');
       }
     } catch (e) {
@@ -480,8 +502,7 @@ class ApiService {
     try {
       final uri = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
       final body = json.encode({'username': username, 'password': password});
-      // print('🔐 POST $uri');
-      // print('📤 Body: $body');
+      LoggerService.d('Intentando login en $uri');
 
       final response = await http.post(
         uri,
@@ -489,26 +510,31 @@ class ApiService {
         body: body,
       );
 
-      // print('📥 Status: ${response.statusCode}');
-      // print('📥 Response body: ${response.body}');
+      LoggerService.i('Status de login: ${response.statusCode}');
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == AppConstants.httpOk) {
+        LoggerService.i('Login exitoso para usuario: $username');
         return json.decode(response.body);
-      } else if (response.statusCode == 401) {
+      } else if (response.statusCode == AppConstants.httpUnauthorized) {
+        LoggerService.w('Credenciales incorrectas para: $username');
         final serverMsg = response.body.isNotEmpty
             ? response.body
             : 'Credenciales incorrectas';
         throw Exception('Credenciales incorrectas: $serverMsg');
-      } else if (response.statusCode == 403) {
+      } else if (response.statusCode == AppConstants.httpForbidden) {
+        LoggerService.w('Usuario desactivado: $username');
         final serverMsg =
             response.body.isNotEmpty ? response.body : 'Usuario desactivado';
         throw Exception('Usuario desactivado: $serverMsg');
       } else {
+        LoggerService.e(
+            'Error de servidor en login (${response.statusCode}): ${response.body}');
         throw Exception(
           'Error en el servidor: ${response.statusCode}: ${response.body}',
         );
       }
-    } catch (e) {
+    } catch (e, stack) {
+      LoggerService.e('Excepción durante proceso de login', e, stack);
       throw Exception('$e'); // Propagar el mensaje de error directamente
     }
   }
