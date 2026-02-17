@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'settings_menu.dart';
 import '../providers/visual_settings_provider.dart';
-import 'package:log_in/pantallas/carta_page.dart'; // 👈 Importamos la pantalla de la carta
+import 'package:log_in/pantallas/carta_page.dart'; 
 import '../services/hybrid_data_service.dart';
 import '../config/app_constants.dart';
 
@@ -120,7 +120,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
     }
   }
 
-  // 👇 Método para abrir la carta
+  //Método para abrir la carta
   void _abrirCarta() {
     Navigator.push(
       context,
@@ -436,10 +436,16 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              _finalizarCuenta();
-            },
+            onPressed: _mesaId != null
+                ? () async {
+                    // Código corregido
+                    await _dataService.finalizarPedido(_mesaId!);
+                    if (mounted) {
+                      Navigator.of(ctx).pop();
+                      _cargarCuenta();
+                    }
+                  }
+                : null,
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child:
                 const Text('Finalizar', style: TextStyle(color: Colors.white)),

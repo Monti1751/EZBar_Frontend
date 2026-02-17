@@ -1,10 +1,26 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
+import '../services/token_manager.dart';
 import '../config/app_constants.dart';
 import 'logger_service.dart';
 
 class ApiService {
+  final TokenManager _tokenManager = TokenManager();
+
+  // Obtener headers con autorización
+  Future<Map<String, String>> _getHeaders() async {
+    final token = await _tokenManager.getToken();
+    final headers = {
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+    if (token != null) {
+      print('📤 Header Authorization: Bearer $token');
+    }
+    return headers;
+  }
+
   // Health check para verificar si el servidor está activo
   Future<bool> verificarConexion() async {
     try {
@@ -22,7 +38,8 @@ class ApiService {
   // Obtener todas las mesas
   Future<List<dynamic>> obtenerMesas() async {
     try {
-      final response = await http.get(Uri.parse(ApiConfig.mesas));
+      final headers = await _getHeaders();
+      final response = await http.get(Uri.parse(ApiConfig.mesas), headers: headers);
 
       if (response.statusCode == AppConstants.httpOk) {
         return json.decode(response.body);
@@ -39,7 +56,8 @@ class ApiService {
   Future<List<dynamic>> obtenerZonas() async {
     try {
       LoggerService.d('Intentando conectar a: ${ApiConfig.zonas}');
-      final response = await http.get(Uri.parse(ApiConfig.zonas));
+      final headers = await _getHeaders();
+      final response = await http.get(Uri.parse(ApiConfig.zonas), headers: headers);
       LoggerService.i('Respuesta recibida: ${response.statusCode}');
 
       if (response.statusCode == AppConstants.httpOk) {
@@ -58,7 +76,8 @@ class ApiService {
   Future<List<dynamic>> obtenerCategorias() async {
     try {
       // print('🔌 Intentando conectar a: ${ApiConfig.categorias}');
-      final response = await http.get(Uri.parse(ApiConfig.categorias));
+      final headers = await _getHeaders();
+      final response = await http.get(Uri.parse(ApiConfig.categorias), headers: headers);
       // print('📨 Respuesta recibida: ${response.statusCode}');
 
       if (response.statusCode == AppConstants.httpOk) {
@@ -76,7 +95,8 @@ class ApiService {
   Future<List<dynamic>> obtenerProductos() async {
     try {
       // print('🔌 Intentando conectar a: ${ApiConfig.productos}');
-      final response = await http.get(Uri.parse(ApiConfig.productos));
+      final headers = await _getHeaders();
+      final response = await http.get(Uri.parse(ApiConfig.productos), headers: headers);
       // print('📨 Respuesta recibida: ${response.statusCode}');
 
       if (response.statusCode == AppConstants.httpOk) {
@@ -93,9 +113,10 @@ class ApiService {
   // Crear categoría
   Future<Map<String, dynamic>> crearCategoria(String nombre) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.post(
         Uri.parse(ApiConfig.categorias),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
         body: json.encode({'nombre': nombre}),
       );
 
@@ -113,8 +134,10 @@ class ApiService {
   // Eliminar categoría
   Future<bool> eliminarCategoria(int id) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.delete(
         Uri.parse('${ApiConfig.categorias}/$id'),
+        headers: headers,
       );
       return response.statusCode == AppConstants.httpOk;
     } catch (e) {
@@ -125,9 +148,10 @@ class ApiService {
   // Crear producto
   Future<Map<String, dynamic>> crearProducto(Map<String, dynamic> datos) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.post(
         Uri.parse(ApiConfig.productos),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
         body: json.encode(datos),
       );
 
@@ -146,9 +170,10 @@ class ApiService {
   Future<Map<String, dynamic>> actualizarProducto(
       int id, Map<String, dynamic> datos) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.put(
         Uri.parse('${ApiConfig.productos}/$id'),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
         body: json.encode(datos),
       );
 
@@ -165,8 +190,10 @@ class ApiService {
   // Eliminar producto
   Future<bool> eliminarProducto(int id) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.delete(
         Uri.parse('${ApiConfig.productos}/$id'),
+        headers: headers,
       );
       return response.statusCode == AppConstants.httpOk;
     } catch (e) {
@@ -183,7 +210,8 @@ class ApiService {
 
     try {
       // print('🔍 Intentando obtener mesas para zona: $nombreZona en $url');
-      final response = await http.get(url);
+      final headers = await _getHeaders();
+      final response = await http.get(url, headers: headers);
       // print('📨 Respuesta recibida para mesas: ${response.statusCode}');
 
       if (response.statusCode == AppConstants.httpOk) {
@@ -211,7 +239,8 @@ class ApiService {
       ).replace(queryParameters: {'ubicacion': ubicacion});
 
       // print('📍 URL generada: $url');
-      final response = await http.get(url);
+      final headers = await _getHeaders();
+      final response = await http.get(url, headers: headers);
 
       // print('📨 Respuesta recibida: ${response.statusCode}');
       // print('📦 Body: ${response.body}');
@@ -239,8 +268,10 @@ class ApiService {
     String ubicacion,
   ) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.get(
         Uri.parse('${ApiConfig.baseUrl}/api/zonas/$ubicacion/stats'),
+        headers: headers,
       );
 
       if (response.statusCode == AppConstants.httpOk) {
@@ -259,9 +290,10 @@ class ApiService {
     Map<String, dynamic> datos,
   ) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.put(
         Uri.parse('${ApiConfig.mesas}/$mesaId'),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
         body: json.encode(datos),
       );
 
@@ -278,9 +310,10 @@ class ApiService {
   // Crear pedido
   Future<Map<String, dynamic>> crearPedido(Map<String, dynamic> pedido) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.post(
         Uri.parse(ApiConfig.pedidos),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
         body: json.encode(pedido),
       );
 
@@ -298,9 +331,10 @@ class ApiService {
   // Crear mesa
   Future<Map<String, dynamic>> crearMesa(Map<String, dynamic> datos) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.post(
         Uri.parse(ApiConfig.mesas),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
         body: json.encode(datos),
       );
 
@@ -318,8 +352,10 @@ class ApiService {
   // Eliminar mesa
   Future<bool> eliminarMesa(int mesaId) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.delete(
         Uri.parse('${ApiConfig.mesas}/$mesaId'),
+        headers: headers,
       );
 
       return response.statusCode == AppConstants.httpOk;
@@ -332,9 +368,10 @@ class ApiService {
   // Mantenerlo por compatibilidad pero podría no usarse
   Future<Map<String, dynamic>> crearZona(Map<String, dynamic> zona) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.post(
         Uri.parse(ApiConfig.zonas),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
         body: json.encode(zona),
       );
 
@@ -353,8 +390,10 @@ class ApiService {
   // Mantenerlo por compatibilidad pero podría no usarse
   Future<bool> eliminarZona(String ubicacion) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.delete(
         Uri.parse('${ApiConfig.zonas}/$ubicacion'),
+        headers: headers,
       );
 
       return response.statusCode == AppConstants.httpOk;
@@ -368,8 +407,10 @@ class ApiService {
   Future<Map<String, dynamic>?> obtenerPedidoActivoMesa(int mesaId) async {
     try {
       // Endpoint aproximado: ajusta según tu backend real
+      final headers = await _getHeaders();
       final response = await http.get(
         Uri.parse('${ApiConfig.pedidos}/mesa/$mesaId/activo'),
+        headers: headers,
       );
       if (response.statusCode == AppConstants.httpOk) {
         return json.decode(response.body);
@@ -383,8 +424,10 @@ class ApiService {
 
   Future<List<dynamic>> obtenerDetallesPedido(int pedidoId) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.get(
         Uri.parse('${ApiConfig.pedidos}/$pedidoId/detalles'),
+        headers: headers,
       );
       if (response.statusCode == AppConstants.httpOk) {
         return json.decode(response.body);
@@ -398,9 +441,10 @@ class ApiService {
 
   Future<void> agregarProductoAMesa(int mesaId, int productoId) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.post(
         Uri.parse('${ApiConfig.pedidos}/mesa/$mesaId/agregar-producto'),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
         body: json.encode({'productoId': productoId}),
       );
       if (response.statusCode != AppConstants.httpOk &&
@@ -414,8 +458,10 @@ class ApiService {
 
   Future<void> eliminarDetallePedido(int detalleId) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.delete(
         Uri.parse('${ApiConfig.pedidos}/detalles/$detalleId'),
+        headers: headers,
       );
       if (response.statusCode != AppConstants.httpOk &&
           response.statusCode != AppConstants.httpNoContent) {
@@ -428,8 +474,10 @@ class ApiService {
 
   Future<void> finalizarPedido(int pedidoId) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.put(
         Uri.parse('${ApiConfig.pedidos}/$pedidoId/finalizar'),
+        headers: headers,
       );
       if (response.statusCode != AppConstants.httpOk) {
         throw Exception('Error al finalizar pedido: ${response.statusCode}');

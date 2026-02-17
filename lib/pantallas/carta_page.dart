@@ -96,15 +96,62 @@ class _CartaPageState extends State<CartaPage> {
         });
 
         for (var p in pList) {
-          s.platos.add(Plato.fromMap(p as Map<String, dynamic>));
+          // Convertir precio (puede ser String o num)
+          final mutableP = Map<String, dynamic>.from(p as Map);
+          final precioRaw = mutableP['precio'];
+          if (precioRaw is String) {
+            mutableP['precio'] = double.tryParse(precioRaw) ?? 0.0;
+          }
+          s.platos.add(Plato.fromMap(mutableP));
         }
         loaded.add(s);
       }
       setState(() {
         secciones = loaded;
       });
+      
+      // Guardar en localStorage para uso offline
+      await _localStorage.saveSecciones(loaded);
     } catch (e) {
-      // print("Error loading data: $e");
+      print('❌ Error al cargar datos de carta: $e');
+      
+      // Intenta cargar del almacenamiento local
+      try {
+        final seccionesRawData = await _localStorage.getSecciones();
+        
+        List<Seccion> seccionesLocal = [];
+        for (var data in seccionesRawData) {
+          Seccion s = Seccion(
+            id: data['id'],
+            nombre: data['nombre'],
+          );
+          s.isOpen = data['isOpen'] ?? false;
+          
+          if (data['platos'] != null && data['platos'] is List) {
+            for (var p in data['platos']) {
+              s.platos.add(
+                Plato(
+                  id: p['id'],
+                  nombre: p['nombre'],
+                  precio: (p['precio'] as num).toDouble(),
+                  imagenUrl: p['imagenUrl'],
+                  imagenBlob: p['imagenBlob'],
+                ),
+              );
+            }
+          }
+          seccionesLocal.add(s);
+        }
+        
+        setState(() {
+          secciones = seccionesLocal;
+        });
+      } catch (e2) {
+        print('❌ Error cargando desde localStorage: $e2');
+        setState(() {
+          secciones = [];
+        });
+      }
     }
   }
 
@@ -383,15 +430,12 @@ class _CartaPageState extends State<CartaPage> {
                                               try {
                                                 final data = {
                                                   'nombre': nuevoPlato.nombre,
+                                                  'descripcion': '', // sin descripción por ahora
                                                   'precio': nuevoPlato.precio,
-                                                  'categoria': {
-                                                    'categoria_id': seccion.id,
-                                                  },
-                                                  'ingredientes':
-                                                      nuevoPlato.ingredientes,
-                                                  'extras': nuevoPlato.extras,
-                                                  'alergenos':
-                                                      nuevoPlato.alergenos,
+                                                  'categoria_id': seccion.id,
+                                                  // 'ingredientes': nuevoPlato.ingredientes,
+                                                  // 'extras': nuevoPlato.extras,
+                                                  // 'alergenos': nuevoPlato.alergenos,
                                                   'imagenUrl':
                                                       nuevoPlato.imagenUrl,
                                                   'imagenBlob':
@@ -451,17 +495,11 @@ class _CartaPageState extends State<CartaPage> {
                                                           platoEditado.nombre,
                                                       'precio':
                                                           platoEditado.precio,
-                                                      'categoria': {
-                                                        'categoria_id':
-                                                            seccion.id,
-                                                      },
-                                                      'ingredientes':
-                                                          platoEditado
-                                                              .ingredientes,
-                                                      'extras':
-                                                          platoEditado.extras,
-                                                      'alergenos': platoEditado
-                                                          .alergenos,
+                                                      'categoria_id':
+                                                          seccion.id,
+                                                      // 'ingredientes': platoEditado.ingredientes,
+                                                      // 'extras': platoEditado.extras,
+                                                      // 'alergenos': platoEditado.alergenos,
                                                       'imagenUrl': platoEditado
                                                           .imagenUrl,
                                                       'imagenBlob': platoEditado

@@ -56,7 +56,8 @@ class SyncService extends ChangeNotifier {
       _isSyncing = true;
       notifyListeners();
 
-      // Obtener operaciones pendientes de la cola
+      // Obtener operaciones pendientes de la cola (solo si no es Web)
+      if (kIsWeb) return;
       final queue = await _dbService.getSyncQueue();
       
       for (var item in queue) {
@@ -72,7 +73,11 @@ class SyncService extends ChangeNotifier {
       }
 
       // Actualizar contador de operaciones pendientes
-      _pendingOperations = await _dbService.getPendingSyncCount();
+      if (!kIsWeb) {
+        _pendingOperations = await _dbService.getPendingSyncCount();
+      } else {
+        _pendingOperations = 0;
+      }
       _lastSyncTime = DateTime.now();
       
     } finally {
@@ -190,30 +195,38 @@ class SyncService extends ChangeNotifier {
     try {
       // Cargar mesas
       final mesas = await _apiService.obtenerMesas();
-      for (var mesaJson in mesas) {
-        final mesa = Mesa.fromJson(mesaJson as Map<String, dynamic>);
-        await _dbService.insertMesa(mesa);
+      if (!kIsWeb) {
+        for (var mesaJson in mesas) {
+          final mesa = Mesa.fromJson(mesaJson as Map<String, dynamic>);
+          await _dbService.insertMesa(mesa);
+        }
       }
 
       // Cargar zonas
       final zonas = await _apiService.obtenerZonas();
-      for (var zonaJson in zonas) {
-        final zona = Zona.fromJson(zonaJson as Map<String, dynamic>);
-        await _dbService.insertZona(zona);
+      if (!kIsWeb) {
+        for (var zonaJson in zonas) {
+          final zona = Zona.fromJson(zonaJson as Map<String, dynamic>);
+          await _dbService.insertZona(zona);
+        }
       }
 
       // Cargar productos
       final productos = await _apiService.obtenerProductos();
-      for (var productoJson in productos) {
-        final producto = Plato.fromMap(productoJson as Map<String, dynamic>);
-        await _dbService.insertProducto(producto);
+      if (!kIsWeb) {
+        for (var productoJson in productos) {
+          final producto = Plato.fromMap(productoJson as Map<String, dynamic>);
+          await _dbService.insertProducto(producto);
+        }
       }
 
       // Cargar categorías
       final categorias = await _apiService.obtenerCategorias();
-      for (var categoriaJson in categorias) {
-        final categoria = Categoria.fromJson(categoriaJson as Map<String, dynamic>);
-        await _dbService.insertCategoria(categoria);
+      if (!kIsWeb) {
+        for (var categoriaJson in categorias) {
+          final categoria = Categoria.fromJson(categoriaJson as Map<String, dynamic>);
+          await _dbService.insertCategoria(categoria);
+        }
       }
 
       _lastSyncTime = DateTime.now();

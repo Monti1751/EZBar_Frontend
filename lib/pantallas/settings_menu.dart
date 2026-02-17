@@ -6,6 +6,7 @@ import '../providers/visual_settings_provider.dart';
 import 'pantalla_principal.dart';
 import 'carta_page.dart';
 import '../l10n/app_localizations.dart';
+import '../services/token_manager.dart';
 
 class SettingsMenu extends StatelessWidget {
   const SettingsMenu({super.key});
@@ -138,7 +139,9 @@ class SettingsMenu extends StatelessWidget {
               child: Align(
                 alignment: Alignment.centerRight,
                 child: TextButton.icon(
-                  onPressed: () {
+                  onPressed: () async {
+                    await TokenManager().clearToken();
+                    if (!context.mounted) return;
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(

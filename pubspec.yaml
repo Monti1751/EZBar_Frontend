@@ -40,7 +40,6 @@ dependencies:
   logger: ^2.4.0
   sqflite: ^2.3.0
   sqflite_common_ffi: ^2.3.0
-  sqlite3_flutter_libs: ^0.5.24
 
 
 
@@ -103,4 +102,3 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
- 

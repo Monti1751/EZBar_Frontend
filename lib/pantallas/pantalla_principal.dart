@@ -39,18 +39,27 @@ class _MainMenuState extends State<MainMenu> {
   @override
   void initState() {
     super.initState();
+    print('🔄 PantallaPrincipal initState: comenzando carga de zonas...');
     _cargarZonas();
   }
 
   Future<void> _cargarZonas() async {
+    print('📥 _cargarZonas() iniciado');
     try {
       final zonasData = await _dataService.obtenerZonas();
+      print('📦 Datos de zonas recibidos: ${zonasData.length} zonas');
       setState(() {
-        zones = zonasData.map((z) => Zona.fromJson(z)).toList();
+        zones = zonasData.map((z) {
+          print('🔍 Parseando zona: ${z['nombre']}');
+          return Zona.fromJson(z);
+        }).toList();
         _isLoading = false;
       });
+      
+      print('✅ Zonas cargadas: ${zones.length}');
       await _localStorage.saveZones(zones);
-    } catch (_) {
+    } catch (e) {
+      print('❌ Error al cargar zonas: $e');
       final locales = await _localStorage.getZones();
       setState(() {
         zones = locales;
