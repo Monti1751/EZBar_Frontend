@@ -6,6 +6,17 @@ import 'services/logger_service.dart';
 import 'config/app_constants.dart';
 
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:provider/provider.dart';
+
+import 'pantallas/pantalla_principal.dart';
+import 'providers/visual_settings_provider.dart';
+import 'providers/localization_provider.dart';
+import 'providers/sync_provider.dart';
+import 'services/hybrid_data_service.dart';
+import 'services/token_manager.dart';
+import 'l10n/app_localizations.dart';
+import 'services/localization_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

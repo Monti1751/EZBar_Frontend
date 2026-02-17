@@ -432,14 +432,10 @@ class _CartaPageState extends State<CartaPage> {
                                                   'nombre': nuevoPlato.nombre,
                                                   'descripcion': '', // sin descripción por ahora
                                                   'precio': nuevoPlato.precio,
-                                                  'categoria': {
-                                                    'categoria_id': seccion.id,
-                                                  },
-                                                  'ingredientes':
-                                                      nuevoPlato.ingredientes,
-                                                  'extras': nuevoPlato.extras,
-                                                  'alergenos':
-                                                      nuevoPlato.alergenos,
+                                                  'categoria_id': seccion.id,
+                                                  // 'ingredientes': nuevoPlato.ingredientes,
+                                                  // 'extras': nuevoPlato.extras,
+                                                  // 'alergenos': nuevoPlato.alergenos,
                                                   'imagenUrl':
                                                       nuevoPlato.imagenUrl,
                                                   'imagenBlob':
@@ -499,17 +495,11 @@ class _CartaPageState extends State<CartaPage> {
                                                           platoEditado.nombre,
                                                       'precio':
                                                           platoEditado.precio,
-                                                      'categoria': {
-                                                        'categoria_id':
-                                                            seccion.id,
-                                                      },
-                                                      'ingredientes':
-                                                          platoEditado
-                                                              .ingredientes,
-                                                      'extras':
-                                                          platoEditado.extras,
-                                                      'alergenos': platoEditado
-                                                          .alergenos,
+                                                      'categoria_id':
+                                                          seccion.id,
+                                                      // 'ingredientes': platoEditado.ingredientes,
+                                                      // 'extras': platoEditado.extras,
+                                                      // 'alergenos': platoEditado.alergenos,
                                                       'imagenUrl': platoEditado
                                                           .imagenUrl,
                                                       'imagenBlob': platoEditado

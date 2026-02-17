@@ -1,12 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
-<<<<<<< HEAD
 import '../services/token_manager.dart';
-=======
 import '../config/app_constants.dart';
 import 'logger_service.dart';
->>>>>>> eaa51ddc53f8c9a4df82ede5db214e5d451dbe4d
 
 class ApiService {
   final TokenManager _tokenManager = TokenManager();
@@ -58,17 +55,10 @@ class ApiService {
 
   Future<List<dynamic>> obtenerZonas() async {
     try {
-<<<<<<< HEAD
-      // print('🔌 Intentando conectar a: ${ApiConfig.zonas}');
+      LoggerService.d('Intentando conectar a: ${ApiConfig.zonas}');
       final headers = await _getHeaders();
       final response = await http.get(Uri.parse(ApiConfig.zonas), headers: headers);
-      // print('📨 Respuesta recibida: ${response.statusCode}');
-      // print('📦 Body: ${response.body}');
-=======
-      LoggerService.d('Intentando conectar a: ${ApiConfig.zonas}');
-      final response = await http.get(Uri.parse(ApiConfig.zonas));
       LoggerService.i('Respuesta recibida: ${response.statusCode}');
->>>>>>> eaa51ddc53f8c9a4df82ede5db214e5d451dbe4d
 
       if (response.statusCode == AppConstants.httpOk) {
         return json.decode(response.body); // ✅ Devuelve List<dynamic>

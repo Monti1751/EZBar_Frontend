@@ -76,16 +76,25 @@ class HybridDataService {
           
           return mesas;
         } catch (e) {
+          if (!kIsWeb) {
+            final mesasLocal = await _dbService.getMesasPorZona(nombreZona);
+            return mesasLocal.map((m) => m.toJson()).toList();
+          }
+          return [];
+        }
+      } else {
+        if (!kIsWeb) {
           final mesasLocal = await _dbService.getMesasPorZona(nombreZona);
           return mesasLocal.map((m) => m.toJson()).toList();
         }
-      } else {
+        return [];
+      }
+    } catch (e) {
+      if (!kIsWeb) {
         final mesasLocal = await _dbService.getMesasPorZona(nombreZona);
         return mesasLocal.map((m) => m.toJson()).toList();
       }
-    } catch (e) {
-      final mesasLocal = await _dbService.getMesasPorZona(nombreZona);
-      return mesasLocal.map((m) => m.toJson()).toList();
+      return [];
     }
   }
 
@@ -96,7 +105,9 @@ class HybridDataService {
       try {
         final resultado = await _apiService.crearMesa(datos);
         final mesa = Mesa.fromJson(resultado);
-        await _dbService.insertMesa(mesa);
+        if (!kIsWeb) {
+          await _dbService.insertMesa(mesa);
+        }
         return resultado;
       } catch (e) {
         rethrow;
@@ -109,15 +120,18 @@ class HybridDataService {
         // pero por ahora lanzamos error o devolvemos el objeto sin persistir
         return datos; 
       }
-      final mesa = Mesa.fromJson(datos);
-      mesa.syncStatus = 'pendiente';
-      mesa.localId = DateTime.now().millisecondsSinceEpoch.toString();
+      if (!kIsWeb) {
+        final mesa = Mesa.fromJson(datos);
+        mesa.syncStatus = 'pendiente';
+        mesa.localId = DateTime.now().millisecondsSinceEpoch.toString();
 
-      await _dbService.insertMesa(mesa);
-      await _dbService.addToSyncQueue(
-          'CREATE', 'mesas', json.decode(json.encode(datos)));
+        await _dbService.insertMesa(mesa);
+        await _dbService.addToSyncQueue(
+            'CREATE', 'mesas', json.decode(json.encode(datos)));
 
-      return mesa.toJson();
+        return mesa.toJson();
+      }
+      return datos;
     }
   }
 
@@ -129,7 +143,9 @@ class HybridDataService {
       try {
         final resultado = await _apiService.actualizarMesa(mesaId, datos);
         final mesa = Mesa.fromJson(resultado);
-        await _dbService.updateMesa(mesa);
+        if (!kIsWeb) {
+          await _dbService.updateMesa(mesa);
+        }
         return resultado;
       } catch (e) {
         rethrow;
@@ -137,13 +153,16 @@ class HybridDataService {
     } else {
       // Sin conexión: actualizar localmente
       if (kIsWeb) return datos;
-      datos['sync_status'] = 'pendiente';
-      final mesa = Mesa.fromJson(datos);
-      await _dbService.updateMesa(mesa);
-      await _dbService.addToSyncQueue(
-          'UPDATE', 'mesas', json.decode(json.encode(datos)));
+      if (!kIsWeb) {
+        datos['sync_status'] = 'pendiente';
+        final mesa = Mesa.fromJson(datos);
+        await _dbService.updateMesa(mesa);
+        await _dbService.addToSyncQueue(
+            'UPDATE', 'mesas', json.decode(json.encode(datos)));
 
-      return mesa.toJson();
+        return mesa.toJson();
+      }
+      return datos;
     }
   }
 
@@ -153,7 +172,9 @@ class HybridDataService {
     if (isOnline) {
       try {
         final resultado = await _apiService.eliminarMesa(mesaId);
-        await _dbService.deleteMesa(mesaId.toString());
+        if (!kIsWeb) {
+          await _dbService.deleteMesa(mesaId.toString());
+        }
         return resultado;
       } catch (e) {
         rethrow;
@@ -161,8 +182,10 @@ class HybridDataService {
     } else {
       // Sin conexión: marcar para eliminar
       if (kIsWeb) return true;
-      await _dbService.deleteMesa(mesaId.toString());
-      await _dbService.addToSyncQueue('DELETE', 'mesas', {'id': mesaId});
+      if (!kIsWeb) {
+        await _dbService.deleteMesa(mesaId.toString());
+        await _dbService.addToSyncQueue('DELETE', 'mesas', {'id': mesaId});
+      }
       return true;
     }
   }
@@ -174,7 +197,6 @@ class HybridDataService {
       final isOnline = await _apiService.verificarConexion();
 
       if (isOnline) {
-<<<<<<< HEAD
         try {
           final zonas = await _apiService.obtenerZonas();
           
@@ -195,16 +217,6 @@ class HybridDataService {
           }
           rethrow;
         }
-=======
-        final zonas = await _apiService.obtenerZonas();
-
-        for (var zonaJson in zonas) {
-          final zona = Zona.fromJson(zonaJson as Map<String, dynamic>);
-          await _dbService.insertZona(zona);
-        }
-
-        return zonas;
->>>>>>> eaa51ddc53f8c9a4df82ede5db214e5d451dbe4d
       } else {
         // Sin conexión - usar SQLite (solo si no es Web)
         if (!kIsWeb) {
@@ -273,22 +285,27 @@ class HybridDataService {
       try {
         final resultado = await _apiService.crearProducto(datos);
         final producto = Plato.fromMap(resultado);
-        await _dbService.insertProducto(producto);
+        if (!kIsWeb) {
+          await _dbService.insertProducto(producto);
+        }
         return resultado;
       } catch (e) {
         rethrow;
       }
     } else {
       if (kIsWeb) return datos;
-      final producto = Plato.fromMap(datos);
-      producto.syncStatus = 'pendiente';
-      producto.localId = DateTime.now().millisecondsSinceEpoch.toString();
+      if (!kIsWeb) {
+        final producto = Plato.fromMap(datos);
+        producto.syncStatus = 'pendiente';
+        producto.localId = DateTime.now().millisecondsSinceEpoch.toString();
 
-      await _dbService.insertProducto(producto);
-      await _dbService.addToSyncQueue(
-          'CREATE', 'productos', json.decode(json.encode(datos)));
+        await _dbService.insertProducto(producto);
+        await _dbService.addToSyncQueue(
+            'CREATE', 'productos', json.decode(json.encode(datos)));
 
-      return producto.toMap();
+        return producto.toMap();
+      }
+      return datos;
     }
   }
 
@@ -300,20 +317,25 @@ class HybridDataService {
       try {
         final resultado = await _apiService.actualizarProducto(id, datos);
         final producto = Plato.fromMap(resultado);
-        await _dbService.updateProducto(producto);
+        if (!kIsWeb) {
+          await _dbService.updateProducto(producto);
+        }
         return resultado;
       } catch (e) {
         rethrow;
       }
     } else {
       if (kIsWeb) return datos;
-      datos['sync_status'] = 'pendiente';
-      final producto = Plato.fromMap(datos);
-      await _dbService.updateProducto(producto);
-      await _dbService.addToSyncQueue(
-          'UPDATE', 'productos', json.decode(json.encode(datos)));
+      if (!kIsWeb) {
+        datos['sync_status'] = 'pendiente';
+        final producto = Plato.fromMap(datos);
+        await _dbService.updateProducto(producto);
+        await _dbService.addToSyncQueue(
+            'UPDATE', 'productos', json.decode(json.encode(datos)));
 
-      return producto.toMap();
+        return producto.toMap();
+      }
+      return datos;
     }
   }
 
@@ -323,15 +345,19 @@ class HybridDataService {
     if (isOnline) {
       try {
         final resultado = await _apiService.eliminarProducto(id);
-        await _dbService.deleteProducto(id);
+        if (!kIsWeb) {
+          await _dbService.deleteProducto(id);
+        }
         return resultado;
       } catch (e) {
         rethrow;
       }
     } else {
       if (kIsWeb) return true;
-      await _dbService.deleteProducto(id);
-      await _dbService.addToSyncQueue('DELETE', 'productos', {'id': id});
+      if (!kIsWeb) {
+        await _dbService.deleteProducto(id);
+        await _dbService.addToSyncQueue('DELETE', 'productos', {'id': id});
+      }
       return true;
     }
   }
@@ -387,19 +413,24 @@ class HybridDataService {
       try {
         final resultado = await _apiService.crearCategoria(nombre);
         final categoria = Categoria.fromJson(resultado);
-        await _dbService.insertCategoria(categoria);
+        if (!kIsWeb) {
+          await _dbService.insertCategoria(categoria);
+        }
         return resultado;
       } catch (e) {
         rethrow;
       }
     } else {
       if (kIsWeb) return {'nombre': nombre};
-      final categoria = Categoria(nombre: nombre, syncStatus: 'pendiente');
-      await _dbService.insertCategoria(categoria);
-      await _dbService
-          .addToSyncQueue('CREATE', 'categorias', {'nombre': nombre});
+      if (!kIsWeb) {
+        final categoria = Categoria(nombre: nombre, syncStatus: 'pendiente');
+        await _dbService.insertCategoria(categoria);
+        await _dbService
+            .addToSyncQueue('CREATE', 'categorias', {'nombre': nombre});
 
-      return categoria.toJson();
+        return categoria.toJson();
+      }
+      return {'nombre': nombre};
     }
   }
 
@@ -409,15 +440,19 @@ class HybridDataService {
     if (isOnline) {
       try {
         final resultado = await _apiService.eliminarCategoria(id);
-        await _dbService.deleteCategoria(id);
+        if (!kIsWeb) {
+          await _dbService.deleteCategoria(id);
+        }
         return resultado;
       } catch (e) {
         rethrow;
       }
     } else {
       if (kIsWeb) return true;
-      await _dbService.deleteCategoria(id);
-      await _dbService.addToSyncQueue('DELETE', 'categorias', {'id': id});
+      if (!kIsWeb) {
+        await _dbService.deleteCategoria(id);
+        await _dbService.addToSyncQueue('DELETE', 'categorias', {'id': id});
+      }
       return true;
     }
   }
@@ -445,18 +480,26 @@ class HybridDataService {
         final pedido = await _apiService.obtenerPedidoActivoMesa(mesaId);
         
         if (pedido != null) {
-          final pedidoObj = Pedido.fromJson(pedido);
-          await _dbService.insertPedido(pedidoObj);
+          if (!kIsWeb) {
+            final pedidoObj = Pedido.fromJson(pedido);
+            await _dbService.insertPedido(pedidoObj);
+          }
         }
         
         return pedido;
       } else {
+        if (!kIsWeb) {
+          final pedidoLocal = await _dbService.getPedidoActivoMesa(mesaId);
+          return pedidoLocal?.toJson();
+        }
+        return null;
+      }
+    } catch (e) {
+      if (!kIsWeb) {
         final pedidoLocal = await _dbService.getPedidoActivoMesa(mesaId);
         return pedidoLocal?.toJson();
       }
-    } catch (e) {
-      final pedidoLocal = await _dbService.getPedidoActivoMesa(mesaId);
-      return pedidoLocal?.toJson();
+      return null;
     }
   }
 
@@ -467,19 +510,28 @@ class HybridDataService {
       if (isOnline) {
         final detalles = await _apiService.obtenerDetallesPedido(pedidoId);
         
-        for (var detalleJson in detalles) {
-          final detalle = DetallePedido.fromJson(detalleJson as Map<String, dynamic>);
-          await _dbService.insertDetallePedido(detalle);
+        if (!kIsWeb) {
+          for (var detalleJson in detalles) {
+            final detalle =
+                DetallePedido.fromJson(detalleJson as Map<String, dynamic>);
+            await _dbService.insertDetallePedido(detalle);
+          }
         }
         
         return detalles;
       } else {
+        if (!kIsWeb) {
+          final detallesLocal = await _dbService.getDetallesPedido(pedidoId);
+          return detallesLocal.map((d) => d.toJson()).toList();
+        }
+        return [];
+      }
+    } catch (e) {
+      if (!kIsWeb) {
         final detallesLocal = await _dbService.getDetallesPedido(pedidoId);
         return detallesLocal.map((d) => d.toJson()).toList();
       }
-    } catch (e) {
-      final detallesLocal = await _dbService.getDetallesPedido(pedidoId);
-      return detallesLocal.map((d) => d.toJson()).toList();
+      return [];
     }
   }
 
@@ -493,26 +545,38 @@ class HybridDataService {
         rethrow;
       }
     } else {
-      // Sin conexión: crear localmente
-      if (kIsWeb) return;
-      final pedido = await _dbService.getPedidoActivoMesa(mesaId);
-      
-      if (pedido != null) {
-        // Si el pedido existe, agregar un detalle
-        final producto = (await _dbService.getProductos())
-            .firstWhere((p) => p.id == productoId, orElse: () => Plato(id: productoId, nombre: 'Producto', precio: 0.0, ingredientes: [], extras: [], alergenos: [], imagenUrl: '', imagenBlob: '', syncStatus: 'pendiente'));
-        
-        final detalle = DetallePedido(
-          pedidoId: pedido.id,
-          productoId: productoId,
-          nombreProducto: producto.nombre,
-          cantidad: 1,
-          precioUnitario: producto.precio,
-          syncStatus: 'pendiente',
-        );
-        
-        await _dbService.insertDetallePedido(detalle);
-        await _dbService.addToSyncQueue('CREATE', 'detalles_pedido', detalle.toJson());
+      // Sin conexión: crear localmente (solo si no es Web)
+      if (!kIsWeb) {
+        final pedido = await _dbService.getPedidoActivoMesa(mesaId);
+
+        if (pedido != null) {
+          // Si el pedido existe, agregar un detalle
+          final producto = (await _dbService.getProductos()).firstWhere(
+              (p) => p.id == productoId,
+              orElse: () => Plato(
+                  id: productoId,
+                  nombre: 'Producto',
+                  precio: 0.0,
+                  ingredientes: [],
+                  extras: [],
+                  alergenos: [],
+                  imagenUrl: '',
+                  imagenBlob: '',
+                  syncStatus: 'pendiente'));
+
+          final detalle = DetallePedido(
+            pedidoId: pedido.id,
+            productoId: productoId,
+            nombreProducto: producto.nombre,
+            cantidad: 1,
+            precioUnitario: producto.precio,
+            syncStatus: 'pendiente',
+          );
+
+          await _dbService.insertDetallePedido(detalle);
+          await _dbService.addToSyncQueue(
+              'CREATE', 'detalles_pedido', detalle.toJson());
+        }
       }
     }
   }
@@ -527,9 +591,11 @@ class HybridDataService {
         rethrow;
       }
     } else {
-      if (kIsWeb) return;
-      await _dbService.deleteDetallePedido(detalleId);
-      await _dbService.addToSyncQueue('DELETE', 'detalles_pedido', {'id': detalleId});
+      if (!kIsWeb) {
+        await _dbService.deleteDetallePedido(detalleId);
+        await _dbService.addToSyncQueue(
+            'DELETE', 'detalles_pedido', {'id': detalleId});
+      }
     }
   }
 
@@ -540,26 +606,30 @@ class HybridDataService {
       try {
         final resultado = await _apiService.crearPedido(pedido);
         final pedidoObj = Pedido.fromJson(resultado);
-        await _dbService.insertPedido(pedidoObj);
+        if (!kIsWeb) {
+          await _dbService.insertPedido(pedidoObj);
+        }
         return resultado;
       } catch (e) {
         rethrow;
       }
     } else {
-      if (kIsWeb) return pedido;
-      pedido['sync_status'] = 'pendiente';
-      pedido['fecha'] = DateTime.now().toIso8601String();
-      final pedidoObj = Pedido(
-        mesaId: pedido['mesa_id'] as int,
-        estado: pedido['estado'] as String? ?? 'activo',
-        fecha: DateTime.parse(pedido['fecha'] as String),
-        syncStatus: 'pendiente',
-      );
-      
-      await _dbService.insertPedido(pedidoObj);
-      await _dbService.addToSyncQueue('CREATE', 'pedidos', pedido);
-      
-      return pedidoObj.toJson();
+      if (!kIsWeb) {
+        pedido['sync_status'] = 'pendiente';
+        pedido['fecha'] = DateTime.now().toIso8601String();
+        final pedidoObj = Pedido(
+          mesaId: pedido['mesa_id'] as int,
+          estado: pedido['estado'] as String? ?? 'activo',
+          fecha: DateTime.parse(pedido['fecha'] as String),
+          syncStatus: 'pendiente',
+        );
+
+        await _dbService.insertPedido(pedidoObj);
+        await _dbService.addToSyncQueue('CREATE', 'pedidos', pedido);
+
+        return pedidoObj.toJson();
+      }
+      return pedido;
     }
   }
 
@@ -575,15 +645,19 @@ class HybridDataService {
         rethrow;
       }
     } else {
-      if (kIsWeb) return;
-      final pedido = (await _dbService.getPedidos())
-          .firstWhere((p) => p.id == pedidoId, orElse: () => Pedido(mesaId: 0, estado: 'activo', fecha: DateTime.now()));
-      
-      if (pedido.id != null) {
-        pedido.estado = 'pagado';
-        pedido.syncStatus = 'pendiente';
-        await _dbService.updatePedido(pedido);
-        await _dbService.addToSyncQueue('UPDATE', 'pedidos', {'id': pedidoId, 'estado': 'pagado'});
+      if (!kIsWeb) {
+        final pedido = (await _dbService.getPedidos()).firstWhere(
+            (p) => p.id == pedidoId,
+            orElse: () => Pedido(
+                mesaId: 0, estado: 'activo', fecha: DateTime.now()));
+
+        if (pedido.id != null) {
+          pedido.estado = 'pagado';
+          pedido.syncStatus = 'pendiente';
+          await _dbService.updatePedido(pedido);
+          await _dbService.addToSyncQueue(
+              'UPDATE', 'pedidos', {'id': pedidoId, 'estado': 'pagado'});
+        }
       }
     }
   }
@@ -602,7 +676,5 @@ class HybridDataService {
     return await _apiService.login(username, password);
   }
 
-  Future<void> finalizarPedido(int pedidoId) async {
-    return await _apiService.finalizarPedido(pedidoId);
-  }
+
 }
