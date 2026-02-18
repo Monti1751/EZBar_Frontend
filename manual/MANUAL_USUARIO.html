@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Usuario - EZBar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #7BA238;
+            --secondary: #4A4025;
+            --bg: #ECF0D5;
+            --white: #FFFFFF;
+            --text: #333333;
+            --danger: #C63425;
+            --warning: #FFA500;
+            --success: #28a745;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Navegación Lateral */
+        nav {
+            width: 280px;
+            background-color: var(--secondary);
+            color: var(--white);
+            padding: 2rem;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        nav h1 {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        nav ul {
+            list-style: none;
+        }
+
+        nav li {
+            margin-bottom: 1rem;
+        }
+
+        nav a {
+            color: var(--white);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.3s;
+            opacity: 0.8;
+        }
+
+        nav a:hover {
+            opacity: 1;
+            color: var(--primary);
+        }
+
+        /* Contenido Principal */
+        main {
+            flex: 1;
+            padding: 3rem;
+            max-width: 900px;
+            background-color: var(--white);
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.05);
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: var(--secondary);
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-top: 0;
+        }
+
+        h2 {
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 0.5rem;
+        }
+
+        p {
+            margin-bottom: 1rem;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            border-left: 5px solid;
+            background-color: #f8f9fa;
+        }
+
+        .alert-note {
+            border-left-color: var(--primary);
+            background-color: #f0f7e6;
+        }
+
+        .step-list {
+            counter-reset: steps;
+            list-style: none;
+            margin-bottom: 2rem;
+        }
+
+        .step-list li {
+            counter-increment: steps;
+            position: relative;
+            padding-left: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .step-list li::before {
+            content: counter(steps);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 2rem;
+            height: 2rem;
+            background-color: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .status-card {
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-free {
+            background-color: var(--success);
+        }
+
+        .status-reserved {
+            background-color: var(--warning);
+        }
+
+        .status-occupied {
+            background-color: var(--danger);
+        }
+
+        footer {
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid #eee;
+            font-size: 0.85rem;
+            color: #888;
+            text-align: center;
+        }
+
+        /* Mockup Placeholder */
+        .mockup-placeholder {
+            width: 100%;
+            height: 300px;
+            background-color: #eee;
+            border: 2px dashed #ccc;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            margin: 1.5rem 0;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+
+            nav {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+
+            main {
+                padding: 1.5rem;
+            }
+        }
+
+        .img-container {
+            text-align: center;
+            margin: 2rem 0;
+            background-color: #f9f9f9;
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid #eee;
+        }
+
+        .img-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: block;
+            margin: 0 auto 0.5rem;
+        }
+
+        .img-caption {
+            font-size: 0.85rem;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <h1>EZBar</h1>
+        <ul>
+            <li><a href="#inicio">Primeros Pasos</a></li>
+            <li><a href="#zonas">Gestión de Zonas</a></li>
+            <li><a href="#mesas">Gestión de Mesas</a></li>
+            <li><a href="#pedidos">Pedidos y Cuentas</a></li>
+            <li><a href="#carta">Configuración de Carta</a></li>
+            <li><a href="#ajustes">Personalización</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <section id="inicio">
+            <h1>Guía de Usuario EZBar</h1>
+            <p>Optimiza la gestión de tu negocio con EZBar. Esta guía está diseñada tanto para propietarios como para el
+                equipo de sala.</p>
+
+            <h2>1. Primeros Pasos</h2>
+            <div class="alert alert-note">
+                <strong>Inicio de Sesión:</strong> Introduzca su usuario y contraseña para acceder. El sistema funciona
+                incluso sin internet (modo offline).
+            </div>
+            <ul class="step-list">
+                <li>Abra la aplicación en su dispositivo móvil.</li>
+                <li>Introduzca sus credenciales.</li>
+                <li>Pulse "Entrar" para acceder al panel principal.</li>
+            </ul>
+            <div class="img-container">
+                <img src="assets/Pantalla de login.jpeg" alt="Pantalla de Login">
+                <p class="img-caption">Pantalla de inicio de sesión de EZBar</p>
+            </div>
+        </section>
+
+        <section id="zonas">
+            <h2>2. Gestión de Zonas</h2>
+            <p>Las zonas permiten organizar su local. Ejemplo: Terraza, Salón, Barra.</p>
+            <div class="alert alert-note">
+                <strong>Permisos:</strong> Los camareros pueden visualizar todas las zonas y sus mesas, pero las
+                funciones de creación y eliminación están reservadas exclusivamente para administradores.
+            </div>
+            <ul class="step-list">
+                <li>Pulse <strong>Agregar Zona</strong> en la cabecera (solo admin).</li>
+                <li>Asigne un nombre y guarde pulsando en el <strong>✓</strong>.</li>
+                <li>Para eliminarla, use el icono de la papelera roja (solo admin).</li>
+            </ul>
+            <div class="img-container">
+                <img src="assets/Pantalla principal con zonas.jpeg" alt="Vista de Zonas">
+                <p class="img-caption">Vista principal con las zonas del local</p>
+            </div>
+            <div class="img-container">
+                <img src="assets/Pantalla principal con zonas como añadir una nueva zona.jpeg" alt="Añadir Zona">
+                <p class="img-caption">Interfaz para añadir una nueva zona</p>
+            </div>
+        </section>
+
+        <section id="mesas">
+            <h2>3. Gestión de Mesas</h2>
+            <p>Cada mesa muestra su estado actual mediante colores:</p>
+            <div class="status-grid">
+                <div class="status-card status-free">Libre (Verde)</div>
+                <div class="status-card status-reserved">Reservado (Naranja)</div>
+                <div class="status-card status-occupied">Ocupado (Rojo)</div>
+            </div>
+            <h3>Crear Mesas (Solo Administrador)</h3>
+            <ul class="step-list">
+                <li>Expanda la zona deseada pulsando sobre su nombre.</li>
+                <li>Escriba el nombre de la mesa en el campo de texto inferior.</li>
+                <li>Pulse el icono <strong>+</strong> para añadir la mesa al sistema.</li>
+            </ul>
+            <div class="img-container">
+                <img src="assets/Pantalla principal con zonas como añadir una nueva mesa.jpeg" alt="Añadir Mesa">
+                <p class="img-caption">Añadiendo una mesa a una zona existente</p>
+            </div>
+            <h3>Cambiar Estado</h3>
+            <p>Pulse en los tres puntos (⋮) de la mesa seleccionada para abrir el menú de estados.</p>
+        </section>
+
+        <section id="pedidos">
+            <h2>4. Pedidos y Cuentas</h2>
+            <p>Gestione el consumo de sus clientes de forma ágil.</p>
+            <ul class="step-list">
+                <li><strong>Abrir Cuenta:</strong> Pulse sobre el nombre de la mesa.</li>
+                <li><strong>Añadir Productos:</strong> Pulse en "Carta +" y use los botones "+" de los platos deseados.
+                </li>
+                <li><strong>Cobrar:</strong> Verifique el Total y pulse "Finalizar" para liberar la mesa.</li>
+            </ul>
+            <div class="img-container">
+                <img src="assets/Pantalla de cuenta.jpeg" alt="Cuenta de Mesa">
+                <p class="img-caption">Detalle de la cuenta activa de una mesa</p>
+            </div>
+            <div class="img-container">
+                <img src="assets/Pantalla de la carta con platos.jpeg" alt="Carta con platos">
+                <p class="img-caption">Selección de productos desde la carta</p>
+            </div>
+        </section>
+
+        <section id="carta">
+            <h2>5. Configuración de la Carta</h2>
+            <p>Mantenga su menú actualizado desde el menú lateral.</p>
+            <h3>Productos y Secciones</h3>
+            <p>Añada nuevas categorías (Bebidas, Tapas, Postres) y asocie platos con sus precios e imágenes.</p>
+            <div class="img-container">
+                <img src="assets/Pantalla carta.jpeg" alt="Editor de Carta">
+                <p class="img-caption">Panel de administración de la carta</p>
+            </div>
+            <div class="img-container">
+                <img src="assets/Pantalla de la carta creando una nueva sección.jpeg" alt="Nueva Sección">
+                <p class="img-caption">Creación de una nueva categoría en el menú</p>
+            </div>
+            <div class="img-container">
+                <img src="assets/Pantalla plato.jpeg" alt="Detalle de Plato">
+                <p class="img-caption">Edición de los detalles de un producto (precio, nombre, imagen)</p>
+            </div>
+        </section>
+
+        <section id="ajustes">
+            <h2>6. Personalización</h2>
+            <p>Ajuste la app a su gusto desde el menú lateral:</p>
+            <ul>
+                <li><strong>Modo Oscuro:</strong> Reduce la fatiga visual.</li>
+                <li><strong>Tamaño de Letra:</strong> Ajuste para una lectura cómoda.</li>
+                <li><strong>Idiomas:</strong> Seleccione el idioma de trabajo del equipo.</li>
+            </ul>
+            <div class="img-container">
+                <img src="assets/Ajustes hamburguesa.jpeg" alt="Menú Lateral">
+                <p class="img-caption">Acceso rápido a la configuración desde el menú lateral</p>
+            </div>
+            <div class="img-container">
+                <img src="assets/Pantalla ajustes visuales.jpeg" alt="Ajustes Visuales">
+                <p class="img-caption">Personalización de la apariencia de la app</p>
+            </div>
+            <div class="img-container">
+                <img src="assets/Seleccion de idioma.jpeg" alt="Selección de Idioma">
+                <p class="img-caption">Cambio de idioma de la interfaz</p>
+            </div>
+        </section>
+
+        <footer>
+            EZBar - Gestión Inteligente para Hostelería &copy; 2026
+        </footer>
+    </main>
+</body>
+
+</html>
