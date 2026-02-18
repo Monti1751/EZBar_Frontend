@@ -11,8 +11,15 @@ class Categoria {
 
   // Convertir desde JSON del backend
   factory Categoria.fromJson(Map<String, dynamic> json) {
+    int? parseId(dynamic val) {
+      if (val == null) return null;
+      if (val is int) return val;
+      if (val is String) return int.tryParse(val);
+      return null;
+    }
+
     return Categoria(
-      id: json['id'] as int? ?? json['categoria_id'] as int?,
+      id: parseId(json['id']) ?? parseId(json['categoria_id']),
       nombre: json['nombre'] as String? ?? '',
       syncStatus: 'sincronizado',
     );
