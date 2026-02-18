@@ -33,9 +33,27 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 3,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      try {
+        await db.execute('ALTER TABLE productos ADD COLUMN categoria_id INTEGER');
+      } catch (e) {
+        // En caso de que ya exista por alguna ejecución parcial
+      }
+    }
+    if (oldVersion < 3) {
+      try {
+        await db.execute('ALTER TABLE productos ADD COLUMN producto_id INTEGER');
+      } catch (e) {
+        // En caso de que ya exista
+      }
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -68,6 +86,7 @@ class DatabaseService {
     await db.execute('''
       CREATE TABLE productos (
         id INTEGER PRIMARY KEY,
+        producto_id INTEGER,
         nombre TEXT NOT NULL,
         precio REAL NOT NULL,
         imagen_blob TEXT,
@@ -76,7 +95,8 @@ class DatabaseService {
         extras TEXT,
         alergenos TEXT,
         sync_status TEXT NOT NULL,
-        local_id TEXT
+        local_id TEXT,
+        categoria_id INTEGER
       )
     ''');
 
@@ -234,6 +254,11 @@ class DatabaseService {
     );
   }
 
+  Future<void> clearProductos() async {
+    final db = await database;
+    await db.delete('productos');
+  }
+
   // ==================== MÉTODOS CRUD PARA CATEGORÍAS ====================
 
   Future<int> insertCategoria(Categoria categoria) async {
@@ -254,6 +279,11 @@ class DatabaseService {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  Future<void> clearCategorias() async {
+    final db = await database;
+    await db.delete('categorias');
   }
 
   // ==================== MÉTODOS CRUD PARA PEDIDOS ====================

@@ -133,6 +133,11 @@ class LocalStorageService {
     return deleted.map((id) => int.tryParse(id)).whereType<int>().toSet();
   }
 
+  Future<void> clearDeletedCategories() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_deletedCategoriesKey);
+  }
+
   // --- SECCIONES (CATEGORÍAS Y PLATOS) ---
 
   Future<void> saveSecciones(List<dynamic> secciones) async {

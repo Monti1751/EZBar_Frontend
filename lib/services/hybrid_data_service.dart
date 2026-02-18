@@ -241,40 +241,45 @@ class HybridDataService {
       final isOnline = await _apiService.verificarConexion();
 
       if (isOnline) {
+        debugPrint("📡 DIAGNOSTICO: Modo ONLINE. Intentando descargar productos del API...");
         try {
           final productos = await _apiService.obtenerProductos();
+          debugPrint("📡 DIAGNOSTICO: API retornó ${productos.length} productos.");
           
-          // Guardar en SQLite solo si no es Web
           if (!kIsWeb) {
+            debugPrint("📡 DIAGNOSTICO: Limpiando productos locales y guardando nuevos de API...");
+            // Opcional: podrías hacer un clearAll o un delete selectivo. 
+            // Para asegurar consistencia total con la API:
+            await _dbService.clearProductos(); 
+            
             for (var productoJson in productos) {
-              final producto = Plato.fromMap(productoJson as Map<String, dynamic>);
+              final map = Map<String, dynamic>.from(productoJson as Map);
+              if (map['categoria_id'] == null && map['categoria'] != null) {
+                map['categoria_id'] = map['categoria']['categoria_id'] ?? map['categoria']['id'];
+              }
+              final producto = Plato.fromMap(map);
               await _dbService.insertProducto(producto);
             }
           }
-          
           return productos;
         } catch (e) {
-          // Si falla la API, intentar con datos locales (solo si no es Web)
-          if (!kIsWeb) {
-            final productosLocal = await _dbService.getProductos();
-            return productosLocal.map((p) => p.toMap()).toList();
-          }
-          rethrow;
+          debugPrint("📡 DIAGNOSTICO: Fallo en API o mapeo: $e");
+          throw Exception("Fallo en API productos: $e");
         }
       } else {
-        // Sin conexión - usar SQLite (solo si no es Web)
+        debugPrint("📡 DIAGNOSTICO: Modo OFFLINE. Leyendo productos de base de datos local...");
         if (!kIsWeb) {
           final productosLocal = await _dbService.getProductos();
+          debugPrint("📡 DIAGNOSTICO: Local retornó ${productosLocal.length} productos.");
           return productosLocal.map((p) => p.toMap()).toList();
         }
         return [];
       }
     } catch (e) {
-      if (!kIsWeb) {
-        final productosLocal = await _dbService.getProductos();
-        return productosLocal.map((p) => p.toMap()).toList();
-      }
-      return [];
+      debugPrint("📡 DIAGNOSTICO: Catch global en obtenerProductos: $e");
+      // Si el error ocurrió durante un intento de carga online, lo re-lanzamos
+      // para que el usuario vea el error real en el banner.
+      throw Exception("Fallo crítico en productos: $e");
     }
   }
 
@@ -374,6 +379,8 @@ class HybridDataService {
           
           // Guardar en SQLite solo si no es Web
           if (!kIsWeb) {
+            debugPrint("📡 DIAGNOSTICO: Limpiando categorías locales y sincronizando con API...");
+            await _dbService.clearCategorias();
             for (var categoriaJson in categorias) {
               final categoria = Categoria.fromJson(categoriaJson as Map<String, dynamic>);
               await _dbService.insertCategoria(categoria);

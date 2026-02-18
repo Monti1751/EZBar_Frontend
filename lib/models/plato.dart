@@ -19,6 +19,7 @@ class Plato {
   List<String> alergenos;
   String syncStatus; // "pendiente" o "sincronizado"
   String? localId; // ID temporal para productos creados sin conexión
+  int? categoriaId;
 
   Plato({
     this.id,
@@ -32,6 +33,7 @@ class Plato {
     List<String>? alergenos,
     this.syncStatus = 'sincronizado',
     this.localId,
+    this.categoriaId,
   })  : ingredientes = ingredientes ?? [],
         extras = extras ?? [],
         alergenos = alergenos ?? [];
@@ -51,15 +53,25 @@ class Plato {
       'alergenos': alergenos.join('|'),
       'sync_status': syncStatus,
       if (localId != null) 'local_id': localId,
+      if (categoriaId != null) 'categoria_id': categoriaId,
     };
   }
 
   // Crear desde Map de SQLite / JSON
   factory Plato.fromMap(Map<String, dynamic> map) {
+    int? parseId(dynamic val) {
+      if (val == null) return null;
+      if (val is int) return val;
+      if (val is String) return int.tryParse(val);
+      return null;
+    }
+
     return Plato(
-      id: map['id'] as int? ?? map['producto_id'] as int?,
+      id: parseId(map['id']) ?? parseId(map['producto_id']),
       nombre: map['nombre'] as String? ?? '',
-      precio: (map['precio'] as num?)?.toDouble() ?? 0.0,
+      precio: (map['precio'] is String)
+          ? double.tryParse(map['precio']) ?? 0.0
+          : (map['precio'] as num?)?.toDouble() ?? 0.0,
       imagenBlob: map['imagen_blob'] as String?,
       imagenUrl: map['imagen_url'] as String?,
       ingredientes: (map['ingredientes'] as String?)
@@ -79,6 +91,8 @@ class Plato {
           [],
       syncStatus: map['sync_status'] as String? ?? 'sincronizado',
       localId: map['local_id'] as String?,
+      categoriaId: parseId(map['categoria_id']) ?? 
+                  (map['categoria'] != null ? parseId(map['categoria']['categoria_id']) : null),
     );
   }
 }
