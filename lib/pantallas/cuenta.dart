@@ -5,6 +5,7 @@ import '../providers/visual_settings_provider.dart';
 import 'package:log_in/pantallas/carta_page.dart'; 
 import '../services/hybrid_data_service.dart';
 import '../config/app_constants.dart';
+import '../models/pedido.dart';
 
 class CuentaMesaPage extends StatefulWidget {
   final String nombreMesa;
@@ -19,7 +20,7 @@ class CuentaMesaPage extends StatefulWidget {
 class _CuentaMesaPageState extends State<CuentaMesaPage> {
   double total = 0.0;
   int? _mesaId;
-  List<dynamic> _detalles = []; // Lista para guardar los productos
+  List<DetallePedido> _detalles = []; // Lista para guardar los productos
   final HybridDataService _dataService = HybridDataService();
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -62,20 +63,19 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
       if (_mesaId != null) {
         final pedido = await _dataService.obtenerPedidoActivoMesa(_mesaId!);
         if (pedido != null) {
-          // Primero actualizamos el total del pedido
+          if (mounted) {
+            setState(() {
+              _detalles = pedido.detalles;
+              total = pedido.totalPedido;
+            });
+            print('✅ CUENTA: Cargados ${_detalles.length} productos. Total: $total');
+          }
+        } else {
+          print('⚠️ CUENTA: No se encontró pedido para mesa $_mesaId');
           setState(() {
-            final totalPedido = pedido['total_pedido'];
-            // Manejar tanto String como num
-            if (totalPedido is String) {
-              total = double.tryParse(totalPedido) ?? 0.0;
-            } else if (totalPedido is num) {
-              total = totalPedido.toDouble();
-            } else {
-              total = 0.0;
-            }
+            _detalles = [];
+            total = 0.0;
           });
-          // Luego cargamos los detalles
-          await _cargarDetalles(pedido['pedido_id']);
         }
       }
     } catch (e) {
@@ -85,38 +85,25 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
 
   Future<void> _cargarDetalles(int pedidoId) async {
     try {
-      final detalles = await _dataService.obtenerDetallesPedido(pedidoId);
+      final detallesData = await _dataService.obtenerDetallesPedido(pedidoId);
       setState(() {
-        _detalles = detalles;
+        _detalles = detallesData.map((d) => DetallePedido.fromJson(d as Map<String, dynamic>)).toList();
         // Recalcular total desde detalles para asegurar sincronización
         if (_detalles.isNotEmpty) {
-          double sum = 0;
-          for (var d in _detalles) {
-            // Check for null price or total_linea
-            // The backend returns 'total_linea' or 'precio_unitario'
-            // Try multiple field names for robustness (snake_case vs camelCase)
-            // and fallback to nested product price
-            final precio = d['total_linea'] ??
-                d['totalLinea'] ??
-                d['precio_unitario'] ??
-                d['precioUnitario'] ??
-                d['precio'] ??
-                (d['producto'] != null ? d['producto']['precio'] : null);
-
-            if (precio != null) {
-              // Manejar tanto String como num
-              if (precio is String) {
-                sum += double.tryParse(precio) ?? 0.0;
-              } else if (precio is num) {
-                sum += precio.toDouble();
-              }
-            }
-          }
-          total = sum;
+          total = _detalles.fold(0, (sum, d) => sum + (d.totalLinea ?? d.subtotal));
         }
       });
-    } catch (e) {
-      // print('Error cargando detalles: $e');
+    } catch (e, stack) {
+      print('💥 DIAGNÓSTICO ERROR EN _cargarDetalles: $e');
+      print(stack);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error cargando detalles: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -235,149 +222,114 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                           vertical: MediaQuery.of(context).size.height * 0.05,
                           horizontal: MediaQuery.of(context).size.width * 0.05,
                         ),
-                        child: Stack(
-                          children: [
-                            Positioned.fill(
-                              child: ListView.builder(
-                                padding: const EdgeInsets.only(bottom: 80),
-                                itemCount: _detalles.length,
-                                itemBuilder: (ctx, i) {
-                                  final item = _detalles[i];
-                                  final producto = item['producto'];
+                      child: _detalles.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.receipt_long, size: 64, color: Colors.grey.withOpacity(0.5)),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'No hay productos en esta cuenta',
+                                    style: TextStyle(color: Colors.grey, fontSize: fontSize),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  ElevatedButton(
+                                    onPressed: _abrirCarta,
+                                    style: ElevatedButton.styleFrom(backgroundColor: barraSuperior),
+                                    child: const Text('Ver Carta', style: TextStyle(color: Colors.white)),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : Column(
+                              children: [
+                                Expanded(
+                                  child: ListView.builder(
+                                    itemCount: _detalles.length,
+                                    itemBuilder: (ctx, i) {
+                                      final item = _detalles[i];
+                                      final nombre = item.nombreProducto;
+                                      final int cantidad = item.cantidad;
+                                      final double precioUnitario = item.precioUnitario;
+                                      final double subtotalLinea = item.totalLinea ?? item.subtotal;
 
-                                  // Extraer datos con fallbacks de seguridad y conversión de tipos
-                                  final nombre = producto?['nombre'] ??
-                                      item['nombre'] ??
-                                      'Producto';
-
-                                  // Asegurar que cantidad sea un entero (puede venir como String "1.00" o double 1.0)
-                                  final cantidadRaw = item['cantidad'] ?? 1;
-                                  final int cantidad = cantidadRaw is String
-                                      ? (double.tryParse(cantidadRaw)
-                                              ?.toInt() ??
-                                          1)
-                                      : (cantidadRaw as num).toInt();
-
-                                  // Convertir precio unitario (puede ser String o num)
-                                  final precioRaw = producto?['precio'] ??
-                                      item['precio_unitario'] ??
-                                      0;
-                                  final double precioUnitario =
-                                      precioRaw is String
-                                          ? (double.tryParse(precioRaw) ?? 0.0)
-                                          : (precioRaw as num).toDouble();
-
-                                  // Convertir subtotal (puede ser String o num)
-                                  final subtotalRaw = item['total_linea'] ??
-                                      (precioUnitario * cantidad);
-                                  final double subtotalLinea = subtotalRaw
-                                          is String
-                                      ? (double.tryParse(subtotalRaw) ?? 0.0)
-                                      : (subtotalRaw as num).toDouble();
-
-                                  return ListTile(
-                                    leading: CircleAvatar(
-                                      backgroundColor: barraSuperior.withValues(
-                                        alpha: 0.2,
-                                      ),
-                                      child: Text(
-                                        "${cantidad}x",
-                                        style: TextStyle(
-                                          color: textoGeneral,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    title: Text(
-                                      nombre,
-                                      style: TextStyle(
-                                        color: textoGeneral,
-                                        fontSize: fontSize,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    subtitle: Text(
-                                      "${precioUnitario.toStringAsFixed(2)} €/ud",
-                                    ),
-                                    trailing: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        // Botón de Restar (Eliminar uno)
-                                        IconButton(
-                                          icon: Icon(
-                                            cantidad > 1
-                                                ? Icons.remove_circle_outline
-                                                : Icons.delete_outline,
-                                            color: Colors.red,
+                                      return ListTile(
+                                        contentPadding: EdgeInsets.zero,
+                                        leading: CircleAvatar(
+                                          backgroundColor: barraSuperior.withOpacity(0.2),
+                                          child: Text(
+                                            "${cantidad}x",
+                                            style: TextStyle(
+                                              color: textoGeneral,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: fontSize * 0.8,
+                                            ),
                                           ),
-                                          onPressed: () async {
-                                            final id = item['detalle_id'];
-                                            if (id != null) {
-                                              await _dataService
-                                                  .eliminarDetallePedido(id);
-                                              _cargarCuenta();
-                                            }
-                                          },
                                         ),
-                                        // Cantidad central (opcional, ya la tienes en el leading, pero aquí queda muy intuitivo)
-                                        Text(
-                                          "${subtotalLinea.toStringAsFixed(2)} €",
+                                        title: Text(
+                                          nombre,
                                           style: TextStyle(
                                             color: textoGeneral,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: fontSize,
+                                            fontSize: fontSize * 0.9,
+                                            fontWeight: FontWeight.w500,
                                           ),
                                         ),
-                                        // Botón de Sumar (Añadir uno)
-                                        IconButton(
-                                          icon: const Icon(
-                                            Icons.add_circle_outline,
-                                            color: Colors.green,
-                                          ),
-                                          onPressed: () async {
-                                            if (_mesaId != null &&
-                                                item['producto_id'] != null) {
-                                              await _dataService
-                                                  .agregarProductoAMesa(
-                                                      _mesaId!,
-                                                      item['producto_id']);
-                                              _cargarCuenta();
-                                            }
-                                          },
+                                        subtitle: Text(
+                                          "${precioUnitario.toStringAsFixed(2)} €/ud",
+                                          style: TextStyle(fontSize: fontSize * 0.7),
                                         ),
-                                      ],
+                                        trailing: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              "${subtotalLinea.toStringAsFixed(2)} €",
+                                              style: TextStyle(
+                                                color: textoGeneral,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: fontSize * 0.9,
+                                              ),
+                                            ),
+                                            IconButton(
+                                              icon: Icon(
+                                                cantidad > 1 ? Icons.remove_circle_outline : Icons.delete_outline,
+                                                color: Colors.red,
+                                                size: 20,
+                                              ),
+                                              onPressed: () async {
+                                                final id = item.id;
+                                                if (id != null) {
+                                                  await _dataService.eliminarDetallePedido(id);
+                                                  _cargarCuenta();
+                                                }
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                const Divider(),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                  child: ElevatedButton(
+                                    onPressed: _abrirCarta,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: barraSuperior,
+                                      minimumSize: const Size(double.infinity, 50),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                                      ),
                                     ),
-                                  );
-                                },
-                              ),
-                            ),
-                            Align(
-                              alignment: Alignment.bottomCenter,
-                              child: ElevatedButton(
-                                onPressed: _abrirCarta,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: barraSuperior,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical:
-                                        AppConstants.buttonPaddingVerticalLarge,
-                                    horizontal: 50,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                        AppConstants.borderRadiusMedium),
+                                    child: Text(
+                                      'Carta +',
+                                      style: TextStyle(fontSize: fontSize, color: Colors.white),
+                                    ),
                                   ),
                                 ),
-                                child: Text(
-                                  'Carta +',
-                                  style: TextStyle(
-                                    fontSize: settings.currentFontSize,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
+                              ],
                             ),
-                          ],
-                        ),
                       ),
                     ),
                   ),
@@ -465,7 +417,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
       return;
     }
 
-    final pedidoId = _detalles[0]['pedido_id'];
+    final pedidoId = _detalles[0].pedidoId;
     if (pedidoId != null) {
       try {
         await _dataService.finalizarPedido(pedidoId);

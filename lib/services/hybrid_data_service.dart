@@ -479,45 +479,63 @@ class HybridDataService {
       String ubicacion) async {
     return await _apiService.obtenerDatosEstadisticosZona(ubicacion);
   }
-  Future<Map<String, dynamic>?> obtenerPedidoActivoMesa(int mesaId) async {
+  Future<Pedido?> obtenerPedidoActivoMesa(int mesaId) async {
+    print('🔍 DIAGNÓSTICO: Buscando pedido activo para mesa $mesaId...');
     try {
-      final isOnline = await _apiService.verificarConexion();
+      if (kIsWeb) {
+        print('🌐 DIAGNÓSTICO: Corriendo en WEB, saltando SQLite local.');
+      }
+
+      // 1. Intentar obtener de la API
+      print('📡 DIAGNÓSTICO: Llamando a ApiService.obtenerPedidoActivoMesa($mesaId)');
+      final apiData = await _apiService.obtenerPedidoActivoMesa(mesaId);
       
-      if (isOnline) {
-        final pedido = await _apiService.obtenerPedidoActivoMesa(mesaId);
+      if (apiData != null) {
+        print('✅ DIAGNÓSTICO: API devolvió datos: ${json.encode(apiData)}');
+        final pedido = Pedido.fromJson(apiData);
         
-        if (pedido != null) {
-          if (!kIsWeb) {
-            final pedidoObj = Pedido.fromJson(pedido);
-            await _dbService.insertPedido(pedidoObj);
-          }
-        }
+        // Cargar detalles también
+        print('📡 DIAGNÓSTICO: Cargando detalles desde API para pedido ${pedido.id}');
+        final detallesData = await _apiService.obtenerDetallesPedido(pedido.id!);
+        print('✅ DIAGNÓSTICO: Detalles recibidos: ${detallesData.length} líneas');
+        pedido.detalles = detallesData.map((d) => DetallePedido.fromJson(d)).toList();
         
         return pedido;
+      }
+      
+      print('⚠️ DIAGNÓSTICO: API devolvió null para mesa $mesaId');
+
+      if (kIsWeb) return null;
+
+      // 2. Si no hay API o devuelve null, intentar de la DB local
+      print('🏠 DIAGNÓSTICO: Buscando en base de datos LOCAL (SQLite)...');
+      final localPedido = await _dbService.getPedidoActivoMesa(mesaId);
+      
+      if (localPedido != null) {
+        print('✅ DIAGNÓSTICO: SQLite local devolvió pedido ID ${localPedido.id}');
       } else {
-        if (!kIsWeb) {
-          final pedidoLocal = await _dbService.getPedidoActivoMesa(mesaId);
-          return pedidoLocal?.toJson();
-        }
-        return null;
+        print('❌ DIAGNÓSTICO: Tampoco se encontró pedido en SQLite local');
       }
+      
+      return localPedido;
     } catch (e) {
-      if (!kIsWeb) {
-        final pedidoLocal = await _dbService.getPedidoActivoMesa(mesaId);
-        return pedidoLocal?.toJson();
-      }
+      print('💥 DIAGNÓSTICO: Error en obtenerPedidoActivoMesa: $e');
       return null;
     }
   }
 
   Future<List<dynamic>> obtenerDetallesPedido(int pedidoId) async {
+    print('🔍 DIAGNÓSTICO: Buscando detalles para pedido $pedidoId...');
     try {
       final isOnline = await _apiService.verificarConexion();
       
       if (isOnline) {
+        print('📡 DIAGNÓSTICO: Pedido $pedidoId ONLINE. Llamando a ApiService.obtenerDetallesPedido...');
         final detalles = await _apiService.obtenerDetallesPedido(pedidoId);
+        print('✅ DIAGNÓSTICO: Detalles recibidos de API: ${detalles.length} líneas');
         
         if (!kIsWeb) {
+          print('🏠 DIAGNÓSTICO: Sincronizando detalles en SQLite local...');
           for (var detalleJson in detalles) {
             final detalle =
                 DetallePedido.fromJson(detalleJson as Map<String, dynamic>);
@@ -528,13 +546,17 @@ class HybridDataService {
         return detalles;
       } else {
         if (!kIsWeb) {
+          print('🏠 DIAGNÓSTICO: Modo OFFLINE. Buscando detalles en SQLite local para pedido $pedidoId...');
           final detallesLocal = await _dbService.getDetallesPedido(pedidoId);
+          print('✅ DIAGNÓSTICO: SQLite local devolvió ${detallesLocal.length} líneas');
           return detallesLocal.map((d) => d.toJson()).toList();
         }
         return [];
       }
     } catch (e) {
+      print('💥 DIAGNÓSTICO: Error en obtenerDetallesPedido ($pedidoId): $e');
       if (!kIsWeb) {
+        print('🏠 DIAGNÓSTICO: Error detectado, reintentando con SQLite local...');
         final detallesLocal = await _dbService.getDetallesPedido(pedidoId);
         return detallesLocal.map((d) => d.toJson()).toList();
       }

@@ -471,40 +471,50 @@ class ApiService {
   // --- MÉTODOS DE PEDIDOS Y DETALLES (Agregados para cuenta.dart) ---
 
   Future<Map<String, dynamic>?> obtenerPedidoActivoMesa(int mesaId) async {
+    print('📡 API_SERVICE: obtenerPedidoActivoMesa($mesaId) INICIO');
     try {
-      // Endpoint aproximado: ajusta según tu backend real
       final headers = await _getHeaders();
+      final url = '${ApiConfig.pedidos}/mesa/$mesaId/activo';
+      print('📡 API_SERVICE: GET $url');
+      
       final response = await http
-          .get(
-            Uri.parse('${ApiConfig.pedidos}/mesa/$mesaId/activo'),
-            headers: headers,
-          )
+          .get(Uri.parse(url), headers: headers)
           .timeout(AppConstants.networkTimeout);
+          
+      print('📡 API_SERVICE: Status: ${response.statusCode}');
+      
       if (response.statusCode == AppConstants.httpOk) {
+        print('📡 API_SERVICE: Body: ${response.body}');
         return json.decode(response.body);
       }
+      print('📡 API_SERVICE: No ok. Body: ${response.body}');
       return null;
     } catch (e) {
-      // print('Error al obtener pedido activo: $e');
+      print('📡 API_SERVICE: ERROR: $e');
       return null;
     }
   }
 
   Future<List<dynamic>> obtenerDetallesPedido(int pedidoId) async {
+    print('📡 API_SERVICE: obtenerDetallesPedido($pedidoId) INICIO');
     try {
       final headers = await _getHeaders();
+      final url = '${ApiConfig.pedidos}/$pedidoId/detalles';
+      print('📡 API_SERVICE: GET $url');
+      
       final response = await http
-          .get(
-            Uri.parse('${ApiConfig.pedidos}/$pedidoId/detalles'),
-            headers: headers,
-          )
+          .get(Uri.parse(url), headers: headers)
           .timeout(AppConstants.networkTimeout);
+          
+      print('📡 API_SERVICE: Status: ${response.statusCode}');
+      
       if (response.statusCode == AppConstants.httpOk) {
+        print('📡 API_SERVICE: Body: ${response.body}');
         return json.decode(response.body);
       }
       return [];
     } catch (e) {
-      // print('Error al obtener detalles: $e');
+      print('📡 API_SERVICE: ERROR: $e');
       return [];
     }
   }
