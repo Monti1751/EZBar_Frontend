@@ -127,7 +127,7 @@ class LanguageSettingsOption extends StatelessWidget {
               localizationProvider.getLanguageName(currentLanguage),
               style: TextStyle(
                 fontSize: displayFontSize - 2,
-                color: displayTextColor.withValues(alpha: 0.7),
+                color: displayTextColor.withOpacity(0.7),
               ),
             ),
             onTap: () => _showLanguageDialog(
