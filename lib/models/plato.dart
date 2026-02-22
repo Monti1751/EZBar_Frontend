@@ -502,7 +502,7 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
                       (a) => ListTile(
                         title: Text(a, style: TextStyle(color: textColor)),
                         trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
+                          icon: const Icon(Icons.delete, color: Colors.black),
                           onPressed: () => _confirmarBorrado(a, () {
                             setState(() => _alergenos.remove(a));
                           }),
@@ -548,7 +548,7 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
                       (i) => ListTile(
                         title: Text(i, style: TextStyle(color: textColor)),
                         trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
+                          icon: const Icon(Icons.delete, color: Colors.black),
                           onPressed: () => _confirmarBorrado(i, () {
                             setState(() => _ingredientes.remove(i));
                           }),
@@ -593,7 +593,7 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
                       (e) => ListTile(
                         title: Text(e, style: TextStyle(color: textColor)),
                         trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
+                          icon: const Icon(Icons.delete, color: Colors.black),
                           onPressed: () => _confirmarBorrado(e, () {
                             setState(() => _extras.remove(e));
                           }),

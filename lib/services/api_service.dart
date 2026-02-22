@@ -619,4 +619,101 @@ class ApiService {
       throw Exception('$e'); // Propagar el mensaje de error directamente
     }
   }
+
+  // --- Usuarios ---
+  Future<List<dynamic>> obtenerUsuarios() async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http
+          .get(Uri.parse(ApiConfig.usuarios), headers: headers)
+          .timeout(AppConstants.networkTimeout);
+
+      if (response.statusCode == AppConstants.httpOk) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Error al cargar usuarios: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> crearUsuario(Map<String, dynamic> datos) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http
+          .post(
+            Uri.parse(ApiConfig.usuarios),
+            headers: headers,
+            body: json.encode(datos),
+          )
+          .timeout(AppConstants.networkTimeout);
+
+      if (response.statusCode == AppConstants.httpCreated || 
+          response.statusCode == AppConstants.httpOk) {
+        return json.decode(response.body);
+      } else {
+        final body = json.decode(response.body);
+        throw Exception(body['error'] ?? 'Error al crear usuario');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> actualizarUsuario(int id, Map<String, dynamic> datos) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http
+          .put(
+            Uri.parse('${ApiConfig.usuarios}/$id'),
+            headers: headers,
+            body: json.encode(datos),
+          )
+          .timeout(AppConstants.networkTimeout);
+
+      if (response.statusCode == AppConstants.httpOk) {
+        return json.decode(response.body);
+      } else {
+        final body = json.decode(response.body);
+        throw Exception(body['error'] ?? 'Error al actualizar usuario');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  Future<bool> eliminarUsuario(int id) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http
+          .delete(
+            Uri.parse('${ApiConfig.usuarios}/$id'),
+            headers: headers,
+          )
+          .timeout(AppConstants.networkTimeout);
+
+      return response.statusCode == AppConstants.httpOk || 
+             response.statusCode == AppConstants.httpNoContent;
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>?> verificarToken() async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http
+          .get(Uri.parse(ApiConfig.verify), headers: headers)
+          .timeout(AppConstants.networkTimeout);
+
+      if (response.statusCode == AppConstants.httpOk) {
+        return json.decode(response.body);
+      }
+      return null;
+    } catch (e) {
+      LoggerService.e('Error al verificar token: $e');
+      return null;
+    }
+  }
 }

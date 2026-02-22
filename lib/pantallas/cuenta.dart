@@ -293,7 +293,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                                             IconButton(
                                               icon: Icon(
                                                 cantidad > 1 ? Icons.remove_circle_outline : Icons.delete_outline,
-                                                color: Colors.red,
+                                                color: Colors.black,
                                                 size: 20,
                                               ),
                                               onPressed: () async {
