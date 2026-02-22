@@ -235,7 +235,7 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                           );
                         },
                         child: const Icon(Icons.delete,
-                            color: Colors.red, size: 24),
+                            color: Colors.black, size: 24),
                       ),
                       const SizedBox(width: 16),
                       Icon(

@@ -13,9 +13,14 @@ class AuthProvider with ChangeNotifier {
     _loadRole();
   }
 
+  Future<void> initialize() async {
+    await _loadRole();
+  }
+
   Future<void> _loadRole() async {
     final prefs = await SharedPreferences.getInstance();
     _role = prefs.getString(_roleKey) ?? 'usuario';
+    print('📦 Rol cargado de cache: $_role');
     notifyListeners();
   }
 
@@ -24,6 +29,16 @@ class AuthProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_roleKey, _role);
     notifyListeners();
+  }
+
+  Future<void> syncRoleWithBackend(String backendRole) async {
+    if (_role != backendRole) {
+      print('🔄 Sincronizando rol con backend: $_role -> $backendRole');
+      _role = backendRole;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_roleKey, _role);
+      notifyListeners();
+    }
   }
 
   Future<void> logout() async {

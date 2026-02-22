@@ -316,7 +316,7 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                                                       ? Icons
                                                           .remove_circle_outline
                                                       : Icons.delete_outline,
-                                                  color: Colors.red,
+                                                  color: Colors.black,
                                                   size: 20,
                                                 ),
                                                 onPressed: () async {

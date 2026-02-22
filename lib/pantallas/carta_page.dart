@@ -402,7 +402,7 @@ class _CartaPageState extends State<CartaPage> {
                             IconButton(
                               icon: const Icon(
                                 Icons.delete_outline,
-                                color: Colors.red,
+                                color: Colors.black,
                               ),
                               tooltip: "Eliminar sección",
                               onPressed: () {
@@ -707,7 +707,7 @@ class _CartaPageState extends State<CartaPage> {
                                                     IconButton(
                                                       icon: const Icon(
                                                         Icons.delete_outline,
-                                                        color: Colors.red,
+                                                        color: Colors.black,
                                                       ),
                                                       tooltip: "Eliminar plato",
                                                       onPressed: () {
