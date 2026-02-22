@@ -48,12 +48,38 @@ void main() async {
   await LocalizationService().init();
   
   // Cargar token al iniciar la app
-  await TokenManager().loadToken();
+  final tokenManager = TokenManager();
+  await tokenManager.loadToken();
+
+  // Inicializar AuthProvider y cargar rol de cache
+  final authProvider = AuthProvider();
+  await authProvider.initialize();
+
+  // Verificar token con el backend si existe para asegurar rol actualizado
+  final token = tokenManager.getTokenSync();
+  if (token != null) {
+    print('📡 Verificando sesión con el backend...');
+    final dataService = HybridDataService();
+    try {
+      final verifyResponse = await dataService.verificarToken();
+      if (verifyResponse != null && verifyResponse['status'] == 'OK') {
+        final backendRole = verifyResponse['data']['usuario']['rol'];
+        await authProvider.syncRoleWithBackend(backendRole);
+        print('✅ Sesión verificada. Rol: $backendRole');
+      } else {
+        print('⚠️ Sesión inválida o expirada. Limpiando token.');
+        await tokenManager.clearToken();
+        await authProvider.logout();
+      }
+    } catch (e) {
+      print('⚠️ Error al verificar sesión (posiblemente offline): $e');
+    }
+  }
 
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider.value(value: authProvider),
         ChangeNotifierProvider(create: (_) => VisualSettingsProvider()),
         ChangeNotifierProvider(create: (_) => LocalizationProvider()),
         ChangeNotifierProvider(create: (_) => SyncProvider()),

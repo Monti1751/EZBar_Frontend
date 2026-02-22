@@ -18,4 +18,6 @@ class ApiConfig {
   static const String productos = '$baseUrl/api/productos';
   static const String zonas = '$baseUrl/api/zonas';
   static const String categorias = '$baseUrl/api/categorias';
+  static const String usuarios = '$baseUrl/api/usuarios';
+  static const String verify = '$baseUrl/api/auth/verify';
 }

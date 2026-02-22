@@ -213,7 +213,7 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                           // Evitar que se propague el tap
                           widget.onDelete();
                         },
-                        child: Icon(Icons.delete, color: Colors.red, size: 24),
+                        child: Icon(Icons.delete, color: Colors.black, size: 24),
                       ),
                       const SizedBox(width: 16),
                       Icon(
@@ -397,7 +397,7 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                                     IconButton(
                                       icon: const Icon(
                                         Icons.delete_outline,
-                                        color: Colors.red,
+                                        color: Colors.black,
                                       ),
                                       onPressed: () {
                                         showDialog(

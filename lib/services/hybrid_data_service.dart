@@ -705,5 +705,7 @@ class HybridDataService {
     return await _apiService.login(username, password);
   }
 
-
+  Future<Map<String, dynamic>?> verificarToken() async {
+    return await _apiService.verificarToken();
+  }
 }
