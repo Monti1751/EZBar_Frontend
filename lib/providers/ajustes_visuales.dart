@@ -13,18 +13,15 @@ class VisualSettingsPage extends StatelessWidget {
     final settings = Provider.of<VisualSettingsProvider>(context);
 
     // Colores dinámicos según switches
-    final Color fondo = settings.darkMode
-        ? Colors.black
-        : const Color(0xFFECF0D5);
+    final Color fondo =
+        settings.darkMode ? const Color(0xFF1E1E1E) : const Color(0xFFECF0D5);
     final Color texto = settings.darkMode ? Colors.white : Colors.black;
 
     // Paleta adaptada a daltonismo
-    final Color colorPrimario = settings.colorBlindMode
-        ? Colors.blue
-        : const Color(0xFF7BA238);
-    final Color colorSecundario = settings.colorBlindMode
-        ? Colors.orange
-        : const Color(0xFFC63425);
+    final Color colorPrimario =
+        settings.colorBlindMode ? Colors.blue : const Color(0xFF7BA238);
+    final Color colorSecundario =
+        settings.colorBlindMode ? Colors.orange : const Color(0xFFC63425);
 
     // Tamaño de letra dinámico con 3 opciones
     final double fontSize;
@@ -86,8 +83,8 @@ class VisualSettingsPage extends StatelessWidget {
                 settings.fontSize == FontSizeOption.small
                     ? AppLocalizations.of(context).translate('small')
                     : settings.fontSize == FontSizeOption.medium
-                    ? AppLocalizations.of(context).translate('medium')
-                    : AppLocalizations.of(context).translate('large'),
+                        ? AppLocalizations.of(context).translate('medium')
+                        : AppLocalizations.of(context).translate('large'),
                 style: TextStyle(color: texto),
               ),
               trailing: DropdownButton<FontSizeOption>(
@@ -96,15 +93,18 @@ class VisualSettingsPage extends StatelessWidget {
                 items: [
                   DropdownMenuItem(
                     value: FontSizeOption.small,
-                    child: Text(AppLocalizations.of(context).translate('small')),
+                    child:
+                        Text(AppLocalizations.of(context).translate('small')),
                   ),
                   DropdownMenuItem(
                     value: FontSizeOption.medium,
-                    child: Text(AppLocalizations.of(context).translate('medium')),
+                    child:
+                        Text(AppLocalizations.of(context).translate('medium')),
                   ),
                   DropdownMenuItem(
                     value: FontSizeOption.large,
-                    child: Text(AppLocalizations.of(context).translate('large')),
+                    child:
+                        Text(AppLocalizations.of(context).translate('large')),
                   ),
                 ],
                 onChanged: (value) {
@@ -162,7 +162,8 @@ class VisualSettingsPage extends StatelessWidget {
     Color texto,
     Color colorPrimario,
   ) {
-    final localizationProvider = Provider.of<LocalizationProvider>(context, listen: false);
+    final localizationProvider =
+        Provider.of<LocalizationProvider>(context, listen: false);
     final currentLanguage = localizationProvider.currentLocale.languageCode;
 
     showDialog(
@@ -183,9 +184,8 @@ class VisualSettingsPage extends StatelessWidget {
 
               return ListTile(
                 title: Text(langName),
-                trailing: isSelected
-                    ? Icon(Icons.check, color: colorPrimario)
-                    : null,
+                trailing:
+                    isSelected ? Icon(Icons.check, color: colorPrimario) : null,
                 onTap: () async {
                   await localizationProvider.setLocale(Locale(langCode));
                   if (context.mounted) {
@@ -206,4 +206,3 @@ class VisualSettingsPage extends StatelessWidget {
     );
   }
 }
-

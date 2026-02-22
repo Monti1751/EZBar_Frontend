@@ -13,21 +13,25 @@ import '../l10n/app_localizations.dart';
 import '../config/app_constants.dart';
 
 /// Helper para InputDecoration consistente
-InputDecoration loginInputDecoration(String hint, IconData icon) {
+InputDecoration loginInputDecoration(
+    String hint, IconData icon, bool darkMode) {
   return InputDecoration(
     hintText: hint,
-    prefixIcon: Icon(icon, color: AppConstants.darkBrown),
+    hintStyle: TextStyle(color: darkMode ? Colors.grey[400] : Colors.grey[600]),
+    prefixIcon:
+        Icon(icon, color: darkMode ? Colors.white70 : AppConstants.darkBrown),
     filled: true,
-    fillColor: Colors.white,
+    fillColor: darkMode ? Colors.grey[800] : Colors.white,
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
-      borderSide: const BorderSide(
-          color: AppConstants.darkBrown, width: AppConstants.borderWidthThin),
+      borderSide: BorderSide(
+          color: darkMode ? Colors.white70 : AppConstants.darkBrown,
+          width: AppConstants.borderWidthThin),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
-      borderSide: const BorderSide(
-          color: AppConstants.primaryGreen,
+      borderSide: BorderSide(
+          color: darkMode ? Colors.greenAccent : AppConstants.primaryGreen,
           width: AppConstants.borderWidthThick),
     ),
   );
@@ -61,7 +65,7 @@ class _CartaPageState extends State<CartaPage> {
 
   List<Seccion> secciones = [];
   final LocalStorageService _localStorage = LocalStorageService();
-  
+
   // Variables de diagnóstico
   int _apiCatsCount = 0;
   int _apiProdsCount = 0;
@@ -78,17 +82,19 @@ class _CartaPageState extends State<CartaPage> {
     try {
       final cats = await _dataService.obtenerCategorias();
       final prods = await _dataService.obtenerProductos();
-      
+
       setState(() {
         _apiCatsCount = cats.length;
         _apiProdsCount = prods.length;
         _lastRawProds = prods;
       });
-      
-      debugPrint("📡 API: ${cats.length} categorías y ${prods.length} productos recibidos.");
-      
+
+      debugPrint(
+          "📡 API: ${cats.length} categorías y ${prods.length} productos recibidos.");
+
       setState(() {
-        _diagError = prods.isEmpty ? "Lista de productos vacía (Fallback??)" : "";
+        _diagError =
+            prods.isEmpty ? "Lista de productos vacía (Fallback??)" : "";
       });
       if (prods.isNotEmpty) {
         debugPrint("🔍 Ejemplo primer producto: ${prods.first}");
@@ -109,28 +115,34 @@ class _CartaPageState extends State<CartaPage> {
         Seccion s = Seccion(id: categoria.id, nombre: categoria.nombre);
         var pList = prods.where((p) {
           int? pCatId;
-          
+
           try {
             if (p is Plato) {
               pCatId = p.categoriaId;
             } else if (p is Map) {
               // Buscar en todas las combinaciones posibles de llaves
-              final rawCatId = p['categoria_id'] ?? 
-                              p['categoriaId'] ??
-                              (p['categoria'] != null ? (p['categoria']['categoria_id'] ?? p['categoria']['id']) : null);
-                              
-              if (rawCatId is int) pCatId = rawCatId;
+              final rawCatId = p['categoria_id'] ??
+                  p['categoriaId'] ??
+                  (p['categoria'] != null
+                      ? (p['categoria']['categoria_id'] ?? p['categoria']['id'])
+                      : null);
+
+              if (rawCatId is int)
+                pCatId = rawCatId;
               else if (rawCatId is String) pCatId = int.tryParse(rawCatId);
             }
           } catch (e) {
             debugPrint("Error al emparejar producto: $e");
           }
-          
-          bool matches = (pCatId != null && categoria.id != null && pCatId.toString() == categoria.id.toString());
+
+          bool matches = (pCatId != null &&
+              categoria.id != null &&
+              pCatId.toString() == categoria.id.toString());
           return matches;
         }).toList();
-        
-        debugPrint("Match para ${categoria.nombre} (ID: ${categoria.id}): ${pList.length} platos.");
+
+        debugPrint(
+            "Match para ${categoria.nombre} (ID: ${categoria.id}): ${pList.length} platos.");
 
         for (var p in pList) {
           try {
@@ -144,14 +156,15 @@ class _CartaPageState extends State<CartaPage> {
             debugPrint("Error al procesar plato: $e");
           }
         }
-        debugPrint("Sección '${categoria.nombre}' cargada con ${s.platos.length} platos.");
+        debugPrint(
+            "Sección '${categoria.nombre}' cargada con ${s.platos.length} platos.");
         loaded.add(s);
       }
       debugPrint("Total de secciones cargadas: ${loaded.length}");
       setState(() {
         secciones = loaded;
       });
-      
+
       // Guardar en localStorage para uso offline
       await _localStorage.saveSecciones(loaded);
     } catch (e) {
@@ -161,11 +174,11 @@ class _CartaPageState extends State<CartaPage> {
           _diagError = "ERROR: $e";
         });
       }
-      
+
       // Intenta cargar del almacenamiento local
       try {
         final seccionesRawData = await _localStorage.getSecciones();
-        
+
         List<Seccion> seccionesLocal = [];
         for (var data in seccionesRawData) {
           Seccion s = Seccion(
@@ -173,7 +186,7 @@ class _CartaPageState extends State<CartaPage> {
             nombre: data['nombre'],
           );
           s.isOpen = data['isOpen'] ?? false;
-          
+
           if (data['platos'] != null && data['platos'] is List) {
             for (var p in data['platos']) {
               s.platos.add(
@@ -189,7 +202,7 @@ class _CartaPageState extends State<CartaPage> {
           }
           seccionesLocal.add(s);
         }
-        
+
         setState(() {
           secciones = seccionesLocal;
         });
@@ -208,7 +221,7 @@ class _CartaPageState extends State<CartaPage> {
       listen: false,
     );
     return BoxDecoration(
-      color: settings.darkMode ? Colors.grey[850] : Colors.white,
+      color: settings.darkMode ? const Color(0xFF2C2C2C) : Colors.white,
       borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmallMedium),
       border: Border.all(color: Colors.black26),
     );
@@ -272,8 +285,9 @@ class _CartaPageState extends State<CartaPage> {
   Widget build(BuildContext context) {
     final settings = Provider.of<VisualSettingsProvider>(context);
 
-    final Color fondo =
-        settings.darkMode ? Colors.black : AppConstants.backgroundCream;
+    final Color fondo = settings.darkMode
+        ? const Color(0xFF1E1E1E)
+        : AppConstants.backgroundCream;
     final Color barraSuperior =
         settings.colorBlindMode ? Colors.blue : AppConstants.primaryGreen;
     final Color textoGeneral = settings.darkMode ? Colors.white : Colors.black;
@@ -314,18 +328,30 @@ class _CartaPageState extends State<CartaPage> {
             child: TextField(
               decoration: loginInputDecoration(
                   AppLocalizations.of(context).translate('search_hint'),
-                  Icons.search),
+                  Icons.search,
+                  settings.darkMode),
               style: TextStyle(color: textoGeneral, fontSize: fontSize),
             ),
           ),
 
           // Lista de secciones
           Expanded(
-            child: ListView.builder(
+            child: ReorderableListView.builder(
               itemCount: secciones.length,
+              onReorder: (oldIndex, newIndex) {
+                setState(() {
+                  if (oldIndex < newIndex) {
+                    newIndex -= 1;
+                  }
+                  final item = secciones.removeAt(oldIndex);
+                  secciones.insert(newIndex, item);
+                });
+                _localStorage.saveSecciones(secciones);
+              },
               itemBuilder: (context, index) {
                 final seccion = secciones[index];
                 return Container(
+                  key: ValueKey('seccion_${seccion.id ?? seccion.nombre}'),
                   margin: const EdgeInsets.symmetric(
                     horizontal: AppConstants.paddingLarge,
                     vertical: AppConstants.paddingSmall,
@@ -406,7 +432,8 @@ class _CartaPageState extends State<CartaPage> {
                                             )
                                                 .then((success) {
                                               if (success) {
-                                                _localStorage.addDeletedCategory(
+                                                _localStorage
+                                                    .addDeletedCategory(
                                                   seccion.id!,
                                                 );
                                                 setState(() {
@@ -416,17 +443,22 @@ class _CartaPageState extends State<CartaPage> {
                                               } else {
                                                 // Manejo genérico de fallo
                                                 Navigator.of(popContext).pop();
-                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
                                                   const SnackBar(
-                                                    content: Text("No se pudo eliminar la sección."),
+                                                    content: Text(
+                                                        "No se pudo eliminar la sección."),
                                                     backgroundColor: Colors.red,
                                                   ),
                                                 );
                                               }
                                             }).catchError((e) {
                                               Navigator.of(popContext).pop();
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(content: Text("Error: $e")),
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                const SnackBar(
+                                                    content: Text(
+                                                        "Ocurrió un error al eliminar la sección. Inténtelo de nuevo.")),
                                               );
                                             });
                                           } else {
@@ -479,6 +511,7 @@ class _CartaPageState extends State<CartaPage> {
                                         decoration: loginInputDecoration(
                                           "Nombre del plato",
                                           Icons.fastfood,
+                                          settings.darkMode,
                                         ),
                                       ),
                                     ),
@@ -512,7 +545,8 @@ class _CartaPageState extends State<CartaPage> {
                                               try {
                                                 final data = {
                                                   'nombre': nuevoPlato.nombre,
-                                                  'descripcion': '', // sin descripción por ahora
+                                                  'descripcion':
+                                                      '', // sin descripción por ahora
                                                   'precio': nuevoPlato.precio,
                                                   'categoria_id': seccion.id,
                                                   // 'ingredientes': nuevoPlato.ingredientes,
@@ -550,11 +584,24 @@ class _CartaPageState extends State<CartaPage> {
 
                                 // Lista de platos
                                 Expanded(
-                                  child: ListView.builder(
+                                  child: ReorderableListView.builder(
                                     itemCount: seccion.platos.length,
+                                    onReorder: (oldIndex, newIndex) {
+                                      setState(() {
+                                        if (oldIndex < newIndex) {
+                                          newIndex -= 1;
+                                        }
+                                        final item =
+                                            seccion.platos.removeAt(oldIndex);
+                                        seccion.platos.insert(newIndex, item);
+                                      });
+                                      _localStorage.saveSecciones(secciones);
+                                    },
                                     itemBuilder: (context, platoIndex) {
                                       final plato = seccion.platos[platoIndex];
                                       return Container(
+                                        key: ValueKey(
+                                            'plato_${plato.id ?? plato.nombre}_${plato.hashCode}'),
                                         margin: const EdgeInsets.symmetric(
                                           vertical: AppConstants.paddingXXSmall,
                                           horizontal:
@@ -643,18 +690,20 @@ class _CartaPageState extends State<CartaPage> {
                                                 // Acciones: añadir a cuenta (+) y eliminar
                                                 Row(
                                                   children: [
-                                                    IconButton(
-                                                      icon: Icon(
-                                                        Icons.add_circle,
-                                                        color: barraSuperior,
+                                                    if (widget.onAddToCuenta !=
+                                                        null)
+                                                      IconButton(
+                                                        icon: Icon(
+                                                          Icons.add_circle,
+                                                          color: barraSuperior,
+                                                        ),
+                                                        tooltip:
+                                                            "Añadir a la cuenta",
+                                                        onPressed: () =>
+                                                            _addPlatoToCuenta(
+                                                          plato,
+                                                        ),
                                                       ),
-                                                      tooltip:
-                                                          "Añadir a la cuenta",
-                                                      onPressed: () =>
-                                                          _addPlatoToCuenta(
-                                                        plato,
-                                                      ),
-                                                    ),
                                                     IconButton(
                                                       icon: const Icon(
                                                         Icons.delete_outline,
@@ -794,6 +843,7 @@ class _CartaPageState extends State<CartaPage> {
                         AppLocalizations.of(context)
                             .translate('section_name_hint'),
                         Icons.list,
+                        settings.darkMode,
                       ),
                     ),
                     actions: [

@@ -42,12 +42,12 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
     }
   }
 
-  InputDecoration _inputDecoration(String hint, IconData icon) {
+  InputDecoration _inputDecoration(String hint, IconData icon, bool darkMode) {
     return InputDecoration(
       hintText: hint,
       prefixIcon: Icon(icon, color: AppConstants.darkBrown),
       filled: true,
-      fillColor: Colors.white,
+      fillColor: darkMode ? Colors.grey[800] : Colors.white,
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
         borderSide: const BorderSide(
@@ -67,8 +67,9 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
     final settings = Provider.of<VisualSettingsProvider>(context);
 
     // Colores estándar de la app
-    final Color fondo =
-        settings.darkMode ? Colors.black : AppConstants.backgroundCream;
+    final Color fondo = settings.darkMode
+        ? const Color(0xFF1E1E1E)
+        : AppConstants.backgroundCream;
     final Color barraSuperior =
         settings.colorBlindMode ? Colors.blue : AppConstants.primaryGreen;
     final Color textoGeneral =
@@ -122,9 +123,9 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                     const SizedBox(height: AppConstants.paddingLarge),
                     TextFormField(
                       controller: _usernameController,
-                      style: TextStyle(color: Colors.black, fontSize: fontSize),
-                      decoration:
-                          _inputDecoration('Nombre de usuario', Icons.person),
+                      style: TextStyle(color: textoGeneral, fontSize: fontSize),
+                      decoration: _inputDecoration(
+                          'Nombre de usuario', Icons.person, settings.darkMode),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Ingresa un nombre de usuario';
@@ -136,8 +137,9 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                     TextFormField(
                       controller: _passwordController,
                       obscureText: true,
-                      style: TextStyle(color: Colors.black, fontSize: fontSize),
-                      decoration: _inputDecoration('Contraseña', Icons.lock),
+                      style: TextStyle(color: textoGeneral, fontSize: fontSize),
+                      decoration: _inputDecoration(
+                          'Contraseña', Icons.lock, settings.darkMode),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Ingresa una contraseña';
@@ -148,8 +150,9 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                     const SizedBox(height: AppConstants.paddingMedium),
                     DropdownButtonFormField<String>(
                       value: _selectedRole,
-                      decoration: _inputDecoration('Rol', Icons.badge),
-                      style: TextStyle(color: Colors.black, fontSize: fontSize),
+                      decoration: _inputDecoration(
+                          'Rol', Icons.badge, settings.darkMode),
+                      style: TextStyle(color: textoGeneral, fontSize: fontSize),
                       dropdownColor: Colors.white,
                       items: const [
                         DropdownMenuItem(

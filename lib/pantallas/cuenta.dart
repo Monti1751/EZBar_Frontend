@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'settings_menu.dart';
 import '../providers/visual_settings_provider.dart';
-import 'package:log_in/pantallas/carta_page.dart'; 
+import 'package:log_in/pantallas/carta_page.dart';
 import '../services/hybrid_data_service.dart';
 import '../config/app_constants.dart';
 import '../models/pedido.dart';
@@ -68,7 +68,8 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
               _detalles = pedido.detalles;
               total = pedido.totalPedido;
             });
-            print('✅ CUENTA: Cargados ${_detalles.length} productos. Total: $total');
+            print(
+                '✅ CUENTA: Cargados ${_detalles.length} productos. Total: $total');
           }
         } else {
           print('⚠️ CUENTA: No se encontró pedido para mesa $_mesaId');
@@ -87,10 +88,13 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
     try {
       final detallesData = await _dataService.obtenerDetallesPedido(pedidoId);
       setState(() {
-        _detalles = detallesData.map((d) => DetallePedido.fromJson(d as Map<String, dynamic>)).toList();
+        _detalles = detallesData
+            .map((d) => DetallePedido.fromJson(d as Map<String, dynamic>))
+            .toList();
         // Recalcular total desde detalles para asegurar sincronización
         if (_detalles.isNotEmpty) {
-          total = _detalles.fold(0, (sum, d) => sum + (d.totalLinea ?? d.subtotal));
+          total =
+              _detalles.fold(0, (sum, d) => sum + (d.totalLinea ?? d.subtotal));
         }
       });
     } catch (e, stack) {
@@ -98,8 +102,9 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
       print(stack);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error cargando detalles: $e'),
+          const SnackBar(
+            content: Text(
+                'Error al cargar los detalles del pedido. Inténtelo de nuevo.'),
             backgroundColor: Colors.red,
           ),
         );
@@ -137,8 +142,9 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
     final settings = Provider.of<VisualSettingsProvider>(context);
 
     // Colores dinámicos según ajustes
-    final Color fondo =
-        settings.darkMode ? Colors.black : AppConstants.backgroundCream;
+    final Color fondo = settings.darkMode
+        ? const Color(0xFF1E1E1E)
+        : AppConstants.backgroundCream;
     final Color barraSuperior =
         settings.colorBlindMode ? Colors.blue : AppConstants.primaryGreen;
     final Color textoGeneral = settings.darkMode ? Colors.white : Colors.black;
@@ -184,7 +190,9 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                 children: [
                   // === CUADRO PARA EL NOMBRE DE LA MESA ===
                   Card(
-                    color: settings.darkMode ? Colors.grey[850] : Colors.white,
+                    color: settings.darkMode
+                        ? const Color(0xFF2C2C2C)
+                        : Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(
                           AppConstants.borderRadiusMedium),
@@ -210,8 +218,9 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                   // === LISTA DE DETALLES ===
                   Expanded(
                     child: Card(
-                      color:
-                          settings.darkMode ? Colors.grey[850] : Colors.white,
+                      color: settings.darkMode
+                          ? const Color(0xFF2C2C2C)
+                          : Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(
                             AppConstants.borderRadiusMedium),
@@ -222,114 +231,135 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                           vertical: MediaQuery.of(context).size.height * 0.05,
                           horizontal: MediaQuery.of(context).size.width * 0.05,
                         ),
-                      child: _detalles.isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                        child: _detalles.isEmpty
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.receipt_long,
+                                        size: 64,
+                                        color: Colors.grey.withOpacity(0.5)),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'No hay productos en esta cuenta',
+                                      style: TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: fontSize),
+                                    ),
+                                    const SizedBox(height: 20),
+                                    ElevatedButton(
+                                      onPressed: _abrirCarta,
+                                      style: ElevatedButton.styleFrom(
+                                          backgroundColor: barraSuperior),
+                                      child: const Text('Ver Carta',
+                                          style:
+                                              TextStyle(color: Colors.white)),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : Column(
                                 children: [
-                                  Icon(Icons.receipt_long, size: 64, color: Colors.grey.withOpacity(0.5)),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'No hay productos en esta cuenta',
-                                    style: TextStyle(color: Colors.grey, fontSize: fontSize),
-                                  ),
-                                  const SizedBox(height: 20),
-                                  ElevatedButton(
-                                    onPressed: _abrirCarta,
-                                    style: ElevatedButton.styleFrom(backgroundColor: barraSuperior),
-                                    child: const Text('Ver Carta', style: TextStyle(color: Colors.white)),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : Column(
-                              children: [
-                                Expanded(
-                                  child: ListView.builder(
-                                    itemCount: _detalles.length,
-                                    itemBuilder: (ctx, i) {
-                                      final item = _detalles[i];
-                                      final nombre = item.nombreProducto;
-                                      final int cantidad = item.cantidad;
-                                      final double precioUnitario = item.precioUnitario;
-                                      final double subtotalLinea = item.totalLinea ?? item.subtotal;
+                                  Expanded(
+                                    child: ListView.builder(
+                                      itemCount: _detalles.length,
+                                      itemBuilder: (ctx, i) {
+                                        final item = _detalles[i];
+                                        final nombre = item.nombreProducto;
+                                        final int cantidad = item.cantidad;
+                                        final double precioUnitario =
+                                            item.precioUnitario;
+                                        final double subtotalLinea =
+                                            item.totalLinea ?? item.subtotal;
 
-                                      return ListTile(
-                                        contentPadding: EdgeInsets.zero,
-                                        leading: CircleAvatar(
-                                          backgroundColor: barraSuperior.withOpacity(0.2),
-                                          child: Text(
-                                            "${cantidad}x",
-                                            style: TextStyle(
-                                              color: textoGeneral,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: fontSize * 0.8,
-                                            ),
-                                          ),
-                                        ),
-                                        title: Text(
-                                          nombre,
-                                          style: TextStyle(
-                                            color: textoGeneral,
-                                            fontSize: fontSize * 0.9,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                        subtitle: Text(
-                                          "${precioUnitario.toStringAsFixed(2)} €/ud",
-                                          style: TextStyle(fontSize: fontSize * 0.7),
-                                        ),
-                                        trailing: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(
-                                              "${subtotalLinea.toStringAsFixed(2)} €",
+                                        return ListTile(
+                                          contentPadding: EdgeInsets.zero,
+                                          leading: CircleAvatar(
+                                            backgroundColor:
+                                                barraSuperior.withOpacity(0.2),
+                                            child: Text(
+                                              "${cantidad}x",
                                               style: TextStyle(
                                                 color: textoGeneral,
                                                 fontWeight: FontWeight.bold,
-                                                fontSize: fontSize * 0.9,
+                                                fontSize: fontSize * 0.8,
                                               ),
                                             ),
-                                            IconButton(
-                                              icon: Icon(
-                                                cantidad > 1 ? Icons.remove_circle_outline : Icons.delete_outline,
-                                                color: Colors.red,
-                                                size: 20,
-                                              ),
-                                              onPressed: () async {
-                                                final id = item.id;
-                                                if (id != null) {
-                                                  await _dataService.eliminarDetallePedido(id);
-                                                  _cargarCuenta();
-                                                }
-                                              },
+                                          ),
+                                          title: Text(
+                                            nombre,
+                                            style: TextStyle(
+                                              color: textoGeneral,
+                                              fontSize: fontSize * 0.9,
+                                              fontWeight: FontWeight.w500,
                                             ),
-                                          ],
-                                        ),
-                                      );
-                                    },
+                                          ),
+                                          subtitle: Text(
+                                            "${precioUnitario.toStringAsFixed(2)} €/ud",
+                                            style: TextStyle(
+                                                fontSize: fontSize * 0.7),
+                                          ),
+                                          trailing: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                "${subtotalLinea.toStringAsFixed(2)} €",
+                                                style: TextStyle(
+                                                  color: textoGeneral,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: fontSize * 0.9,
+                                                ),
+                                              ),
+                                              IconButton(
+                                                icon: Icon(
+                                                  cantidad > 1
+                                                      ? Icons
+                                                          .remove_circle_outline
+                                                      : Icons.delete_outline,
+                                                  color: Colors.red,
+                                                  size: 20,
+                                                ),
+                                                onPressed: () async {
+                                                  final id = item.id;
+                                                  if (id != null) {
+                                                    await _dataService
+                                                        .eliminarDetallePedido(
+                                                            id);
+                                                    _cargarCuenta();
+                                                  }
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
                                   ),
-                                ),
-                                const Divider(),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                                  child: ElevatedButton(
-                                    onPressed: _abrirCarta,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: barraSuperior,
-                                      minimumSize: const Size(double.infinity, 50),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                                  const Divider(),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 8.0),
+                                    child: ElevatedButton(
+                                      onPressed: _abrirCarta,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: barraSuperior,
+                                        minimumSize:
+                                            const Size(double.infinity, 50),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              AppConstants.borderRadiusMedium),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        'Carta +',
+                                        style: TextStyle(
+                                            fontSize: fontSize,
+                                            color: Colors.white),
                                       ),
                                     ),
-                                    child: Text(
-                                      'Carta +',
-                                      style: TextStyle(fontSize: fontSize, color: Colors.white),
-                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
+                                ],
+                              ),
                       ),
                     ),
                   ),
@@ -430,7 +460,8 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $e')),
+            const SnackBar(
+                content: Text('No ha sido posible finalizar la cuenta.')),
           );
         }
       }
