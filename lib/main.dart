@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'dart:io';
 import 'services/logger_service.dart';
 import 'config/app_constants.dart';
@@ -13,6 +14,7 @@ import 'pantallas/pantalla_principal.dart';
 import 'providers/visual_settings_provider.dart';
 import 'providers/localization_provider.dart';
 import 'providers/sync_provider.dart';
+import 'providers/auth_provider.dart';
 import 'services/hybrid_data_service.dart';
 import 'services/token_manager.dart';
 import 'l10n/app_localizations.dart';
@@ -20,9 +22,12 @@ import 'services/localization_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Inicializar SQLite solo en Desktop (Windows, Linux, macOS)
-  if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+
+  // Activar modo inmersivo en dispositivos móviles (ocultar barra de estado y navegación)
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
+  // Inicializar base de datos para escritorio (Windows/Linux)
+  if (!kIsWeb && (Platform.isWindows || Platform.isLinux)) {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
@@ -48,6 +53,7 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => VisualSettingsProvider()),
         ChangeNotifierProvider(create: (_) => LocalizationProvider()),
         ChangeNotifierProvider(create: (_) => SyncProvider()),
@@ -56,6 +62,9 @@ void main() async {
     ),
   );
 }
+
+final GlobalKey<NavigatorState> globalNavigatorKey =
+    GlobalKey<NavigatorState>();
 
 class LogIn extends StatelessWidget {
   const LogIn({super.key});
@@ -66,6 +75,7 @@ class LogIn extends StatelessWidget {
     final localization = Provider.of<LocalizationProvider>(context);
 
     return MaterialApp(
+      navigatorKey: globalNavigatorKey,
       title: 'EZBar',
       debugShowCheckedModeBanner: false,
       locale: localization.currentLocale,
@@ -95,6 +105,21 @@ class LogIn extends StatelessWidget {
           fillColor: Colors.black,
         ),
       ),
+      builder: (context, child) {
+        return GestureDetector(
+          onHorizontalDragEnd: (details) {
+            // Deslizamiento de derecha a izquierda rápido (velocidad negativa)
+            if (details.primaryVelocity != null &&
+                details.primaryVelocity! < -300) {
+              if (globalNavigatorKey.currentState != null &&
+                  globalNavigatorKey.currentState!.canPop()) {
+                globalNavigatorKey.currentState!.pop();
+              }
+            }
+          },
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
       home: const LoginPage(),
     );
   }
@@ -152,6 +177,19 @@ class _LoginPageState extends State<LoginPage> {
             ),
           );
 
+          // Leer el rol desde la respuesta del servidor si está disponible
+          String rol = 'usuario'; // Por defecto
+          if (response['data'] != null &&
+              response['data']['usuario'] != null &&
+              response['data']['usuario']['rol'] != null) {
+            rol = response['data']['usuario']['rol'];
+          }
+
+          // Guardar el rol en el State global
+          Provider.of<AuthProvider>(context, listen: false).setRole(rol);
+
+          // Aquí podrías guardar el token si lo necesitas para futuras peticiones
+          // final token = response['data']['token'];
           // Guardar el token para futuras peticiones
           final token = response['data']?['token'] ?? response['token'];
           if (token != null && token.isNotEmpty) {

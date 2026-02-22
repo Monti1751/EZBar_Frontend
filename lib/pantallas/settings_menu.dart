@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 import '../main.dart';
 import '../providers/ajustes_visuales.dart';
 import '../providers/visual_settings_provider.dart';
+import '../providers/auth_provider.dart';
 import 'pantalla_principal.dart';
 import 'carta_page.dart';
+import 'pantalla_usuarios.dart';
 import '../l10n/app_localizations.dart';
 import '../services/token_manager.dart';
 
@@ -14,12 +16,12 @@ class SettingsMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final settings = Provider.of<VisualSettingsProvider>(context);
+    final auth = Provider.of<AuthProvider>(context);
 
     // Colores dinámicos según ajustes
     final Color fondo = settings.darkMode ? Colors.black : Colors.white;
-    final Color encabezado = settings.colorBlindMode
-        ? Colors.blue
-        : const Color(0xFF7BA238);
+    final Color encabezado =
+        settings.colorBlindMode ? Colors.blue : const Color(0xFF7BA238);
     final Color textoGeneral = settings.darkMode ? Colors.white : Colors.black;
 
     // Tamaños dinámicos
@@ -28,14 +30,14 @@ class SettingsMenu extends StatelessWidget {
     final double headerFontSize = settings.fontSize == FontSizeOption.small
         ? 18
         : settings.fontSize == FontSizeOption.medium
-        ? 22
-        : 26;
+            ? 22
+            : 26;
 
     final double logoutFontSize = settings.fontSize == FontSizeOption.small
         ? 14
         : settings.fontSize == FontSizeOption.medium
-        ? 16
-        : 18;
+            ? 16
+            : 18;
 
     return Drawer(
       child: SafeArea(
@@ -62,47 +64,58 @@ class SettingsMenu extends StatelessWidget {
                 color: fondo,
                 child: ListView(
                   children: [
-                    _menuItem(
-                      icon: Icons.person_pin,
-                      text: AppLocalizations.of(context).translate('manage_roles'),
-                      onTap: () {},
-                      textoColor: textoGeneral,
-                      fontSize: fontSize,
-                    ),
-                    _menuItem(
-                      icon: Icons.menu_book,
-                      text: AppLocalizations.of(context).translate('edit_menu'),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const CartaPage(),
-                          ),
-                        );
-                      },
-                      textoColor: textoGeneral,
-                      fontSize: fontSize,
-                    ),
-                    _menuItem(
-                      icon: Icons.group,
-                      text: AppLocalizations.of(context).translate('edit_users'),
-                      onTap: () {
-                        // TODO: Implementar página de editar/crear usuarios
-                      },
-                      textoColor: textoGeneral,
-                      fontSize: fontSize,
-                    ),
-
-                    _menuItem(
-                      icon: Icons.inventory,
-                      text: AppLocalizations.of(context).translate('edit_inventory'),
-                      onTap: () {},
-                      textoColor: textoGeneral,
-                      fontSize: fontSize,
-                    ),
+                    if (auth.isAdmin) ...[
+                      _menuItem(
+                        icon: Icons.person_pin,
+                        text: AppLocalizations.of(context)
+                            .translate('manage_roles'),
+                        onTap: () {},
+                        textoColor: textoGeneral,
+                        fontSize: fontSize,
+                      ),
+                      _menuItem(
+                        icon: Icons.menu_book,
+                        text:
+                            AppLocalizations.of(context).translate('edit_menu'),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const CartaPage(),
+                            ),
+                          );
+                        },
+                        textoColor: textoGeneral,
+                        fontSize: fontSize,
+                      ),
+                      _menuItem(
+                        icon: Icons.group,
+                        text: AppLocalizations.of(context)
+                            .translate('edit_users'),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const PantallaUsuarios(),
+                            ),
+                          );
+                        },
+                        textoColor: textoGeneral,
+                        fontSize: fontSize,
+                      ),
+                      _menuItem(
+                        icon: Icons.inventory,
+                        text: AppLocalizations.of(context)
+                            .translate('edit_inventory'),
+                        onTap: () {},
+                        textoColor: textoGeneral,
+                        fontSize: fontSize,
+                      ),
+                    ],
                     _menuItem(
                       icon: Icons.brush,
-                      text: AppLocalizations.of(context).translate('settings_header'),
+                      text: AppLocalizations.of(context)
+                          .translate('settings_header'),
                       onTap: () {
                         Navigator.push(
                           context,
@@ -116,7 +129,8 @@ class SettingsMenu extends StatelessWidget {
                     ),
                     _menuItem(
                       icon: Icons.approval,
-                      text: AppLocalizations.of(context).translate('main_menu_access'),
+                      text: AppLocalizations.of(context)
+                          .translate('main_menu_access'),
                       onTap: () {
                         Navigator.push(
                           context,
@@ -139,9 +153,10 @@ class SettingsMenu extends StatelessWidget {
               child: Align(
                 alignment: Alignment.centerRight,
                 child: TextButton.icon(
-                  onPressed: () async {
-                    await TokenManager().clearToken();
-                    if (!context.mounted) return;
+                  onPressed: () {
+                    // Limpiar la variable de sesión al salir
+                    Provider.of<AuthProvider>(context, listen: false).logout();
+
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(
