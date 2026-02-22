@@ -61,6 +61,12 @@ class _CartaPageState extends State<CartaPage> {
 
   List<Seccion> secciones = [];
   final LocalStorageService _localStorage = LocalStorageService();
+  
+  // Variables de diagnóstico
+  int _apiCatsCount = 0;
+  int _apiProdsCount = 0;
+  List<dynamic> _lastRawProds = [];
+  String _diagError = "";
 
   @override
   void initState() {
@@ -72,6 +78,21 @@ class _CartaPageState extends State<CartaPage> {
     try {
       final cats = await _dataService.obtenerCategorias();
       final prods = await _dataService.obtenerProductos();
+      
+      setState(() {
+        _apiCatsCount = cats.length;
+        _apiProdsCount = prods.length;
+        _lastRawProds = prods;
+      });
+      
+      debugPrint("📡 API: ${cats.length} categorías y ${prods.length} productos recibidos.");
+      
+      setState(() {
+        _diagError = prods.isEmpty ? "Lista de productos vacía (Fallback??)" : "";
+      });
+      if (prods.isNotEmpty) {
+        debugPrint("🔍 Ejemplo primer producto: ${prods.first}");
+      }
 
       // Obtener lista negra de categorías eliminadas
       final deletedCategoryIds = await _localStorage.getDeletedCategories();
@@ -87,24 +108,97 @@ class _CartaPageState extends State<CartaPage> {
 
         Seccion s = Seccion(id: categoria.id, nombre: categoria.nombre);
         var pList = prods.where((p) {
-          if (p['categoria'] != null && p['categoria'] is Map) {
-            final catId =
-                p['categoria']['id'] ?? p['categoria']['categoria_id'];
-            return catId == categoria.id;
+          int? pCatId;
+          
+          try {
+            if (p is Plato) {
+              pCatId = p.categoriaId;
+            } else if (p is Map) {
+              // Buscar en todas las combinaciones posibles de llaves
+              final rawCatId = p['categoria_id'] ?? 
+                              p['categoriaId'] ??
+                              (p['categoria'] != null ? (p['categoria']['categoria_id'] ?? p['categoria']['id']) : null);
+                              
+              if (rawCatId is int) pCatId = rawCatId;
+              else if (rawCatId is String) pCatId = int.tryParse(rawCatId);
+            }
+          } catch (e) {
+            debugPrint("Error al emparejar producto: $e");
           }
-          return false;
-        });
+          
+          bool matches = (pCatId != null && categoria.id != null && pCatId.toString() == categoria.id.toString());
+          return matches;
+        }).toList();
+        
+        debugPrint("Match para ${categoria.nombre} (ID: ${categoria.id}): ${pList.length} platos.");
 
         for (var p in pList) {
-          s.platos.add(Plato.fromMap(p as Map<String, dynamic>));
+          try {
+            if (p is Plato) {
+              s.platos.add(p);
+            } else {
+              final map = Map<String, dynamic>.from(p as Map);
+              s.platos.add(Plato.fromMap(map));
+            }
+          } catch (e) {
+            debugPrint("Error al procesar plato: $e");
+          }
         }
+        debugPrint("Sección '${categoria.nombre}' cargada con ${s.platos.length} platos.");
         loaded.add(s);
       }
+      debugPrint("Total de secciones cargadas: ${loaded.length}");
       setState(() {
         secciones = loaded;
       });
+      
+      // Guardar en localStorage para uso offline
+      await _localStorage.saveSecciones(loaded);
     } catch (e) {
-      // print("Error loading data: $e");
+      debugPrint("❌ Error al cargar datos de carta: $e");
+      if (mounted) {
+        setState(() {
+          _diagError = "ERROR: $e";
+        });
+      }
+      
+      // Intenta cargar del almacenamiento local
+      try {
+        final seccionesRawData = await _localStorage.getSecciones();
+        
+        List<Seccion> seccionesLocal = [];
+        for (var data in seccionesRawData) {
+          Seccion s = Seccion(
+            id: data['id'],
+            nombre: data['nombre'],
+          );
+          s.isOpen = data['isOpen'] ?? false;
+          
+          if (data['platos'] != null && data['platos'] is List) {
+            for (var p in data['platos']) {
+              s.platos.add(
+                Plato(
+                  id: p['id'],
+                  nombre: p['nombre'],
+                  precio: (p['precio'] as num).toDouble(),
+                  imagenUrl: p['imagenUrl'],
+                  imagenBlob: p['imagenBlob'],
+                ),
+              );
+            }
+          }
+          seccionesLocal.add(s);
+        }
+        
+        setState(() {
+          secciones = seccionesLocal;
+        });
+      } catch (e2) {
+        print('❌ Error cargando desde localStorage: $e2');
+        setState(() {
+          secciones = [];
+        });
+      }
     }
   }
 
@@ -245,13 +339,36 @@ class _CartaPageState extends State<CartaPage> {
                   child: Column(
                     children: [
                       ListTile(
-                        title: Text(
-                          seccion.nombre,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: fontSize,
-                            color: textoGeneral,
-                          ),
+                        title: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                seccion.nombre,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: fontSize,
+                                  color: textoGeneral,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.white24,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                "[${seccion.platos.length}]",
+                                style: TextStyle(
+                                    fontSize: fontSize * 0.8,
+                                    fontWeight: FontWeight.bold,
+                                    color: seccion.platos.isEmpty
+                                        ? Colors.red
+                                        : textoGeneral.withOpacity(0.7)),
+                              ),
+                            ),
+                          ],
                         ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -287,18 +404,30 @@ class _CartaPageState extends State<CartaPage> {
                                                 .eliminarCategoria(
                                               seccion.id!,
                                             )
-                                                .then((_) {
-                                              _localStorage.addDeletedCategory(
-                                                seccion.id!,
-                                              );
-                                            }).then((_) {
-                                              setState(() {
-                                                secciones.remove(seccion);
-                                              });
-                                              // ignore: use_build_context_synchronously
-                                              Navigator.of(popContext).pop();
+                                                .then((success) {
+                                              if (success) {
+                                                _localStorage.addDeletedCategory(
+                                                  seccion.id!,
+                                                );
+                                                setState(() {
+                                                  secciones.remove(seccion);
+                                                });
+                                                Navigator.of(popContext).pop();
+                                              } else {
+                                                // Manejo genérico de fallo
+                                                Navigator.of(popContext).pop();
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text("No se pudo eliminar la sección."),
+                                                    backgroundColor: Colors.red,
+                                                  ),
+                                                );
+                                              }
                                             }).catchError((e) {
-                                              // print('Error: $e');
+                                              Navigator.of(popContext).pop();
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(content: Text("Error: $e")),
+                                              );
                                             });
                                           } else {
                                             setState(() {
@@ -383,15 +512,12 @@ class _CartaPageState extends State<CartaPage> {
                                               try {
                                                 final data = {
                                                   'nombre': nuevoPlato.nombre,
+                                                  'descripcion': '', // sin descripción por ahora
                                                   'precio': nuevoPlato.precio,
-                                                  'categoria': {
-                                                    'categoria_id': seccion.id,
-                                                  },
-                                                  'ingredientes':
-                                                      nuevoPlato.ingredientes,
-                                                  'extras': nuevoPlato.extras,
-                                                  'alergenos':
-                                                      nuevoPlato.alergenos,
+                                                  'categoria_id': seccion.id,
+                                                  // 'ingredientes': nuevoPlato.ingredientes,
+                                                  // 'extras': nuevoPlato.extras,
+                                                  // 'alergenos': nuevoPlato.alergenos,
                                                   'imagenUrl':
                                                       nuevoPlato.imagenUrl,
                                                   'imagenBlob':
@@ -451,17 +577,11 @@ class _CartaPageState extends State<CartaPage> {
                                                           platoEditado.nombre,
                                                       'precio':
                                                           platoEditado.precio,
-                                                      'categoria': {
-                                                        'categoria_id':
-                                                            seccion.id,
-                                                      },
-                                                      'ingredientes':
-                                                          platoEditado
-                                                              .ingredientes,
-                                                      'extras':
-                                                          platoEditado.extras,
-                                                      'alergenos': platoEditado
-                                                          .alergenos,
+                                                      'categoria_id':
+                                                          seccion.id,
+                                                      // 'ingredientes': platoEditado.ingredientes,
+                                                      // 'extras': platoEditado.extras,
+                                                      // 'alergenos': platoEditado.alergenos,
                                                       'imagenUrl': platoEditado
                                                           .imagenUrl,
                                                       'imagenBlob': platoEditado

@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:flutter/foundation.dart';
 import '../models/mesa.dart';
 import '../models/zona.dart';
 import '../models/plato.dart';
@@ -17,20 +18,42 @@ class DatabaseService {
   DatabaseService._internal();
 
   Future<Database> get database async {
+    if (kIsWeb) {
+      throw UnsupportedError('SQLite not supported on Web');
+    }
     if (_database != null) return _database!;
     _database = await _initDatabase();
     return _database!;
   }
 
   Future<Database> _initDatabase() async {
+    if (kIsWeb) return Future.error('SQLite not supported on Web');
     final databasePath = await getDatabasesPath();
     final path = join(databasePath, 'ezbar_local.db');
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 3,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      try {
+        await db.execute('ALTER TABLE productos ADD COLUMN categoria_id INTEGER');
+      } catch (e) {
+        // En caso de que ya exista por alguna ejecución parcial
+      }
+    }
+    if (oldVersion < 3) {
+      try {
+        await db.execute('ALTER TABLE productos ADD COLUMN producto_id INTEGER');
+      } catch (e) {
+        // En caso de que ya exista
+      }
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -63,6 +86,7 @@ class DatabaseService {
     await db.execute('''
       CREATE TABLE productos (
         id INTEGER PRIMARY KEY,
+        producto_id INTEGER,
         nombre TEXT NOT NULL,
         precio REAL NOT NULL,
         imagen_blob TEXT,
@@ -71,7 +95,8 @@ class DatabaseService {
         extras TEXT,
         alergenos TEXT,
         sync_status TEXT NOT NULL,
-        local_id TEXT
+        local_id TEXT,
+        categoria_id INTEGER
       )
     ''');
 
@@ -229,6 +254,11 @@ class DatabaseService {
     );
   }
 
+  Future<void> clearProductos() async {
+    final db = await database;
+    await db.delete('productos');
+  }
+
   // ==================== MÉTODOS CRUD PARA CATEGORÍAS ====================
 
   Future<int> insertCategoria(Categoria categoria) async {
@@ -249,6 +279,11 @@ class DatabaseService {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  Future<void> clearCategorias() async {
+    final db = await database;
+    await db.delete('categorias');
   }
 
   // ==================== MÉTODOS CRUD PARA PEDIDOS ====================
@@ -277,6 +312,58 @@ class DatabaseService {
       whereArgs: [pedidoId],
     );
     return List.generate(maps.length, (i) => DetallePedido.fromMap(maps[i]));
+  }
+
+  Future<Pedido?> getPedidoActivoMesa(int mesaId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'pedidos',
+      where: 'mesa_id = ? AND estado = ?',
+      whereArgs: [mesaId, 'activo'],
+      limit: 1,
+    );
+    if (maps.isNotEmpty) {
+      return Pedido.fromMap(maps[0]);
+    }
+    return null;
+  }
+
+  Future<int> updatePedido(Pedido pedido) async {
+    final db = await database;
+    return await db.update(
+      'pedidos',
+      pedido.toMap(),
+      where: 'id = ?',
+      whereArgs: [pedido.id],
+    );
+  }
+
+  Future<int> deletePedido(int id) async {
+    final db = await database;
+    return await db.delete(
+      'pedidos',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> deleteDetallePedido(int id) async {
+    final db = await database;
+    return await db.delete(
+      'detalles_pedido',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> updateDetallePedido(DetallePedido detalle) async {
+    final db = await database;
+    return await db.update(
+      'detalles_pedido',
+      detalle.toMap(),
+      where: 'id = ?',
+      whereArgs: [detalle.id],
+    );
   }
 
   // ==================== MÉTODOS PARA COLA DE SINCRONIZACIÓN ====================

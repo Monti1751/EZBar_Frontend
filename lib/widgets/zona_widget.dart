@@ -343,9 +343,7 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                                     PopupMenuButton<String>(
                                       icon: Icon(
                                         Icons.more_vert,
-                                        color: textColor.withValues(
-                                          alpha: 0.7,
-                                        ),
+                                        color: textColor.withOpacity(0.7),
                                       ),
                                       onSelected: (value) {
                                         _cambiarEstadoMesa(mesa, value);

@@ -59,4 +59,5 @@ class AppConstants {
   static const Duration snackBarMedium = Duration(seconds: 3);
   static const Duration animationFast = Duration(milliseconds: 200);
   static const Duration animationMedium = Duration(milliseconds: 500);
+  static const Duration networkTimeout = Duration(seconds: 30);
 }

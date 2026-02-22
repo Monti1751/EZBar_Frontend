@@ -117,7 +117,7 @@ class PlatoDetallePage extends StatelessWidget {
                   .map(
                     (i) => Chip(
                       label: Text(i),
-                      backgroundColor: colorPrimario.withValues(alpha: 0.1),
+                      backgroundColor: colorPrimario.withOpacity(0.1),
                       side: BorderSide.none,
                     ),
                   )

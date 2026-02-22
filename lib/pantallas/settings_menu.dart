@@ -8,6 +8,7 @@ import 'pantalla_principal.dart';
 import 'carta_page.dart';
 import 'pantalla_usuarios.dart';
 import '../l10n/app_localizations.dart';
+import '../services/token_manager.dart';
 
 class SettingsMenu extends StatelessWidget {
   const SettingsMenu({super.key});
