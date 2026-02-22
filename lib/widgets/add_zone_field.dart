@@ -26,8 +26,29 @@ class AddZoneField extends StatelessWidget {
           child: TextField(
             controller: controller,
             decoration: InputDecoration(
-              hintText: AppLocalizations.of(context).translate('zone_name_hint'),
+              hintText:
+                  AppLocalizations.of(context).translate('zone_name_hint'),
               border: const OutlineInputBorder(),
+              filled: true,
+              fillColor: settings.darkMode ? Colors.grey[800] : Colors.white,
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: settings.darkMode
+                      ? Colors.white70
+                      : const Color(0xFF4A4025),
+                  width: 1.5,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: settings.darkMode
+                      ? Colors.greenAccent
+                      : const Color(0xFF7BA238),
+                  width: 2.2,
+                ),
+              ),
             ),
             style: TextStyle(color: textoGeneral),
           ),

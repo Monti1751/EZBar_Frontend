@@ -152,13 +152,12 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
     }
   }
 
-  InputDecoration _inputDecoration(String hint, IconData icon) {
+  InputDecoration _inputDecoration(String hint, IconData icon, bool darkMode) {
     return InputDecoration(
       hintText: hint,
       prefixIcon: Icon(icon, color: AppConstants.darkBrown),
       filled: true,
-      fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      fillColor: darkMode ? Colors.grey[800] : Colors.white,
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
         borderSide: const BorderSide(
@@ -178,9 +177,14 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
   Widget build(BuildContext context) {
     final settings = Provider.of<VisualSettingsProvider>(context);
 
-    final Color fondo = settings.darkMode ? Colors.black : AppConstants.backgroundCream;
-    final Color barraSuperior = settings.colorBlindMode ? Colors.blue : AppConstants.primaryGreen;
-    final Color textoGeneral = settings.darkMode ? Colors.white : AppConstants.darkBrown;
+    // Colores estándar de la app
+    final Color fondo = settings.darkMode
+        ? const Color(0xFF1E1E1E)
+        : AppConstants.backgroundCream;
+    final Color barraSuperior =
+        settings.colorBlindMode ? Colors.blue : AppConstants.primaryGreen;
+    final Color textoGeneral =
+        settings.darkMode ? Colors.white : AppConstants.darkBrown;
 
     final double fontSize = settings.currentFontSize;
 
@@ -307,45 +311,52 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                         ],
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Usuarios del Sistema',
-                    style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: textoGeneral),
-                  ),
-                  const SizedBox(height: 8),
-                  if (_isLoading)
-                    const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator()))
-                  else if (_usuarios.isEmpty)
-                    const Padding(padding: EdgeInsets.all(20), child: Center(child: Text('No hay usuarios registrados')))
-                  else
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: _usuarios.length,
-                      itemBuilder: (context, index) {
-                        final user = _usuarios[index];
-                        final bool active = user['activo'] == 1 || user['activo'] == true;
-                        final bool isAdmin = user['rol'] == 'admin';
-
-                        return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 6),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: active ? (isAdmin ? Colors.orange : barraSuperior) : Colors.grey,
-                              child: Icon(isAdmin ? Icons.security : Icons.person, color: Colors.white),
-                            ),
-                            title: Text(user['username'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: Text('ID: ${user['id']} | Rol: ${user['rol']}'),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(icon: const Icon(Icons.edit, color: Colors.black), onPressed: () => _editUser(user)),
-                                IconButton(icon: const Icon(Icons.delete, color: Colors.black), onPressed: () => _deleteUser(user['id'])),
-                              ],
-                            ),
-                          ),
-                        );
+                    const SizedBox(height: AppConstants.paddingLarge),
+                    TextFormField(
+                      controller: _usernameController,
+                      style: TextStyle(color: textoGeneral, fontSize: fontSize),
+                      decoration: _inputDecoration(
+                          'Nombre de usuario', Icons.person, settings.darkMode),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Ingresa un nombre de usuario';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: AppConstants.paddingMedium),
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: true,
+                      style: TextStyle(color: textoGeneral, fontSize: fontSize),
+                      decoration: _inputDecoration(
+                          'Contraseña', Icons.lock, settings.darkMode),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Ingresa una contraseña';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: AppConstants.paddingMedium),
+                    DropdownButtonFormField<String>(
+                      value: _selectedRole,
+                      decoration: _inputDecoration(
+                          'Rol', Icons.badge, settings.darkMode),
+                      style: TextStyle(color: textoGeneral, fontSize: fontSize),
+                      dropdownColor: Colors.white,
+                      items: const [
+                        DropdownMenuItem(
+                            value: 'admin', child: Text('Administrador')),
+                        DropdownMenuItem(
+                            value: 'usuario', child: Text('Usuario')),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            _selectedRole = value;
+                          });
+                        }
                       },
                     ),
                 ],

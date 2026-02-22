@@ -19,7 +19,8 @@ class SettingsMenu extends StatelessWidget {
     final auth = Provider.of<AuthProvider>(context);
 
     // Colores dinámicos según ajustes
-    final Color fondo = settings.darkMode ? Colors.black : Colors.white;
+    final Color fondo =
+        settings.darkMode ? const Color(0xFF1E1E1E) : Colors.white;
     final Color encabezado =
         settings.colorBlindMode ? Colors.blue : const Color(0xFF7BA238);
     final Color textoGeneral = settings.darkMode ? Colors.white : Colors.black;

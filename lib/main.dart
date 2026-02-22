@@ -46,7 +46,7 @@ void main() async {
 
   LoggerService.i('Iniciando aplicacion EZBar...');
   await LocalizationService().init();
-  
+
   // Cargar token al iniciar la app
   final tokenManager = TokenManager();
   await tokenManager.loadToken();
@@ -125,10 +125,10 @@ class LogIn extends StatelessWidget {
       darkTheme: ThemeData(
         brightness: Brightness.dark,
         primarySwatch: Colors.green,
-        scaffoldBackgroundColor: Colors.black,
+        scaffoldBackgroundColor: const Color(0xFF1E1E1E),
         inputDecorationTheme: const InputDecorationTheme(
           filled: true,
-          fillColor: Colors.black,
+          fillColor: Color(0xFF1E1E1E),
         ),
       ),
       builder: (context, child) {
@@ -240,20 +240,19 @@ class _LoginPageState extends State<LoginPage> {
           // Error controlado (aunque el catch debería atraparlo si lanza excepción)
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: ${response['message']}'),
+            const SnackBar(
+              content:
+                  Text('Error al iniciar sesión. Verifique sus credenciales.'),
               backgroundColor: AppConstants.errorColor,
             ),
           );
         }
       } catch (e) {
         if (!mounted) return;
-        // Limpiar el mensaje de la excepción para que sea amigable
-        // e.toString() suele ser "Exception: Mensaje"
-        final mensaje = e.toString().replaceAll('Exception: ', '');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(mensaje), backgroundColor: AppConstants.errorColor),
+          const SnackBar(
+              content: Text('Error al iniciar sesión. Compruebe su conexión.'),
+              backgroundColor: AppConstants.errorColor),
         );
       }
     }
