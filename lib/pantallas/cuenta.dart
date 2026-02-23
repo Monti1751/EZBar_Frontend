@@ -406,28 +406,29 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
   }
 
   void _mostrarConfirmacionFinalizar(BuildContext context) {
+    if (_detalles.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No hay productos en la cuenta')),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('¿Finalizar cuenta?'),
         content: const Text(
-            'Esta acción marcará el pedido como pagado y liberará la mesa. ¿Estás seguro?'),
+            'Esta acción marcará el pedido como "listo" y liberará la mesa para nuevos clientes. ¿Estás seguro?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            onPressed: _mesaId != null
-                ? () async {
-                    // Código corregido
-                    await _dataService.finalizarPedido(_mesaId!);
-                    if (mounted) {
-                      Navigator.of(ctx).pop();
-                      _cargarCuenta();
-                    }
-                  }
-                : null,
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              await _finalizarCuenta();
+            },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child:
                 const Text('Finalizar', style: TextStyle(color: Colors.white)),
@@ -438,24 +439,21 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
   }
 
   Future<void> _finalizarCuenta() async {
-    if (_detalles.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No hay productos en la cuenta')),
-        );
-      }
-      return;
-    }
+    if (_detalles.isEmpty) return;
 
     final pedidoId = _detalles[0].pedidoId;
     if (pedidoId != null) {
       try {
         await _dataService.finalizarPedido(pedidoId);
-        await _cargarCuenta();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Cuenta finalizada correctamente')),
+            const SnackBar(
+              content: Text('Cuenta finalizada correctamente. Mesa libre.'),
+              backgroundColor: Colors.green,
+            ),
           );
+          // Volver a la pantalla principal para que se vea la mesa libre
+          Navigator.pop(context);
         }
       } catch (e) {
         if (mounted) {

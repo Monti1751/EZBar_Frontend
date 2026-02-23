@@ -23,6 +23,8 @@
   "retry": "Réessayer",
   "connecting": "Connexion en cours...",
   "login_success": "Connexion réussie!",
+  "connection_error": "Erreur de connexion, vérifiez votre connexion.",
+  "incorrect_credentials": "Identifiants incorrects.",
   "welcome": "Bienvenue",
   "username_hint": "Nom d'utilisateur...",
   "password_hint": "Mot de passe...",
