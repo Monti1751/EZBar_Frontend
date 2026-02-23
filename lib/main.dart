@@ -197,8 +197,8 @@ class _LoginPageState extends State<LoginPage> {
           if (!mounted) return;
 
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('¡Login exitoso!'),
+            SnackBar(
+              content: Text(AppLocalizations.of(context).translate('login_success')),
               backgroundColor: AppConstants.successColor,
             ),
           );
@@ -214,18 +214,14 @@ class _LoginPageState extends State<LoginPage> {
           // Guardar el rol en el State global
           Provider.of<AuthProvider>(context, listen: false).setRole(rol);
 
-          // Aquí podrías guardar el token si lo necesitas para futuras peticiones
-          // final token = response['data']['token'];
-          // Guardar el token para futuras peticiones
+          // Cargar el token
           final token = response['data']?['token'] ?? response['token'];
           if (token != null && token.isNotEmpty) {
             await TokenManager().saveToken(token);
             print('✅ Token guardado: $token');
-          } else {
-            print('⚠️ No se encontró token en la respuesta: $response');
           }
 
-          // Cargar datos iniciales en SQLite si es la primera vez o hay conexión
+          // Cargar datos iniciales en SQLite
           if (!mounted) return;
           Provider.of<SyncProvider>(context, listen: false).loadInitialData();
 
@@ -237,21 +233,24 @@ class _LoginPageState extends State<LoginPage> {
             ),
           );
         } else {
-          // Error controlado (aunque el catch debería atraparlo si lanza excepción)
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content:
-                  Text('Error al iniciar sesión. Verifique sus credenciales.'),
-              backgroundColor: AppConstants.errorColor,
-            ),
-          );
+          // Si el status no es OK, lanzamos excepción para que la capture el catch
+          throw Exception('Credenciales incorrectas');
         }
       } catch (e) {
         if (!mounted) return;
+        final errorMsg = e.toString();
+        String snackBarMsg =
+            AppLocalizations.of(context).translate('connection_error');
+
+        // Determinar si es un error de credenciales
+        if (errorMsg.contains('Credenciales incorrectas')) {
+          snackBarMsg =
+              AppLocalizations.of(context).translate('incorrect_credentials');
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Error al iniciar sesión. Compruebe su conexión.'),
+          SnackBar(
+              content: Text(snackBarMsg),
               backgroundColor: AppConstants.errorColor),
         );
       }

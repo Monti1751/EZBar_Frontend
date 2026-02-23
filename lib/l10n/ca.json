@@ -23,6 +23,8 @@
   "retry": "Reintentar",
   "connecting": "Connectant...",
   "login_success": "¡Login exitós!",
+  "connection_error": "Error de connexió, comproveu la vostra connexió.",
+  "incorrect_credentials": "Credencials incorrectes.",
   "welcome": "Benvingut",
   "username_hint": "Nom d'usuari...",
   "password_hint": "Contrasenya...",
