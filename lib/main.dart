@@ -1,12 +1,57 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'pantalla_principal.dart';
-import 'package:provider/provider.dart';
-import 'visual_settings_provider.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:io';
+import 'services/logger_service.dart';
+import 'config/app_constants.dart';
 
-void main() {
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:provider/provider.dart';
+
+import 'pantallas/pantalla_principal.dart';
+import 'providers/visual_settings_provider.dart';
+import 'providers/localization_provider.dart';
+import 'providers/sync_provider.dart';
+import 'services/hybrid_data_service.dart';
+import 'services/token_manager.dart';
+import 'l10n/app_localizations.dart';
+import 'services/localization_service.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Inicializar SQLite solo en Desktop (Windows, Linux, macOS)
+  if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  }
+
+  // Configurar captura de errores globales de Flutter
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    LoggerService.e('Flutter Error', details.exception, details.stack);
+  };
+
+  // Configurar captura de errores asíncronos fuera de Flutter
+  PlatformDispatcher.instance.onError = (error, stack) {
+    LoggerService.e('Asynchronous Error', error, stack);
+    return true;
+  };
+
+  LoggerService.i('Iniciando aplicacion EZBar...');
+  await LocalizationService().init();
+  
+  // Cargar token al iniciar la app
+  await TokenManager().loadToken();
+
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => VisualSettingsProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => VisualSettingsProvider()),
+        ChangeNotifierProvider(create: (_) => LocalizationProvider()),
+        ChangeNotifierProvider(create: (_) => SyncProvider()),
+      ],
       child: const LogIn(),
     ),
   );
@@ -18,18 +63,27 @@ class LogIn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final settings = Provider.of<VisualSettingsProvider>(context);
+    final localization = Provider.of<LocalizationProvider>(context);
 
     return MaterialApp(
       title: 'EZBar',
       debugShowCheckedModeBanner: false,
+      locale: localization.currentLocale,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: localization.localizationService.supportedLocales,
       themeMode: settings.darkMode ? ThemeMode.dark : ThemeMode.light,
       theme: ThemeData(
         brightness: Brightness.light,
         primarySwatch: Colors.green,
-        scaffoldBackgroundColor: const Color(0xFFECF0D5),
+        scaffoldBackgroundColor: AppConstants.backgroundCream,
         inputDecorationTheme: const InputDecorationTheme(
           filled: true,
-          fillColor: Color(0xFFECF0D5),
+          fillColor: AppConstants.backgroundCream,
         ),
       ),
       darkTheme: ThemeData(
@@ -57,6 +111,8 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final HybridDataService _dataService =
+      HybridDataService(); // Servicio híbrido (API + SQLite)
 
   @override
   void dispose() {
@@ -68,22 +124,74 @@ class _LoginPageState extends State<LoginPage> {
   final RegExp usernameRegex = RegExp(r'^(?=.{3,})([a-zA-Z0-9_]+)$');
   final RegExp passwordRegex = RegExp(r'^.{8,}$');
 
-  void _login() {
+  Future<void> _login() async {
     if (_formKey.currentState?.validate() ?? false) {
+      // Mostrar indicador de carga
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Conectando...'),
-          backgroundColor: Color(0xFF7BA238),
-          duration: Duration(seconds: 2),
+          backgroundColor: AppConstants.primaryGreen,
+          duration: AppConstants.snackBarShort,
         ),
       );
 
-      Future.delayed(const Duration(seconds: 2), () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const PantallaPrincipal()),
+      try {
+        final response = await _dataService.login(
+          _usernameController.text,
+          _passwordController.text,
         );
-      });
+
+        if (response['status'] == 'OK') {
+          // Login exitoso
+          if (!mounted) return;
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('¡Login exitoso!'),
+              backgroundColor: AppConstants.successColor,
+            ),
+          );
+
+          // Guardar el token para futuras peticiones
+          final token = response['data']?['token'] ?? response['token'];
+          if (token != null && token.isNotEmpty) {
+            await TokenManager().saveToken(token);
+            print('✅ Token guardado: $token');
+          } else {
+            print('⚠️ No se encontró token en la respuesta: $response');
+          }
+
+          // Cargar datos iniciales en SQLite si es la primera vez o hay conexión
+          if (!mounted) return;
+          Provider.of<SyncProvider>(context, listen: false).loadInitialData();
+
+          if (!mounted) return;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const PantallaPrincipal(),
+            ),
+          );
+        } else {
+          // Error controlado (aunque el catch debería atraparlo si lanza excepción)
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: ${response['message']}'),
+              backgroundColor: AppConstants.errorColor,
+            ),
+          );
+        }
+      } catch (e) {
+        if (!mounted) return;
+        // Limpiar el mensaje de la excepción para que sea amigable
+        // e.toString() suele ser "Exception: Mensaje"
+        final mensaje = e.toString().replaceAll('Exception: ', '');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(mensaje), backgroundColor: AppConstants.errorColor),
+        );
+      }
     }
   }
 
@@ -100,11 +208,12 @@ class _LoginPageState extends State<LoginPage> {
                 margin: const EdgeInsets.only(top: 90),
                 padding: const EdgeInsets.fromLTRB(24, 80, 24, 24),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF7BA238),
-                  borderRadius: BorderRadius.circular(12),
+                  color: AppConstants.primaryGreen,
+                  borderRadius:
+                      BorderRadius.circular(AppConstants.borderRadiusMedium),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF4A4025).withOpacity(0.2),
+                      color: AppConstants.darkBrown.withValues(alpha: 0.2),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -116,38 +225,49 @@ class _LoginPageState extends State<LoginPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const SizedBox(height: 6),
-                      const Text(
-                        'Bienvenido',
-                        style: TextStyle(
+                      Text(
+                        AppLocalizations.of(context).translate('welcome'),
+                        style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF4A4025),
+                          color: AppConstants.darkBrown,
                         ),
                       ),
                       const SizedBox(height: 30),
                       TextFormField(
                         controller: _usernameController,
                         decoration: InputDecoration(
-                          hintText: 'Nombre de usuario...',
-                          prefixIcon: Icon(Icons.person_outlined, color: Color(0xFF4A4025)),
+                          hintText: AppLocalizations.of(context)
+                              .translate('username_hint'),
+                          prefixIcon: const Icon(
+                            Icons.person_outlined,
+                            color: AppConstants.darkBrown,
+                          ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Color(0xFF4A4025),  width: 1.5,),
+                            borderRadius: BorderRadius.circular(
+                                AppConstants.borderRadiusMedium),
+                            borderSide: const BorderSide(
+                              color: AppConstants.darkBrown,
+                              width: AppConstants.borderWidthThin,
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(
+                                AppConstants.borderRadiusMedium),
                             borderSide: const BorderSide(
-                              color: Color(0xFFECF0D5),
-                              width: 2.2,
+                              color: AppConstants.backgroundCream,
+                              width: AppConstants.borderWidthThick,
                             ),
                           ),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Por favor, ingresa tu usuario';
+                            return AppLocalizations.of(context)
+                                .translate('please_enter_username');
                           }
                           if (!usernameRegex.hasMatch(value)) {
-                            return 'Usuario inválido (mín. 3 caracteres, solo letras, números y _)';
+                            return AppLocalizations.of(context)
+                                .translate('invalid_username');
                           }
                           return null;
                         },
@@ -157,26 +277,37 @@ class _LoginPageState extends State<LoginPage> {
                         controller: _passwordController,
                         obscureText: true,
                         decoration: InputDecoration(
-                          hintText: 'Contraseña...',
-                          prefixIcon: Icon(Icons.lock_outline, color: Color(0xFF4A4025)),
+                          hintText: AppLocalizations.of(context)
+                              .translate('password_hint'),
+                          prefixIcon: const Icon(
+                            Icons.lock_outline,
+                            color: AppConstants.darkBrown,
+                          ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Color(0xFF4A4025), width: 1.5,),
+                            borderRadius: BorderRadius.circular(
+                                AppConstants.borderRadiusMedium),
+                            borderSide: const BorderSide(
+                              color: AppConstants.darkBrown,
+                              width: AppConstants.borderWidthThin,
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(
+                                AppConstants.borderRadiusMedium),
                             borderSide: const BorderSide(
-                              color: Color(0xFFECF0D5),
-                              width: 2.2,
+                              color: AppConstants.backgroundCream,
+                              width: AppConstants.borderWidthThick,
                             ),
                           ),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Por favor, ingresa la contraseña';
+                            return AppLocalizations.of(context)
+                                .translate('please_enter_password');
                           }
                           if (!passwordRegex.hasMatch(value)) {
-                            return 'La contraseña debe tener al menos 8 caracteres';
+                            return AppLocalizations.of(context)
+                                .translate('password_min_8');
                           }
                           return null;
                         },
@@ -187,15 +318,20 @@ class _LoginPageState extends State<LoginPage> {
                         child: ElevatedButton(
                           onPressed: _login,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF4A4025),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            backgroundColor: AppConstants.darkBrown,
+                            padding: const EdgeInsets.symmetric(
+                                vertical: AppConstants.buttonPaddingVertical),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(
+                                  AppConstants.borderRadiusMedium),
                             ),
                           ),
-                          child: const Text(
-                            'Iniciar sesión',
-                            style: TextStyle(fontSize: 18, color: Color(0xFFECF0D5)),
+                          child: Text(
+                            AppLocalizations.of(context).translate('login'),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              color: AppConstants.backgroundCream,
+                            ),
                           ),
                         ),
                       ),
@@ -205,19 +341,18 @@ class _LoginPageState extends State<LoginPage> {
               ),
               Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFFECF0D5),
+                  color: AppConstants.backgroundCream,
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: const Color(0xFF4A4025),
-                    width: 6,
-                  ),
+                      color: AppConstants.darkBrown,
+                      width: AppConstants.logoBorderWidth),
                 ),
                 padding: const EdgeInsets.all(8),
                 child: ClipOval(
                   child: Image.asset(
-                    'logo_bueno.png',
-                    height: 130,
-                    width: 130,
+                    'logo_bueno.PNG',
+                    height: AppConstants.logoSizeLarge,
+                    width: AppConstants.logoSizeLarge,
                     fit: BoxFit.cover,
                   ),
                 ),

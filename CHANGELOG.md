@@ -1,6 +1,38 @@
 # Changelog
 
-## -30-11-2025
+## Versión 0.7.0 (9-2-2026)
+
+### Añadido
+* Lógica del botón de guardado.
+* Implementación de estado de bloqueo del botón: el botón "Agregar" ahora se desactiva durante el guardado y solo se habilita al detectar cambios reales.
+
+### Corregido
+* Mejora de persistencia de imágenes.
+* Se actualizó PlatoEditorPage para manejar correctamente la selección de imágenes con XFile y codificación Base64.
+* Mejora del widget de imagen para manejar archivos locales, URLs y blobs Base64 de forma consistente.
+* Corrección de posible fallo por ID nulo en el callback de actualización de productos.
+
+## Versión 0.5.0 (15-12-2025)
+
+### Añadido
+* Se ha añadido la pantalla para la creación de los plato.
+* Se ha añadido la pantalla para la carta y un acceso desde ajuses funcinal.
+* Se ha añadido advertencia de borrado.
+* Se ha añadido el botón para cambiar el idiama de la app en ajustes (aun sin funcionalidad).
+
+### Corregido
+* Se ha cambiado la funcionalidad del botón para acceder a la carta.
+* Se ha cambiado el estilo visual de los estados de las mesas (Badges).
+* Ajustar botón de la zona.
+* Eliminar segundo bloque de añadir mesas.
+* Corregir tamaño de la letra.
+* Se ha cambiado los scrolls de las pantallas.
+* Uniformidad en los contenedores.
+* Se ha cambiado la funcinalidad del botón para regresar al menú principal.
+* Se han corregido los cuadros de texto (Nuestros colores, levelText -> hintText) y que no se deformen.
+* Ajustar botón carta.
+
+## Versión 0.2.0 (30-11-2025)
 
 ### Añadido
 * Se ha añadido la ventana de ajustes dentro de la ventana de mesas, igual que en el menú principal.
@@ -15,7 +47,7 @@
 ### Corregido
 * Se ha cambiado el condicional del inicio de sesión por un controlador basado en Regex.
 
-## -17-11-2025
+## Versiuón 0.1.0 (17-11-2025)
 
 ### Añadido
 * Se ha añadido una página de Log in.
