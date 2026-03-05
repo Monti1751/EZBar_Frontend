@@ -9,6 +9,7 @@ import '../widgets/top_bar.dart';
 import '../widgets/add_zone_button.dart';
 import '../widgets/add_zone_field.dart';
 import '../widgets/zona_widget.dart';
+import '../widgets/reorderable_responsive_grid.dart';
 
 class PantallaPrincipal extends StatelessWidget {
   const PantallaPrincipal({super.key});
@@ -55,7 +56,7 @@ class _MainMenuState extends State<MainMenu> {
         }).toList();
         _isLoading = false;
       });
-      
+
       print('✅ Zonas cargadas: ${zones.length}');
       await _localStorage.saveZones(zones);
     } catch (e) {
@@ -118,8 +119,10 @@ class _MainMenuState extends State<MainMenu> {
   Widget build(BuildContext context) {
     final settings = Provider.of<VisualSettingsProvider>(context);
 
-    final Color fondo = settings.darkMode ? Colors.black : const Color(0xFFECF0D5);
-    final Color barraSuperior = settings.colorBlindMode ? Colors.blue : const Color(0xFF7BA238);
+    final Color fondo =
+        settings.darkMode ? const Color(0xFF1E1E1E) : const Color(0xFFECF0D5);
+    final Color barraSuperior =
+        settings.colorBlindMode ? Colors.blue : const Color(0xFF7BA238);
 
     return Scaffold(
       key: _scaffoldKey,
@@ -154,30 +157,44 @@ class _MainMenuState extends State<MainMenu> {
                   Expanded(
                     child: _isLoading
                         ? Center(
-                            child: CircularProgressIndicator(color: barraSuperior))
-                        : LayoutBuilder(
-                            builder: (context, constraints) {
+                            child:
+                                CircularProgressIndicator(color: barraSuperior))
+                        : ReorderableResponsiveGrid<Zona>(
+                            items: zones,
+                            onReorder: (oldIndex, newIndex) {
+                              setState(() {
+                                final item = zones.removeAt(oldIndex);
+                                zones.insert(newIndex, item);
+                              });
+                              _localStorage.saveZones(zones);
+                            },
+                            layoutBuilder: (context, constraints, children) {
                               return SingleChildScrollView(
                                 child: Center(
                                   child: Wrap(
                                     spacing: 12,
                                     runSpacing: 12,
                                     alignment: WrapAlignment.start,
-                                    children: zones.map((z) {
-                                      return SizedBox(
-                                        width: constraints.maxWidth > 600
-                                            ? (constraints.maxWidth / 2) -
-                                                18 // 2 columns minus spacing
-                                            : constraints.maxWidth, // 1 column
-                                        child: ZoneWidget(
-                                          zona: z,
-                                          onDelete: () => _eliminarZona(z),
-                                        ),
-                                      );
-                                    }).toList(),
+                                    children: children,
                                   ),
                                 ),
                               );
+                            },
+                            itemBuilder: (context, index, z) {
+                              return LayoutBuilder(builder: (ctx, constraints) {
+                                double maxWidth =
+                                    MediaQuery.of(context).size.width -
+                                        24; // considering padding
+                                return SizedBox(
+                                  width: maxWidth > 600
+                                      ? (maxWidth / 2) - 18
+                                      : maxWidth,
+                                  child: ZoneWidget(
+                                    zona: z,
+                                    onDelete: () => _eliminarZona(z),
+                                  ),
+                                );
+                              });
                             },
                           ),
                   ),

@@ -152,13 +152,12 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
     }
   }
 
-  InputDecoration _inputDecoration(String hint, IconData icon) {
+  InputDecoration _inputDecoration(String hint, IconData icon, bool darkMode) {
     return InputDecoration(
       hintText: hint,
       prefixIcon: Icon(icon, color: AppConstants.darkBrown),
       filled: true,
-      fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      fillColor: darkMode ? Colors.grey[800] : Colors.white,
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
         borderSide: const BorderSide(
@@ -178,9 +177,17 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
   Widget build(BuildContext context) {
     final settings = Provider.of<VisualSettingsProvider>(context);
 
-    final Color fondo = settings.darkMode ? Colors.black : AppConstants.backgroundCream;
-    final Color barraSuperior = settings.colorBlindMode ? Colors.blue : AppConstants.primaryGreen;
-    final Color textoGeneral = settings.darkMode ? Colors.white : AppConstants.darkBrown;
+    // Colores estándar de la app
+    final Color fondo = settings.darkMode
+        ? const Color(0xFF1E1E1E)
+        : AppConstants.backgroundCream;
+    final Color barraSuperior =
+        settings.colorBlindMode ? Colors.blue : AppConstants.primaryGreen;
+    final Color textoGeneral =
+        settings.darkMode ? Colors.white : AppConstants.darkBrown;
+    final Color cardColor = settings.darkMode 
+        ? const Color(0xFF2C2C2C) 
+        : Colors.white;
 
     final double fontSize = settings.currentFontSize;
 
@@ -199,12 +206,12 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 IconButton(
-                  icon: Icon(Icons.arrow_back, color: Colors.white, size: AppConstants.defaultIconSize),
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
                   onPressed: () => Navigator.pop(context),
                 ),
                 const Spacer(),
                 IconButton(
-                  icon: Icon(Icons.menu, color: Colors.white, size: AppConstants.defaultIconSize),
+                  icon: const Icon(Icons.menu, color: Colors.white),
                   onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                 ),
               ],
@@ -219,16 +226,17 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                   // Formulario en ExpansionTile
                   Card(
                     elevation: 2,
+                    color: cardColor,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium)),
                     child: Theme(
                       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
                       child: ExpansionTile(
                         initiallyExpanded: _editingUserId != null,
                         maintainState: true,
-                        key: ValueKey('user_form_$_isFormExpanded'), // Ayuda a forzar el estado si es necesario
+                        key: ValueKey('user_form_$_editingUserId'),
                         title: Text(
                           _editingUserId != null ? 'Editar: ${_usernameController.text}' : 'Crear Nuevo Usuario',
-                          style: TextStyle(fontWeight: FontWeight.bold, color: barraSuperior),
+                          style: TextStyle(fontWeight: FontWeight.bold, color: barraSuperior, fontSize: fontSize),
                         ),
                         leading: Icon(_editingUserId != null ? Icons.edit : Icons.person_add, color: barraSuperior),
                         children: [
@@ -240,14 +248,16 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                                 children: [
                                   TextFormField(
                                     controller: _usernameController,
-                                    decoration: _inputDecoration('Nombre de usuario', Icons.person),
+                                    style: TextStyle(color: textoGeneral, fontSize: fontSize),
+                                    decoration: _inputDecoration('Nombre de usuario', Icons.person, settings.darkMode),
                                     validator: (value) => value!.isEmpty ? 'Requerido' : null,
                                   ),
                                   const SizedBox(height: 12),
                                   TextFormField(
                                     controller: _passwordController,
                                     obscureText: true,
-                                    decoration: _inputDecoration(_editingUserId != null ? 'Nueva contraseña (opcional)' : 'Contraseña', Icons.lock),
+                                    style: TextStyle(color: textoGeneral, fontSize: fontSize),
+                                    decoration: _inputDecoration(_editingUserId != null ? 'Nueva contraseña (opcional)' : 'Contraseña', Icons.lock, settings.darkMode),
                                     validator: (value) => (_editingUserId == null && value!.isEmpty) ? 'Requerido' : null,
                                   ),
                                   const SizedBox(height: 12),
@@ -256,7 +266,9 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                                       Expanded(
                                         child: DropdownButtonFormField<String>(
                                           value: _selectedRole,
-                                          decoration: _inputDecoration('Rol', Icons.badge),
+                                          dropdownColor: cardColor,
+                                          style: TextStyle(color: textoGeneral, fontSize: fontSize),
+                                          decoration: _inputDecoration('Rol', Icons.badge, settings.darkMode),
                                           items: const [
                                             DropdownMenuItem(value: 'admin', child: Text('Admin')),
                                             DropdownMenuItem(value: 'usuario', child: Text('Usuario')),
@@ -267,7 +279,7 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                                       const SizedBox(width: 12),
                                       Column(
                                         children: [
-                                          Text('Activo', style: TextStyle(fontSize: fontSize - 2)),
+                                          Text('Activo', style: TextStyle(fontSize: fontSize * 0.8, color: textoGeneral)),
                                           Switch(
                                             value: _isActive,
                                             onChanged: (v) => setState(() => _isActive = v),
@@ -284,7 +296,7 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                                         Expanded(
                                           child: TextButton(
                                             onPressed: _resetForm,
-                                            child: const Text('Cancelar'),
+                                            child: Text('Cancelar', style: TextStyle(color: barraSuperior, fontSize: fontSize)),
                                           ),
                                         ),
                                       Expanded(
@@ -293,6 +305,7 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: barraSuperior,
                                             padding: const EdgeInsets.symmetric(vertical: 12),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                           ),
                                           onPressed: _saveUser,
                                           child: Text(_editingUserId != null ? 'Actualizar' : 'Guardar Usuario', style: const TextStyle(color: Colors.white)),
@@ -308,16 +321,17 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 20),
                   Text(
                     'Usuarios del Sistema',
                     style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: textoGeneral),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   if (_isLoading)
-                    const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator()))
+                    const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator()))
                   else if (_usuarios.isEmpty)
-                    const Padding(padding: EdgeInsets.all(20), child: Center(child: Text('No hay usuarios registrados')))
+                    const Padding(padding: EdgeInsets.all(40), child: Center(child: Text('No hay usuarios registrados')))
                   else
                     ListView.builder(
                       shrinkWrap: true,
@@ -330,18 +344,32 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
 
                         return Card(
                           margin: const EdgeInsets.symmetric(vertical: 6),
+                          color: cardColor,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           child: ListTile(
                             leading: CircleAvatar(
                               backgroundColor: active ? (isAdmin ? Colors.orange : barraSuperior) : Colors.grey,
-                              child: Icon(isAdmin ? Icons.security : Icons.person, color: Colors.white),
+                              child: Icon(isAdmin ? Icons.security : Icons.person, color: Colors.white, size: 20),
                             ),
-                            title: Text(user['username'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: Text('ID: ${user['id']} | Rol: ${user['rol']}'),
+                            title: Text(
+                              user['username'], 
+                              style: TextStyle(fontWeight: FontWeight.bold, color: textoGeneral, fontSize: fontSize),
+                            ),
+                            subtitle: Text(
+                              'ID: ${user['id']} | Rol: ${user['rol']}',
+                              style: TextStyle(color: textoGeneral.withOpacity(0.7), fontSize: fontSize * 0.8),
+                            ),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                IconButton(icon: const Icon(Icons.edit, color: Colors.black), onPressed: () => _editUser(user)),
-                                IconButton(icon: const Icon(Icons.delete, color: Colors.black), onPressed: () => _deleteUser(user['id'])),
+                                IconButton(
+                                  icon: const Icon(Icons.edit, color: Colors.black, size: 22), 
+                                  onPressed: () => _editUser(user)
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.black, size: 22), 
+                                  onPressed: () => _deleteUser(user['id'])
+                                ),
                               ],
                             ),
                           ),

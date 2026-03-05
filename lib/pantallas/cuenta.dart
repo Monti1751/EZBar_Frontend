@@ -102,8 +102,9 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
       print(stack);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error cargando detalles: $e'),
+          const SnackBar(
+            content: Text(
+                'Error al cargar los detalles del pedido. Inténtelo de nuevo.'),
             backgroundColor: Colors.red,
           ),
         );
@@ -141,8 +142,9 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
     final settings = Provider.of<VisualSettingsProvider>(context);
 
     // Colores dinámicos según ajustes
-    final Color fondo =
-        settings.darkMode ? Colors.black : AppConstants.backgroundCream;
+    final Color fondo = settings.darkMode
+        ? const Color(0xFF1E1E1E)
+        : AppConstants.backgroundCream;
     final Color barraSuperior =
         settings.colorBlindMode ? Colors.blue : AppConstants.primaryGreen;
     final Color textoGeneral = settings.darkMode ? Colors.white : Colors.black;
@@ -188,7 +190,9 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                 children: [
                   // === CUADRO PARA EL NOMBRE DE LA MESA ===
                   Card(
-                    color: settings.darkMode ? Colors.grey[850] : Colors.white,
+                    color: settings.darkMode
+                        ? const Color(0xFF2C2C2C)
+                        : Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(
                           AppConstants.borderRadiusMedium),
@@ -214,8 +218,9 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
                   // === LISTA DE DETALLES ===
                   Expanded(
                     child: Card(
-                      color:
-                          settings.darkMode ? Colors.grey[850] : Colors.white,
+                      color: settings.darkMode
+                          ? const Color(0xFF2C2C2C)
+                          : Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(
                             AppConstants.borderRadiusMedium),
@@ -401,12 +406,19 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
   }
 
   void _mostrarConfirmacionFinalizar(BuildContext context) {
+    if (_detalles.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No hay productos en la cuenta')),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('¿Finalizar cuenta?'),
         content: const Text(
-            'Esta acción marcará el pedido como pagado y liberará la mesa. ¿Estás seguro?'),
+            'Esta acción marcará el pedido como "listo" y liberará la mesa para nuevos clientes. ¿Estás seguro?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
@@ -427,29 +439,27 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
   }
 
   Future<void> _finalizarCuenta() async {
-    if (_detalles.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No hay productos en la cuenta')),
-        );
-      }
-      return;
-    }
+    if (_detalles.isEmpty) return;
 
     final pedidoId = _detalles[0].pedidoId;
     if (pedidoId != null) {
       try {
         await _dataService.finalizarPedido(pedidoId);
-        await _cargarCuenta();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Cuenta finalizada correctamente')),
+            const SnackBar(
+              content: Text('Cuenta finalizada correctamente. Mesa libre.'),
+              backgroundColor: Colors.green,
+            ),
           );
+          // Volver a la pantalla principal para que se vea la mesa libre
+          Navigator.pop(context);
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $e')),
+            const SnackBar(
+                content: Text('No ha sido posible finalizar la cuenta.')),
           );
         }
       }

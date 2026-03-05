@@ -23,6 +23,8 @@
   "retry": "重试",
   "connecting": "正在连接...",
   "login_success": "登录成功！",
+  "connection_error": "连接错误，请检查您的连接。",
+  "incorrect_credentials": "凭据错误。",
   "welcome": "欢迎",
   "username_hint": "用户名...",
   "password_hint": "密码...",

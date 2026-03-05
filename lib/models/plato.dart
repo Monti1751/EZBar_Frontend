@@ -91,8 +91,10 @@ class Plato {
           [],
       syncStatus: map['sync_status'] as String? ?? 'sincronizado',
       localId: map['local_id'] as String?,
-      categoriaId: parseId(map['categoria_id']) ?? 
-                  (map['categoria'] != null ? parseId(map['categoria']['categoria_id']) : null),
+      categoriaId: parseId(map['categoria_id']) ??
+          (map['categoria'] != null
+              ? parseId(map['categoria']['categoria_id'])
+              : null),
     );
   }
 }
@@ -293,12 +295,16 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
           setState(() {
             _isSaving = false;
           });
+          Navigator.pop(context, widget.plato);
         }
       } catch (e) {
         if (mounted) {
           setState(() => _isSaving = false);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+            const SnackBar(
+                content: Text(
+                    "Ocurrió un error al guardar el plato. Revise su conexión."),
+                backgroundColor: Colors.red),
           );
         }
       }
@@ -390,9 +396,9 @@ class _PlatoEditorPageState extends State<PlatoEditorPage> {
     } catch (_) {}
 
     final primaryColor = colorBlind ? Colors.blue : const Color(0xFF7BA238);
-    final backgroundColor = darkMode ? Colors.black87 : Colors.white;
+    final backgroundColor = darkMode ? const Color(0xFF1E1E1E) : Colors.white;
     final textColor = darkMode ? Colors.white : Colors.black;
-    final cardColor = darkMode ? Colors.grey[900] : Colors.white;
+    final cardColor = darkMode ? const Color(0xFF2C2C2C) : Colors.white;
 
     // Colores para el botón de guardar (bloqueado vs activo)
     final saveButtonColor = primaryColor;
