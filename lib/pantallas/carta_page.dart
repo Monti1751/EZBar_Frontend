@@ -61,10 +61,12 @@ class _CartaPageState extends State<CartaPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _seccionController = TextEditingController();
   final TextEditingController _platoController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
   final HybridDataService _dataService = HybridDataService();
 
   List<Seccion> secciones = [];
   final LocalStorageService _localStorage = LocalStorageService();
+  String _searchQuery = "";
 
   // Variables de diagnóstico
   int _apiCatsCount = 0;
@@ -231,6 +233,7 @@ class _CartaPageState extends State<CartaPage> {
   void dispose() {
     _seccionController.dispose();
     _platoController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -293,6 +296,18 @@ class _CartaPageState extends State<CartaPage> {
     final Color textoGeneral = settings.darkMode ? Colors.white : Colors.black;
     final double fontSize = settings.currentFontSize;
 
+    List<Seccion> seccionesMostrar = secciones;
+    if (_searchQuery.isNotEmpty) {
+      seccionesMostrar = secciones.where((seccion) {
+        final queryLower = _searchQuery.toLowerCase();
+        final matchesSeccion =
+            seccion.nombre.toLowerCase().contains(queryLower);
+        final matchesPlato = seccion.platos
+            .any((p) => p.nombre.toLowerCase().contains(queryLower));
+        return matchesSeccion || matchesPlato;
+      }).toList();
+    }
+
     return Scaffold(
       key: _scaffoldKey,
       drawer: const SettingsMenu(),
@@ -326,6 +341,12 @@ class _CartaPageState extends State<CartaPage> {
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: TextField(
+              controller: _searchController,
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
               decoration: loginInputDecoration(
                   AppLocalizations.of(context).translate('search_hint'),
                   Icons.search,
@@ -337,8 +358,10 @@ class _CartaPageState extends State<CartaPage> {
           // Lista de secciones
           Expanded(
             child: ReorderableListView.builder(
-              itemCount: secciones.length,
+              buildDefaultDragHandles: _searchQuery.isEmpty,
+              itemCount: seccionesMostrar.length,
               onReorder: (oldIndex, newIndex) {
+                if (_searchQuery.isNotEmpty) return;
                 setState(() {
                   if (oldIndex < newIndex) {
                     newIndex -= 1;
@@ -349,7 +372,21 @@ class _CartaPageState extends State<CartaPage> {
                 _localStorage.saveSecciones(secciones);
               },
               itemBuilder: (context, index) {
-                final seccion = secciones[index];
+                final seccion = seccionesMostrar[index];
+
+                List<Plato> platosMostrar = seccion.platos;
+                if (_searchQuery.isNotEmpty) {
+                  final queryLower = _searchQuery.toLowerCase();
+                  final matchesSeccion =
+                      seccion.nombre.toLowerCase().contains(queryLower);
+                  if (!matchesSeccion) {
+                    platosMostrar = seccion.platos
+                        .where(
+                            (p) => p.nombre.toLowerCase().contains(queryLower))
+                        .toList();
+                  }
+                }
+
                 return Container(
                   key: ValueKey('seccion_${seccion.id ?? seccion.nombre}'),
                   margin: const EdgeInsets.symmetric(
@@ -474,7 +511,7 @@ class _CartaPageState extends State<CartaPage> {
                           setState(() => seccion.isOpen = !seccion.isOpen);
                         },
                       ),
-                      if (seccion.isOpen)
+                      if (seccion.isOpen || _searchQuery.isNotEmpty)
                         SizedBox(
                           height: MediaQuery.of(context).size.height * 0.65,
                           child: Container(
@@ -568,8 +605,11 @@ class _CartaPageState extends State<CartaPage> {
                                 // Lista de platos
                                 Expanded(
                                   child: ReorderableListView.builder(
-                                    itemCount: seccion.platos.length,
+                                    buildDefaultDragHandles:
+                                        _searchQuery.isEmpty,
+                                    itemCount: platosMostrar.length,
                                     onReorder: (oldIndex, newIndex) {
+                                      if (_searchQuery.isNotEmpty) return;
                                       setState(() {
                                         if (oldIndex < newIndex) {
                                           newIndex -= 1;
@@ -581,7 +621,7 @@ class _CartaPageState extends State<CartaPage> {
                                       _localStorage.saveSecciones(secciones);
                                     },
                                     itemBuilder: (context, platoIndex) {
-                                      final plato = seccion.platos[platoIndex];
+                                      final plato = platosMostrar[platoIndex];
                                       return Container(
                                         key: ValueKey(
                                             'plato_${plato.id ?? plato.nombre}_${plato.hashCode}'),
