@@ -13,21 +13,25 @@ import '../l10n/app_localizations.dart';
 import '../config/app_constants.dart';
 
 /// Helper para InputDecoration consistente
-InputDecoration loginInputDecoration(String hint, IconData icon) {
+InputDecoration loginInputDecoration(
+    String hint, IconData icon, bool darkMode) {
   return InputDecoration(
     hintText: hint,
-    prefixIcon: Icon(icon, color: AppConstants.darkBrown),
+    hintStyle: TextStyle(color: darkMode ? Colors.grey[400] : Colors.grey[600]),
+    prefixIcon:
+        Icon(icon, color: darkMode ? Colors.white70 : AppConstants.darkBrown),
     filled: true,
-    fillColor: Colors.white,
+    fillColor: darkMode ? Colors.grey[800] : Colors.white,
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
-      borderSide: const BorderSide(
-          color: AppConstants.darkBrown, width: AppConstants.borderWidthThin),
+      borderSide: BorderSide(
+          color: darkMode ? Colors.white70 : AppConstants.darkBrown,
+          width: AppConstants.borderWidthThin),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
-      borderSide: const BorderSide(
-          color: AppConstants.primaryGreen,
+      borderSide: BorderSide(
+          color: darkMode ? Colors.greenAccent : AppConstants.primaryGreen,
           width: AppConstants.borderWidthThick),
     ),
   );
@@ -57,12 +61,12 @@ class _CartaPageState extends State<CartaPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _seccionController = TextEditingController();
   final TextEditingController _platoController = TextEditingController();
-  final HybridDataService _dataService = HybridDataService();
   final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = "";
+  final HybridDataService _dataService = HybridDataService();
 
   List<Seccion> secciones = [];
   final LocalStorageService _localStorage = LocalStorageService();
+  String _searchQuery = "";
 
   // Variables de diagnóstico
   int _apiCatsCount = 0;
@@ -219,7 +223,7 @@ class _CartaPageState extends State<CartaPage> {
       listen: false,
     );
     return BoxDecoration(
-      color: settings.darkMode ? Colors.grey[850] : Colors.white,
+      color: settings.darkMode ? const Color(0xFF2C2C2C) : Colors.white,
       borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmallMedium),
       border: Border.all(color: Colors.black26),
     );
@@ -284,12 +288,25 @@ class _CartaPageState extends State<CartaPage> {
   Widget build(BuildContext context) {
     final settings = Provider.of<VisualSettingsProvider>(context);
 
-    final Color fondo =
-        settings.darkMode ? Colors.black : AppConstants.backgroundCream;
+    final Color fondo = settings.darkMode
+        ? const Color(0xFF1E1E1E)
+        : AppConstants.backgroundCream;
     final Color barraSuperior =
         settings.colorBlindMode ? Colors.blue : AppConstants.primaryGreen;
     final Color textoGeneral = settings.darkMode ? Colors.white : Colors.black;
     final double fontSize = settings.currentFontSize;
+
+    List<Seccion> seccionesMostrar = secciones;
+    if (_searchQuery.isNotEmpty) {
+      seccionesMostrar = secciones.where((seccion) {
+        final queryLower = _searchQuery.toLowerCase();
+        final matchesSeccion =
+            seccion.nombre.toLowerCase().contains(queryLower);
+        final matchesPlato = seccion.platos
+            .any((p) => p.nombre.toLowerCase().contains(queryLower));
+        return matchesSeccion || matchesPlato;
+      }).toList();
+    }
 
     return Scaffold(
       key: _scaffoldKey,
@@ -327,214 +344,490 @@ class _CartaPageState extends State<CartaPage> {
               controller: _searchController,
               onChanged: (value) {
                 setState(() {
-                  _searchQuery = value.toLowerCase();
+                  _searchQuery = value;
                 });
               },
               decoration: loginInputDecoration(
                   AppLocalizations.of(context).translate('search_hint'),
-                  Icons.search),
+                  Icons.search,
+                  settings.darkMode),
               style: TextStyle(color: textoGeneral, fontSize: fontSize),
             ),
           ),
 
           // Lista de secciones
           Expanded(
-            child: Builder(
-              builder: (context) {
-                final listaMostrada = secciones.where((seccion) {
-                  if (_searchQuery.isEmpty) return true;
+            child: ReorderableListView.builder(
+              buildDefaultDragHandles: _searchQuery.isEmpty,
+              itemCount: seccionesMostrar.length,
+              onReorder: (oldIndex, newIndex) {
+                if (_searchQuery.isNotEmpty) return;
+                setState(() {
+                  if (oldIndex < newIndex) {
+                    newIndex -= 1;
+                  }
+                  final item = secciones.removeAt(oldIndex);
+                  secciones.insert(newIndex, item);
+                });
+                _localStorage.saveSecciones(secciones);
+              },
+              itemBuilder: (context, index) {
+                final seccion = seccionesMostrar[index];
 
-                  return seccion.platos.any((plato) =>
-                      plato.nombre.toLowerCase().contains(_searchQuery));
-                }).toList();
+                List<Plato> platosMostrar = seccion.platos;
+                if (_searchQuery.isNotEmpty) {
+                  final queryLower = _searchQuery.toLowerCase();
+                  final matchesSeccion =
+                      seccion.nombre.toLowerCase().contains(queryLower);
+                  if (!matchesSeccion) {
+                    platosMostrar = seccion.platos
+                        .where(
+                            (p) => p.nombre.toLowerCase().contains(queryLower))
+                        .toList();
+                  }
+                }
 
-                return ListView.builder(
-                  itemCount: listaMostrada.length,
-                  itemBuilder: (context, index) {
-                    final seccion = listaMostrada[index];
-
-                    return Container(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: AppConstants.paddingLarge,
-                        vertical: AppConstants.paddingSmall,
-                      ),
-                      decoration: BoxDecoration(
-                        color: barraSuperior,
-                        borderRadius: BorderRadius.circular(
-                            AppConstants.borderRadiusSmallMedium),
-                        border: Border.all(color: Colors.black54),
-                      ),
-                      child: Column(
-                        children: [
-                          ListTile(
-                            title: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    seccion.nombre,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: fontSize,
-                                      color: textoGeneral,
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white24,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Text(
-                                    "[${seccion.platos.length}]",
-                                    style: TextStyle(
-                                        fontSize: fontSize * 0.8,
-                                        fontWeight: FontWeight.bold,
-                                        color: seccion.platos.isEmpty
-                                            ? Colors.red
-                                            : textoGeneral.withOpacity(0.7)),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.delete_outline,
-                                    color: Colors.red,
-                                  ),
-                                  tooltip: "Eliminar sección",
-                                  onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (ctx) => AlertDialog(
-                                        title: const Text(
-                                          "Confirmar eliminación",
-                                        ),
-                                        content: Text(
-                                          "¿Seguro que quieres eliminar la sección '${seccion.nombre}'?",
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.of(ctx).pop(),
-                                            child: Text(
-                                                AppLocalizations.of(context)
-                                                    .translate('cancel')),
-                                          ),
-                                          TextButton(
-                                            onPressed: () {
-                                              final popContext = ctx;
-                                              if (seccion.id != null) {
-                                                _dataService
-                                                    .eliminarCategoria(
-                                                  seccion.id!,
-                                                )
-                                                    .then((success) {
-                                                  if (success) {
-                                                    _localStorage
-                                                        .addDeletedCategory(
-                                                      seccion.id!,
-                                                    );
-                                                    setState(() {
-                                                      secciones.remove(seccion);
-                                                    });
-                                                    Navigator.of(popContext)
-                                                        .pop();
-                                                  }
-                                                });
-                                              }
-                                            },
-                                            child: const Text(
-                                              "Eliminar",
-                                              style:
-                                                  TextStyle(color: Colors.red),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                ),
-                                Icon(
-                                  seccion.isOpen
-                                      ? Icons.expand_less
-                                      : Icons.expand_more,
+                return Container(
+                  key: ValueKey('seccion_${seccion.id ?? seccion.nombre}'),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: AppConstants.paddingLarge,
+                    vertical: AppConstants.paddingSmall,
+                  ),
+                  decoration: BoxDecoration(
+                    color: barraSuperior,
+                    borderRadius: BorderRadius.circular(
+                        AppConstants.borderRadiusSmallMedium),
+                    border: Border.all(color: Colors.black54),
+                  ),
+                  child: Column(
+                    children: [
+                      ListTile(
+                        title: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                seccion.nombre,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: fontSize,
                                   color: textoGeneral,
-                                ),
-                              ],
-                            ),
-                            onTap: () {
-                              setState(() => seccion.isOpen = !seccion.isOpen);
-                            },
-                          ),
-                          if (seccion.isOpen)
-                            SizedBox(
-                              height: MediaQuery.of(context).size.height * 0.65,
-                              child: Container(
-                                margin: const EdgeInsets.all(
-                                    AppConstants.paddingMedium),
-                                decoration: _cardDecoration(context),
-                                padding: const EdgeInsets.all(
-                                    AppConstants.paddingMedium),
-                                child: Column(
-                                  children: [
-                                    const SizedBox(height: 10),
-                                    Expanded(
-                                      child: ListView.builder(
-                                        itemCount: seccion.platos.length,
-                                        itemBuilder: (context, platoIndex) {
-                                          final plato =
-                                              seccion.platos[platoIndex];
-
-                                          if (_searchQuery.isNotEmpty &&
-                                              !plato.nombre
-                                                  .toLowerCase()
-                                                  .contains(_searchQuery)) {
-                                            return const SizedBox();
-                                          }
-
-                                          return Container(
-                                            margin: const EdgeInsets.symmetric(
-                                              vertical:
-                                                  AppConstants.paddingXXSmall,
-                                              horizontal:
-                                                  AppConstants.paddingXXSmall,
-                                            ),
-                                            decoration:
-                                                _cardDecoration(context),
-                                            child: Padding(
-                                              padding: const EdgeInsets.all(
-                                                  AppConstants.paddingLarge),
-                                              child: Row(
-                                                children: [
-                                                  Expanded(
-                                                    child: Text(
-                                                      plato.nombre,
-                                                      style: TextStyle(
-                                                        fontSize: fontSize,
-                                                        color: textoGeneral,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  ],
                                 ),
                               ),
                             ),
-                        ],
+                          ],
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                color: Colors.black,
+                              ),
+                              tooltip: "Eliminar sección",
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: const Text(
+                                      "Confirmar eliminación",
+                                    ),
+                                    content: Text(
+                                      "¿Seguro que quieres eliminar la sección '${seccion.nombre}'?",
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(ctx).pop(),
+                                        child: Text(AppLocalizations.of(context)
+                                            .translate('cancel')),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          final popContext = ctx;
+                                          if (seccion.id != null) {
+                                            _dataService
+                                                .eliminarCategoria(
+                                              seccion.id!,
+                                            )
+                                                .then((success) {
+                                              if (success) {
+                                                _localStorage
+                                                    .addDeletedCategory(
+                                                  seccion.id!,
+                                                );
+                                                setState(() {
+                                                  secciones.remove(seccion);
+                                                });
+                                                Navigator.of(popContext).pop();
+                                              } else {
+                                                // Manejo genérico de fallo
+                                                Navigator.of(popContext).pop();
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                        "No se pudo eliminar la sección."),
+                                                    backgroundColor: Colors.red,
+                                                  ),
+                                                );
+                                              }
+                                            }).catchError((e) {
+                                              Navigator.of(popContext).pop();
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                const SnackBar(
+                                                    content: Text(
+                                                        "Ocurrió un error al eliminar la sección. Inténtelo de nuevo.")),
+                                              );
+                                            });
+                                          } else {
+                                            setState(() {
+                                              secciones.remove(seccion);
+                                            });
+                                            // ignore: use_build_context_synchronously
+                                            Navigator.of(popContext).pop();
+                                          }
+                                        },
+                                        child: const Text(
+                                          "Eliminar",
+                                          style: TextStyle(color: Colors.red),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                            Icon(
+                              seccion.isOpen
+                                  ? Icons.expand_less
+                                  : Icons.expand_more,
+                              color: textoGeneral,
+                            ),
+                          ],
+                        ),
+                        onTap: () {
+                          setState(() => seccion.isOpen = !seccion.isOpen);
+                        },
                       ),
-                    );
-                  },
+                      if (seccion.isOpen || _searchQuery.isNotEmpty)
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.65,
+                          child: Container(
+                            margin: const EdgeInsets.all(
+                                AppConstants.paddingMedium),
+                            decoration: _cardDecoration(context),
+                            padding: const EdgeInsets.all(
+                                AppConstants.paddingMedium),
+                            child: Column(
+                              children: [
+                                // Añadir plato (solo nombre) -> abre editor y añade al volver
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: TextField(
+                                        controller: _platoController,
+                                        decoration: loginInputDecoration(
+                                          "Nombre del plato",
+                                          Icons.fastfood,
+                                          settings.darkMode,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(
+                                        width: AppConstants.paddingSmall),
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.add,
+                                        color: Colors.green,
+                                      ),
+                                      tooltip: "Crear plato",
+                                      onPressed: () async {
+                                        final nombre =
+                                            _platoController.text.trim();
+                                        if (nombre.isNotEmpty) {
+                                          final nuevoPlato =
+                                              await Navigator.push<Plato>(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (ctx) => PlatoEditorPage(
+                                                plato: Plato(
+                                                  nombre: nombre,
+                                                  precio: 0.0,
+                                                ),
+                                              ),
+                                            ),
+                                          );
+
+                                          if (nuevoPlato != null) {
+                                            if (seccion.id != null) {
+                                              try {
+                                                final data = {
+                                                  'nombre': nuevoPlato.nombre,
+                                                  'descripcion':
+                                                      '', // sin descripción por ahora
+                                                  'precio': nuevoPlato.precio,
+                                                  'categoria_id': seccion.id,
+                                                  // 'ingredientes': nuevoPlato.ingredientes,
+                                                  // 'extras': nuevoPlato.extras,
+                                                  // 'alergenos': nuevoPlato.alergenos,
+                                                  'imagenUrl':
+                                                      nuevoPlato.imagenUrl,
+                                                  'imagenBlob':
+                                                      nuevoPlato.imagenBlob,
+                                                };
+                                                final res = await _dataService
+                                                    .crearProducto(data);
+                                                nuevoPlato.id =
+                                                    res['producto_id'];
+                                                setState(() {
+                                                  seccion.platos.add(
+                                                    nuevoPlato,
+                                                  );
+                                                });
+                                              } catch (e) {
+                                                // print(
+                                                //   "Error creating product: $e",
+                                                // );
+                                              }
+                                            }
+                                            _platoController.clear();
+                                          }
+                                        }
+                                      },
+                                    ),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 10),
+
+                                // Lista de platos
+                                Expanded(
+                                  child: ReorderableListView.builder(
+                                    buildDefaultDragHandles:
+                                        _searchQuery.isEmpty,
+                                    itemCount: platosMostrar.length,
+                                    onReorder: (oldIndex, newIndex) {
+                                      if (_searchQuery.isNotEmpty) return;
+                                      setState(() {
+                                        if (oldIndex < newIndex) {
+                                          newIndex -= 1;
+                                        }
+                                        final item =
+                                            seccion.platos.removeAt(oldIndex);
+                                        seccion.platos.insert(newIndex, item);
+                                      });
+                                      _localStorage.saveSecciones(secciones);
+                                    },
+                                    itemBuilder: (context, platoIndex) {
+                                      final plato = platosMostrar[platoIndex];
+                                      return Container(
+                                        key: ValueKey(
+                                            'plato_${plato.id ?? plato.nombre}_${plato.hashCode}'),
+                                        margin: const EdgeInsets.symmetric(
+                                          vertical: AppConstants.paddingXXSmall,
+                                          horizontal:
+                                              AppConstants.paddingXXSmall,
+                                        ),
+                                        decoration: _cardDecoration(
+                                          context,
+                                        ),
+                                        child: InkWell(
+                                          onTap: () async {
+                                            await Navigator.push<Plato>(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (ctx) =>
+                                                    PlatoEditorPage(
+                                                  plato: plato,
+                                                  onSave: (platoEditado) async {
+                                                    final data = {
+                                                      'nombre':
+                                                          platoEditado.nombre,
+                                                      'precio':
+                                                          platoEditado.precio,
+                                                      'categoria_id':
+                                                          seccion.id,
+                                                      // 'ingredientes': platoEditado.ingredientes,
+                                                      // 'extras': platoEditado.extras,
+                                                      // 'alergenos': platoEditado.alergenos,
+                                                      'imagenUrl': platoEditado
+                                                          .imagenUrl,
+                                                      'imagenBlob': platoEditado
+                                                          .imagenBlob,
+                                                    };
+                                                    await _dataService
+                                                        .actualizarProducto(
+                                                            platoEditado.id!,
+                                                            data);
+                                                    setState(() {});
+                                                  },
+                                                ),
+                                              ),
+                                            );
+                                            setState(() {});
+                                          },
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(
+                                                AppConstants.paddingLarge),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                // Imagen pequeña + nombre
+                                                Expanded(
+                                                  child: Row(
+                                                    children: [
+                                                      ClipRRect(
+                                                        borderRadius: BorderRadius
+                                                            .circular(AppConstants
+                                                                .borderRadiusSmall),
+                                                        child: SizedBox(
+                                                          width: 50,
+                                                          height: 50,
+                                                          child:
+                                                              _buildListImage(
+                                                                  plato),
+                                                        ),
+                                                      ),
+                                                      const SizedBox(
+                                                          width: AppConstants
+                                                              .paddingMedium),
+                                                      Expanded(
+                                                        child: Text(
+                                                          plato.nombre,
+                                                          style: TextStyle(
+                                                            fontSize: fontSize,
+                                                            color: textoGeneral,
+                                                          ),
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+
+                                                // Acciones: añadir a cuenta (+) y eliminar
+                                                Row(
+                                                  children: [
+                                                    if (widget.onAddToCuenta !=
+                                                        null)
+                                                      IconButton(
+                                                        icon: Icon(
+                                                          Icons.add_circle,
+                                                          color: barraSuperior,
+                                                        ),
+                                                        tooltip:
+                                                            "Añadir a la cuenta",
+                                                        onPressed: () =>
+                                                            _addPlatoToCuenta(
+                                                          plato,
+                                                        ),
+                                                      ),
+                                                    IconButton(
+                                                      icon: const Icon(
+                                                        Icons.delete_outline,
+                                                        color: Colors.black,
+                                                      ),
+                                                      tooltip: "Eliminar plato",
+                                                      onPressed: () {
+                                                        showDialog(
+                                                          context: context,
+                                                          builder: (ctx) =>
+                                                              AlertDialog(
+                                                            title: const Text(
+                                                              "Confirmar eliminación",
+                                                            ),
+                                                            content: Text(
+                                                              "¿Seguro que quieres eliminar el plato '${plato.nombre}'?",
+                                                            ),
+                                                            actions: [
+                                                              TextButton(
+                                                                onPressed: () =>
+                                                                    Navigator
+                                                                        .of(
+                                                                  ctx,
+                                                                ).pop(),
+                                                                child:
+                                                                    const Text(
+                                                                  "Cancelar",
+                                                                ),
+                                                              ),
+                                                              TextButton(
+                                                                onPressed: () {
+                                                                  final popContext =
+                                                                      ctx;
+                                                                  if (plato
+                                                                          .id !=
+                                                                      null) {
+                                                                    _dataService
+                                                                        .eliminarProducto(
+                                                                      plato.id!,
+                                                                    )
+                                                                        .then(
+                                                                            (_) {
+                                                                      setState(
+                                                                          () {
+                                                                        seccion
+                                                                            .platos
+                                                                            .remove(plato);
+                                                                      });
+                                                                      // ignore: use_build_context_synchronously
+                                                                      Navigator.of(
+                                                                              popContext)
+                                                                          .pop();
+                                                                    }).catchError(
+                                                                      (e) {
+                                                                        // Error
+                                                                      },
+                                                                    );
+                                                                  } else {
+                                                                    setState(
+                                                                        () {
+                                                                      seccion
+                                                                          .platos
+                                                                          .remove(
+                                                                              plato);
+                                                                    });
+                                                                    Navigator.of(
+                                                                            popContext)
+                                                                        .pop();
+                                                                  }
+                                                                },
+                                                                child:
+                                                                    const Text(
+                                                                  "Eliminar",
+                                                                  style:
+                                                                      TextStyle(
+                                                                    color: Colors
+                                                                        .red,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        );
+                                                      },
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 );
               },
             ),
@@ -573,6 +866,7 @@ class _CartaPageState extends State<CartaPage> {
                         AppLocalizations.of(context)
                             .translate('section_name_hint'),
                         Icons.list,
+                        settings.darkMode,
                       ),
                     ),
                     actions: [

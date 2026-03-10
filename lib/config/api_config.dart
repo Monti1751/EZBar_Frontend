@@ -1,7 +1,7 @@
 class ApiConfig {
   // URL base de la API Node.js
   //static const String baseUrl = 'https://euphoniously-subpatellar-chandra.ngrok-free.dev';
-  // static const String baseUrl = 'http://localhost:3000'; // Local Node.js API
+  static const String baseUrl = 'http://localhost:3000'; // Local Node.js API
 
   // Para dispositivos Android (emulador)
   // static const String baseUrl = 'http://10.0.2.2:3000';
@@ -10,7 +10,7 @@ class ApiConfig {
   // static const String baseUrl = 'http://localhost:8080/api';
 
   // Para dispositivos físicos (Tu IP local detectada)
-  static const String baseUrl = 'http://172.20.10.5:3000';
+  //static const String baseUrl = 'http://172.20.10.5:3000';
 
   // Endpoints
   static const String mesas = '$baseUrl/api/mesas';
