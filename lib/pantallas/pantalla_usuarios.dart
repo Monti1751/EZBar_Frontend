@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/visual_settings_provider.dart';
 import '../config/app_constants.dart';
 import '../services/api_service.dart';
+import '../l10n/app_localizations.dart';
 import 'settings_menu.dart';
 
 class PantallaUsuarios extends StatefulWidget {
@@ -52,7 +53,7 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('${AppLocalizations.of(context).translate('error')}: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -84,13 +85,13 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Eliminar usuario'),
-        content: const Text('¿Estás seguro de que quieres eliminar este usuario?'),
+        title: Text(AppLocalizations.of(context).translate('delete_user_title')),
+        content: Text(AppLocalizations.of(context).translate('delete_user_confirm')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(AppLocalizations.of(context).translate('cancel'))),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+            child: Text(AppLocalizations.of(context).translate('delete'), style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -101,11 +102,11 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
         await _apiService.eliminarUsuario(id);
         _cargarUsuarios();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Usuario eliminado')),
+          SnackBar(content: Text(AppLocalizations.of(context).translate('user_deleted'))),
         );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('${AppLocalizations.of(context).translate('error')}: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -127,18 +128,18 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
         if (_editingUserId != null) {
           await _apiService.actualizarUsuario(_editingUserId!, datos);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Usuario actualizado correctamente')),
+            SnackBar(content: Text(AppLocalizations.of(context).translate('user_updated_success'))),
           );
         } else {
           if (_passwordController.text.isEmpty) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('La contraseña es obligatoria para nuevos usuarios'), backgroundColor: Colors.orange),
+              SnackBar(content: Text(AppLocalizations.of(context).translate('password_required_new')), backgroundColor: Colors.orange),
             );
             return;
           }
           await _apiService.crearUsuario(datos);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Usuario creado correctamente')),
+            SnackBar(content: Text(AppLocalizations.of(context).translate('user_created_success'))),
           );
         }
         
@@ -146,7 +147,7 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
         _cargarUsuarios();
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('${AppLocalizations.of(context).translate('error')}: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -235,7 +236,9 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                         maintainState: true,
                         key: ValueKey('user_form_$_editingUserId'),
                         title: Text(
-                          _editingUserId != null ? 'Editar: ${_usernameController.text}' : 'Crear Nuevo Usuario',
+                          _editingUserId != null 
+                            ? '${AppLocalizations.of(context).translate('edit_user_prefix')}${_usernameController.text}' 
+                            : AppLocalizations.of(context).translate('create_new_user'),
                           style: TextStyle(fontWeight: FontWeight.bold, color: barraSuperior, fontSize: fontSize),
                         ),
                         leading: Icon(_editingUserId != null ? Icons.edit : Icons.person_add, color: barraSuperior),
@@ -249,16 +252,22 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                                   TextFormField(
                                     controller: _usernameController,
                                     style: TextStyle(color: textoGeneral, fontSize: fontSize),
-                                    decoration: _inputDecoration('Nombre de usuario', Icons.person, settings.darkMode),
-                                    validator: (value) => value!.isEmpty ? 'Requerido' : null,
+                                    decoration: _inputDecoration(AppLocalizations.of(context).translate('username_label'), Icons.person, settings.darkMode),
+                                    validator: (value) => value!.isEmpty ? AppLocalizations.of(context).translate('required_field') : null,
                                   ),
                                   const SizedBox(height: 12),
                                   TextFormField(
                                     controller: _passwordController,
                                     obscureText: true,
                                     style: TextStyle(color: textoGeneral, fontSize: fontSize),
-                                    decoration: _inputDecoration(_editingUserId != null ? 'Nueva contraseña (opcional)' : 'Contraseña', Icons.lock, settings.darkMode),
-                                    validator: (value) => (_editingUserId == null && value!.isEmpty) ? 'Requerido' : null,
+                                    decoration: _inputDecoration(
+                                      _editingUserId != null 
+                                        ? AppLocalizations.of(context).translate('new_password_optional') 
+                                        : AppLocalizations.of(context).translate('password_label'), 
+                                      Icons.lock, 
+                                      settings.darkMode
+                                    ),
+                                    validator: (value) => (_editingUserId == null && value!.isEmpty) ? AppLocalizations.of(context).translate('required_field') : null,
                                   ),
                                   const SizedBox(height: 12),
                                   Row(
@@ -268,10 +277,10 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                                           value: _selectedRole,
                                           dropdownColor: cardColor,
                                           style: TextStyle(color: textoGeneral, fontSize: fontSize),
-                                          decoration: _inputDecoration('Rol', Icons.badge, settings.darkMode),
-                                          items: const [
-                                            DropdownMenuItem(value: 'admin', child: Text('Admin')),
-                                            DropdownMenuItem(value: 'usuario', child: Text('Usuario')),
+                                          decoration: _inputDecoration(AppLocalizations.of(context).translate('role_label'), Icons.badge, settings.darkMode),
+                                          items: [
+                                            DropdownMenuItem(value: 'admin', child: Text(AppLocalizations.of(context).translate('admin_role'))),
+                                            DropdownMenuItem(value: 'usuario', child: Text(AppLocalizations.of(context).translate('user_role'))),
                                           ],
                                           onChanged: (v) => setState(() => _selectedRole = v!),
                                         ),
@@ -279,7 +288,7 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                                       const SizedBox(width: 12),
                                       Column(
                                         children: [
-                                          Text('Activo', style: TextStyle(fontSize: fontSize * 0.8, color: textoGeneral)),
+                                          Text(AppLocalizations.of(context).translate('active_label'), style: TextStyle(fontSize: fontSize * 0.8, color: textoGeneral)),
                                           Switch(
                                             value: _isActive,
                                             onChanged: (v) => setState(() => _isActive = v),
@@ -296,7 +305,7 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                                         Expanded(
                                           child: TextButton(
                                             onPressed: _resetForm,
-                                            child: Text('Cancelar', style: TextStyle(color: barraSuperior, fontSize: fontSize)),
+                                            child: Text(AppLocalizations.of(context).translate('cancel'), style: TextStyle(color: barraSuperior, fontSize: fontSize)),
                                           ),
                                         ),
                                       Expanded(
@@ -308,7 +317,12 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                           ),
                                           onPressed: _saveUser,
-                                          child: Text(_editingUserId != null ? 'Actualizar' : 'Guardar Usuario', style: const TextStyle(color: Colors.white)),
+                                          child: Text(
+                                            _editingUserId != null 
+                                              ? AppLocalizations.of(context).translate('update_button') 
+                                              : AppLocalizations.of(context).translate('save_user_button'), 
+                                            style: const TextStyle(color: Colors.white)
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -324,14 +338,14 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
 
                   const SizedBox(height: 20),
                   Text(
-                    'Usuarios del Sistema',
+                    AppLocalizations.of(context).translate('system_users_title'),
                     style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: textoGeneral),
                   ),
                   const SizedBox(height: 12),
                   if (_isLoading)
                     const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator()))
                   else if (_usuarios.isEmpty)
-                    const Padding(padding: EdgeInsets.all(40), child: Center(child: Text('No hay usuarios registrados')))
+                    Padding(padding: const EdgeInsets.all(40), child: Center(child: Text(AppLocalizations.of(context).translate('no_users_found'))))
                   else
                     ListView.builder(
                       shrinkWrap: true,
@@ -356,7 +370,7 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                               style: TextStyle(fontWeight: FontWeight.bold, color: textoGeneral, fontSize: fontSize),
                             ),
                             subtitle: Text(
-                              'ID: ${user['id']} | Rol: ${user['rol']}',
+                              '${AppLocalizations.of(context).translate('id_label')}: ${user['id']} | ${AppLocalizations.of(context).translate('role_label')}: ${user['rol'] == 'admin' ? AppLocalizations.of(context).translate('admin_role') : AppLocalizations.of(context).translate('user_role')}',
                               style: TextStyle(color: textoGeneral.withOpacity(0.7), fontSize: fontSize * 0.8),
                             ),
                             trailing: Row(

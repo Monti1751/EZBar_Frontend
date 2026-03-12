@@ -43,6 +43,7 @@ class Seccion {
   String nombre;
   bool isOpen = false;
   List<Plato> platos = [];
+  int visibleCount = 3; // Mostrar 3 por defecto
   Seccion({this.id, required this.nombre});
 }
 
@@ -241,28 +242,34 @@ class _CartaPageState extends State<CartaPage> {
     if (widget.onAddToCuenta != null) {
       widget.onAddToCuenta!(plato);
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-            "${AppLocalizations.of(context).translate('added_to_bill')}${plato.nombre}"),
-        behavior: SnackBarBehavior.floating,
-        duration: AppConstants.snackBarMedium,
-      ),
-    );
   }
 
   Widget _buildListImage(Plato plato) {
-    if (plato.imagen != null) {
-      if (kIsWeb) {
-        return Image.network(plato.imagen!.path, fit: BoxFit.cover);
+    // 1. Prioridad: Miniatura (2KB)
+    if (plato.imagenMiniatura != null && plato.imagenMiniatura!.isNotEmpty) {
+      try {
+        String cleanBase64 = plato.imagenMiniatura!;
+        if (cleanBase64.contains(',')) cleanBase64 = cleanBase64.split(',').last;
+        return Image.memory(
+          base64Decode(cleanBase64),
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _buildFallbackImage(plato),
+        );
+      } catch (_) {
+        return _buildFallbackImage(plato);
       }
+    }
+    return _buildFallbackImage(plato);
+  }
+
+  Widget _buildFallbackImage(Plato plato) {
+    if (plato.imagen != null) {
+      if (kIsWeb) return Image.network(plato.imagen!.path, fit: BoxFit.cover);
       return Image.file(File(plato.imagen!.path), fit: BoxFit.cover);
     } else if (plato.imagenBlob != null && plato.imagenBlob!.isNotEmpty) {
       try {
         String cleanBase64 = plato.imagenBlob!;
-        if (cleanBase64.contains(',')) {
-          cleanBase64 = cleanBase64.split(',').last;
-        }
+        if (cleanBase64.contains(',')) cleanBase64 = cleanBase64.split(',').last;
         return Image.memory(
           base64Decode(cleanBase64),
           fit: BoxFit.cover,
@@ -569,13 +576,15 @@ class _CartaPageState extends State<CartaPage> {
                                                       '', // sin descripción por ahora
                                                   'precio': nuevoPlato.precio,
                                                   'categoria_id': seccion.id,
-                                                  // 'ingredientes': nuevoPlato.ingredientes,
-                                                  // 'extras': nuevoPlato.extras,
-                                                  // 'alergenos': nuevoPlato.alergenos,
+                                                  'ingredientes': nuevoPlato.ingredientes.join('|'),
+                                                  'extras': nuevoPlato.extras.join('|'),
+                                                  'alergenos': nuevoPlato.alergenos.join('|'),
                                                   'imagenUrl':
                                                       nuevoPlato.imagenUrl,
                                                   'imagenBlob':
                                                       nuevoPlato.imagenBlob,
+                                                  'imagenMiniatura':
+                                                      nuevoPlato.imagenMiniatura,
                                                 };
                                                 final res = await _dataService
                                                     .crearProducto(data);
@@ -587,9 +596,11 @@ class _CartaPageState extends State<CartaPage> {
                                                   );
                                                 });
                                               } catch (e) {
-                                                // print(
-                                                //   "Error creating product: $e",
-                                                // );
+                                                if (mounted) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(content: Text("Error al crear plato: $e")),
+                                                  );
+                                                }
                                               }
                                             }
                                             _platoController.clear();
@@ -602,24 +613,37 @@ class _CartaPageState extends State<CartaPage> {
 
                                 const SizedBox(height: 10),
 
-                                // Lista de platos
+                                // Lista de platos (Lazy Loading)
                                 Expanded(
-                                  child: ReorderableListView.builder(
-                                    buildDefaultDragHandles:
-                                        _searchQuery.isEmpty,
-                                    itemCount: platosMostrar.length,
-                                    onReorder: (oldIndex, newIndex) {
-                                      if (_searchQuery.isNotEmpty) return;
-                                      setState(() {
-                                        if (oldIndex < newIndex) {
-                                          newIndex -= 1;
+                                  child: NotificationListener<ScrollNotification>(
+                                    onNotification: (ScrollNotification scrollInfo) {
+                                      if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
+                                        // Llegó al final de la lista visible de esta sección
+                                        if (seccion.visibleCount < platosMostrar.length) {
+                                          setState(() {
+                                            seccion.visibleCount += 5; // Cargar 5 más
+                                          });
                                         }
-                                        final item =
-                                            seccion.platos.removeAt(oldIndex);
-                                        seccion.platos.insert(newIndex, item);
-                                      });
-                                      _localStorage.saveSecciones(secciones);
+                                      }
+                                      return true;
                                     },
+                                    child: ReorderableListView.builder(
+                                      buildDefaultDragHandles: _searchQuery.isEmpty,
+                                      itemCount: platosMostrar.length > seccion.visibleCount 
+                                          ? seccion.visibleCount 
+                                          : platosMostrar.length,
+                                      onReorder: (oldIndex, newIndex) {
+                                        if (_searchQuery.isNotEmpty) return;
+                                        setState(() {
+                                          if (oldIndex < newIndex) {
+                                            newIndex -= 1;
+                                          }
+                                          final item =
+                                              seccion.platos.removeAt(oldIndex);
+                                          seccion.platos.insert(newIndex, item);
+                                        });
+                                        _localStorage.saveSecciones(secciones);
+                                      },
                                     itemBuilder: (context, platoIndex) {
                                       final plato = platosMostrar[platoIndex];
                                       return Container(
@@ -649,19 +673,34 @@ class _CartaPageState extends State<CartaPage> {
                                                           platoEditado.precio,
                                                       'categoria_id':
                                                           seccion.id,
-                                                      // 'ingredientes': platoEditado.ingredientes,
-                                                      // 'extras': platoEditado.extras,
-                                                      // 'alergenos': platoEditado.alergenos,
+                                                      'ingredientes': platoEditado.ingredientes.join('|'),
+                                                      'extras': platoEditado.extras.join('|'),
+                                                      'alergenos': platoEditado.alergenos.join('|'),
                                                       'imagenUrl': platoEditado
                                                           .imagenUrl,
                                                       'imagenBlob': platoEditado
                                                           .imagenBlob,
+                                                      'imagenMiniatura': platoEditado
+                                                          .imagenMiniatura,
                                                     };
-                                                    await _dataService
-                                                        .actualizarProducto(
-                                                            platoEditado.id!,
-                                                            data);
-                                                    setState(() {});
+                                                    try {
+                                                      await _dataService
+                                                          .actualizarProducto(
+                                                              platoEditado.id!,
+                                                              data);
+                                                      setState(() {});
+                                                      if (mounted) {
+                                                        ScaffoldMessenger.of(context).showSnackBar(
+                                                          const SnackBar(content: Text("Plato actualizado correctamente")),
+                                                        );
+                                                      }
+                                                    } catch (e) {
+                                                      if (mounted) {
+                                                        ScaffoldMessenger.of(context).showSnackBar(
+                                                          SnackBar(content: Text("Error al actualizar: $e")),
+                                                        );
+                                                      }
+                                                    }
                                                   },
                                                 ),
                                               ),
@@ -822,6 +861,7 @@ class _CartaPageState extends State<CartaPage> {
                                     },
                                   ),
                                 ),
+                              ),
                               ],
                             ),
                           ),
@@ -834,85 +874,86 @@ class _CartaPageState extends State<CartaPage> {
           ),
 
           // Botón para agregar sección
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: barraSuperior,
-                padding: const EdgeInsets.symmetric(
-                  vertical: AppConstants.buttonPaddingVertical,
-                  horizontal: AppConstants.paddingXXLarge,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(AppConstants.borderRadiusMedium),
-                ),
-              ),
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: Text(
-                AppLocalizations.of(context).translate('add_section'),
-                style: TextStyle(fontSize: fontSize, color: Colors.white),
-              ),
-              onPressed: () {
-                _seccionController.clear();
-                showDialog(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: Text(
-                        AppLocalizations.of(context).translate('new_section')),
-                    content: TextField(
-                      controller: _seccionController,
-                      decoration: loginInputDecoration(
-                        AppLocalizations.of(context)
-                            .translate('section_name_hint'),
-                        Icons.list,
-                        settings.darkMode,
-                      ),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        child: Text(
-                            AppLocalizations.of(context).translate('cancel')),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          final popContext = ctx;
-                          if (_seccionController.text.isNotEmpty) {
-                            _dataService
-                                .crearCategoria(
-                              _seccionController.text,
-                            )
-                                .then((nueva) {
-                              setState(() {
-                                final cat = Categoria.fromJson(nueva);
-                                secciones.add(
-                                  Seccion(
-                                    id: cat.id,
-                                    nombre: cat.nombre,
-                                  ),
-                                );
-                              });
-                              // ignore: use_build_context_synchronously
-                              Navigator.pop(popContext);
-                            }).catchError((e) {
-                              // print("Error creating category: $e");
-                              // ignore: use_build_context_synchronously
-                              Navigator.pop(popContext);
-                            });
-                          } else {
-                            Navigator.pop(popContext);
-                          }
-                        },
-                        child:
-                            Text(AppLocalizations.of(context).translate('add')),
-                      ),
-                    ],
+          if (!secciones.any((s) => s.isOpen))
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: barraSuperior,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppConstants.buttonPaddingVertical,
+                    horizontal: AppConstants.paddingXXLarge,
                   ),
-                );
-              },
+                  shape: RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.circular(AppConstants.borderRadiusMedium),
+                  ),
+                ),
+                icon: const Icon(Icons.add, color: Colors.white),
+                label: Text(
+                  AppLocalizations.of(context).translate('add_section'),
+                  style: TextStyle(fontSize: fontSize, color: Colors.white),
+                ),
+                onPressed: () {
+                  _seccionController.clear();
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: Text(AppLocalizations.of(context)
+                          .translate('new_section')),
+                      content: TextField(
+                        controller: _seccionController,
+                        decoration: loginInputDecoration(
+                          AppLocalizations.of(context)
+                              .translate('section_name_hint'),
+                          Icons.list,
+                          settings.darkMode,
+                        ),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: Text(AppLocalizations.of(context)
+                              .translate('cancel')),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            final popContext = ctx;
+                            if (_seccionController.text.isNotEmpty) {
+                              _dataService
+                                  .crearCategoria(
+                                _seccionController.text,
+                              )
+                                  .then((nueva) {
+                                setState(() {
+                                  final cat = Categoria.fromJson(nueva);
+                                  secciones.add(
+                                    Seccion(
+                                      id: cat.id,
+                                      nombre: cat.nombre,
+                                    ),
+                                  );
+                                });
+                                // ignore: use_build_context_synchronously
+                                Navigator.pop(popContext);
+                              }).catchError((e) {
+                                // print("Error creating category: $e");
+                                // ignore: use_build_context_synchronously
+                                Navigator.pop(popContext);
+                              });
+                            } else {
+                              Navigator.pop(popContext);
+                            }
+                          },
+                          child: Text(
+                              AppLocalizations.of(context).translate('add')),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
         ],
       ),
     );

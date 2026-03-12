@@ -162,6 +162,7 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _obscurePassword = true;
   final HybridDataService _dataService =
       HybridDataService(); // Servicio híbrido (API + SQLite)
 
@@ -337,13 +338,26 @@ class _LoginPageState extends State<LoginPage> {
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _passwordController,
-                        obscureText: true,
+                        obscureText: _obscurePassword,
                         decoration: InputDecoration(
                           hintText: AppLocalizations.of(context)
                               .translate('password_hint'),
                           prefixIcon: const Icon(
                             Icons.lock_outline,
                             color: AppConstants.darkBrown,
+                          ),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                              color: AppConstants.darkBrown,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(

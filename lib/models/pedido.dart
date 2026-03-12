@@ -39,9 +39,14 @@ class Pedido {
 
   // Convertir desde JSON del backend
   factory Pedido.fromJson(Map<String, dynamic> json) {
+    // Manejar el objeto anidado 'mesa' si existe
+    final mesaJson = json['mesa'] as Map<String, dynamic>?;
+
     return Pedido(
       id: _parseInt(json['id']) ?? _parseInt(json['pedido_id']),
-      mesaId: _parseInt(json['mesa_id']) ?? _parseInt(json['mesaId']) ?? 0,
+      mesaId: _parseInt(json['mesa_id']) ?? 
+              _parseInt(json['mesaId']) ?? 
+              _parseInt(mesaJson?['mesa_id']) ?? 0,
       estado: json['estado'] as String? ?? 'activo',
       fecha: json['fecha'] != null 
           ? DateTime.parse(json['fecha'] as String)
