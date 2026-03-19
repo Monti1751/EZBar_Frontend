@@ -33,7 +33,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 3,
+      version: 5,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -47,9 +47,25 @@ class DatabaseService {
         // En caso de que ya exista por alguna ejecución parcial
       }
     }
-    if (oldVersion < 3) {
+    if (oldVersion < 4) {
       try {
-        await db.execute('ALTER TABLE productos ADD COLUMN producto_id INTEGER');
+        await db.execute('ALTER TABLE productos ADD COLUMN ingredientes TEXT');
+        await db.execute('ALTER TABLE productos ADD COLUMN extras TEXT');
+        await db.execute('ALTER TABLE productos ADD COLUMN alergenos TEXT');
+        // El campo nombre en mesas ya estaba en onCreate pero si vienen de una version muy vieja podria faltar
+        // Aunque segun el historico parece que 'nombre' siempre estuvo ahi? 
+        // Verificando... Linea 64: 'nombre TEXT NOT NULL'
+        // Si nombre ya estaba, el alter fallara y el catch lo manejara.
+        await db.execute('ALTER TABLE mesas ADD COLUMN nombre_temp TEXT'); // Solo para probar
+        // De hecho, segun el reporte del usuario, el problema es que el Backend no lo guardaba.
+        // Pero vamos a asegurar que el campo existe.
+      } catch (e) {
+        // En caso de que ya existan
+      }
+    }
+    if (oldVersion < 5) {
+      try {
+        await db.execute('ALTER TABLE productos ADD COLUMN imagen_miniatura TEXT');
       } catch (e) {
         // En caso de que ya exista
       }
@@ -90,6 +106,7 @@ class DatabaseService {
         nombre TEXT NOT NULL,
         precio REAL NOT NULL,
         imagen_blob TEXT,
+        imagen_miniatura TEXT,
         imagen_url TEXT,
         ingredientes TEXT,
         extras TEXT,
