@@ -244,14 +244,16 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                                 children: [
                                   TextFormField(
                                     controller: _usernameController,
-                                    decoration: _inputDecoration('Nombre de usuario', Icons.person),
+                                    style: TextStyle(color: textoGeneral, fontSize: fontSize),
+                                    decoration: _inputDecoration('Nombre de usuario', Icons.person, settings.darkMode),
                                     validator: (value) => value!.isEmpty ? 'Requerido' : null,
                                   ),
                                   const SizedBox(height: 12),
                                   TextFormField(
                                     controller: _passwordController,
                                     obscureText: true,
-                                    decoration: _inputDecoration(_editingUserId != null ? 'Nueva contraseña (opcional)' : 'Contraseña', Icons.lock),
+                                    style: TextStyle(color: textoGeneral, fontSize: fontSize),
+                                    decoration: _inputDecoration(_editingUserId != null ? 'Nueva contraseña (opcional)' : 'Contraseña', Icons.lock, settings.darkMode),
                                     validator: (value) => (_editingUserId == null && value!.isEmpty) ? 'Requerido' : null,
                                   ),
                                   const SizedBox(height: 12),
@@ -260,7 +262,9 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                                       Expanded(
                                         child: DropdownButtonFormField<String>(
                                           value: _selectedRole,
-                                          decoration: _inputDecoration('Rol', Icons.badge),
+                                          style: TextStyle(color: textoGeneral, fontSize: fontSize),
+                                          dropdownColor: fondo,
+                                          decoration: _inputDecoration('Rol', Icons.badge, settings.darkMode),
                                           items: const [
                                             DropdownMenuItem(value: 'admin', child: Text('Admin')),
                                             DropdownMenuItem(value: 'usuario', child: Text('Usuario')),
@@ -271,7 +275,7 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                                       const SizedBox(width: 12),
                                       Column(
                                         children: [
-                                          Text('Activo', style: TextStyle(fontSize: fontSize - 2)),
+                                          Text('Activo', style: TextStyle(fontSize: fontSize - 2, color: textoGeneral)),
                                           Switch(
                                             value: _isActive,
                                             onChanged: (v) => setState(() => _isActive = v),
@@ -288,7 +292,7 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                                         Expanded(
                                           child: TextButton(
                                             onPressed: _resetForm,
-                                            child: const Text('Cancelar'),
+                                            child: Text('Cancelar', style: TextStyle(color: textoGeneral)),
                                           ),
                                         ),
                                       Expanded(
@@ -311,52 +315,51 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: AppConstants.paddingLarge),
-                    TextFormField(
-                      controller: _usernameController,
-                      style: TextStyle(color: textoGeneral, fontSize: fontSize),
-                      decoration: _inputDecoration(
-                          'Nombre de usuario', Icons.person, settings.darkMode),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Ingresa un nombre de usuario';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: AppConstants.paddingMedium),
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: true,
-                      style: TextStyle(color: textoGeneral, fontSize: fontSize),
-                      decoration: _inputDecoration(
-                          'Contraseña', Icons.lock, settings.darkMode),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Ingresa una contraseña';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: AppConstants.paddingMedium),
-                    DropdownButtonFormField<String>(
-                      value: _selectedRole,
-                      decoration: _inputDecoration(
-                          'Rol', Icons.badge, settings.darkMode),
-                      style: TextStyle(color: textoGeneral, fontSize: fontSize),
-                      dropdownColor: Colors.white,
-                      items: const [
-                        DropdownMenuItem(
-                            value: 'admin', child: Text('Administrador')),
-                        DropdownMenuItem(
-                            value: 'usuario', child: Text('Usuario')),
-                      ],
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            _selectedRole = value;
-                          });
-                        }
+                  ), // ¡Aquí faltaba cerrar el Card!
+                  const SizedBox(height: AppConstants.paddingLarge),
+                  
+                  // Lista de Usuarios
+                  Text('Usuarios Registrados', style: TextStyle(fontSize: fontSize + 2, fontWeight: FontWeight.bold, color: textoGeneral)),
+                  const SizedBox(height: AppConstants.paddingMedium),
+                  if (_isLoading)
+                    const Center(child: CircularProgressIndicator())
+                  else if (_usuarios.isEmpty)
+                    Center(child: Text('No hay usuarios registrados', style: TextStyle(color: textoGeneral)))
+                  else
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _usuarios.length,
+                      itemBuilder: (context, index) {
+                        final user = _usuarios[index];
+                        final bool userIsActive = user['activo'] == 1 || user['activo'] == true;
+                        return Card(
+                          elevation: 1,
+                          margin: const EdgeInsets.only(bottom: AppConstants.paddingSmall),
+                          color: settings.darkMode ? Colors.grey[850] : Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium)),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: userIsActive ? barraSuperior : Colors.grey,
+                              child: Icon(Icons.person, color: Colors.white),
+                            ),
+                            title: Text(user['username'] ?? '', style: TextStyle(color: textoGeneral, fontSize: fontSize, fontWeight: FontWeight.bold)),
+                            subtitle: Text('Rol: ${user['rol']}', style: TextStyle(color: textoGeneral.withOpacity(0.7), fontSize: fontSize - 2)),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit, color: Colors.blue),
+                                  onPressed: () => _editUser(user),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  onPressed: () => _deleteUser(user['id']),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
                       },
                     ),
                 ],

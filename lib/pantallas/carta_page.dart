@@ -365,36 +365,13 @@ class _CartaPageState extends State<CartaPage> {
                   child: Column(
                     children: [
                       ListTile(
-                        title: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                seccion.nombre,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: fontSize,
-                                  color: textoGeneral,
-                                ),
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.white24,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                "[${seccion.platos.length}]",
-                                style: TextStyle(
-                                    fontSize: fontSize * 0.8,
-                                    fontWeight: FontWeight.bold,
-                                    color: seccion.platos.isEmpty
-                                        ? Colors.red
-                                        : textoGeneral.withOpacity(0.7)),
-                              ),
-                            ),
-                          ],
+                        title: Text(
+                          seccion.nombre,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: fontSize,
+                            color: textoGeneral,
+                          ),
                         ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
