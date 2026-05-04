@@ -67,14 +67,6 @@ class SettingsMenu extends StatelessWidget {
                   children: [
                     if (auth.isAdmin) ...[
                       _menuItem(
-                        icon: Icons.person_pin,
-                        text: AppLocalizations.of(context)
-                            .translate('manage_roles'),
-                        onTap: () {},
-                        textoColor: textoGeneral,
-                        fontSize: fontSize,
-                      ),
-                      _menuItem(
                         icon: Icons.menu_book,
                         text:
                             AppLocalizations.of(context).translate('edit_menu'),
@@ -101,14 +93,6 @@ class SettingsMenu extends StatelessWidget {
                             ),
                           );
                         },
-                        textoColor: textoGeneral,
-                        fontSize: fontSize,
-                      ),
-                      _menuItem(
-                        icon: Icons.inventory,
-                        text: AppLocalizations.of(context)
-                            .translate('edit_inventory'),
-                        onTap: () {},
                         textoColor: textoGeneral,
                         fontSize: fontSize,
                       ),
