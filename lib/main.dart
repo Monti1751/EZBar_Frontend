@@ -164,6 +164,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   final HybridDataService _dataService =
       HybridDataService(); // Servicio híbrido (API + SQLite)
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -338,13 +339,26 @@ class _LoginPageState extends State<LoginPage> {
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _passwordController,
-                        obscureText: true,
+                        obscureText: _obscurePassword,
                         decoration: InputDecoration(
                           hintText: AppLocalizations.of(context)
                               .translate('password_hint'),
                           prefixIcon: const Icon(
                             Icons.lock_outline,
                             color: AppConstants.darkBrown,
+                          ),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                              color: AppConstants.darkBrown,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(
