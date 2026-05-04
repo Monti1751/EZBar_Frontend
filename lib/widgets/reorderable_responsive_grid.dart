@@ -33,6 +33,7 @@ class _ReorderableResponsiveGridState<T>
           final child = widget.itemBuilder(context, index, item);
 
           return DragTarget<int>(
+            key: ValueKey(item),
             onWillAccept: (fromIndex) =>
                 fromIndex != null && fromIndex != index,
             onAccept: (fromIndex) {

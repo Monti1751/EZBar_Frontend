@@ -8,13 +8,14 @@ class LocalizationService {
   late Map<String, Map<String, String>> _localizedValues;
   Locale _currentLocale = const Locale('es');
   
-  final List<String> supportedLanguages = ['es', 'en', 'fr', 'ca', 'zh'];
+  final List<String> supportedLanguages = ['es', 'en', 'fr', 'ca', 'zh', 'ar'];
   final Map<String, String> languageNames = {
     'es': 'Español',
     'en': 'English',
     'fr': 'Français',
     'ca': 'Català',
     'zh': '中文',
+    'ar': 'العربية',
   };
 
   LocalizationService._internal();

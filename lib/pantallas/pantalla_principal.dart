@@ -204,6 +204,7 @@ class _MainMenuState extends State<MainMenu> {
                                       ? (maxWidth / 2) - 18
                                       : maxWidth,
                                   child: ZoneWidget(
+                                    key: ValueKey(z.nombre),
                                     zona: z,
                                     onDelete: () => _eliminarZona(z),
                                   ),

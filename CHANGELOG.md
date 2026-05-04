@@ -1,5 +1,21 @@
 # Changelog
+## Versión 0.8.0 (23-2-2026)
 
+### Añadido
+* Contenedores arrastrables.
+* Ocultación de los botones de android.
+* Volver a la pantalla anterior desplazando hacia la izquierda.
+* Se ha añadido la pantalla de creación y gestión de usuarios.
+* Se ha implementado SQLite como cache.
+* Se ha añadido vista de Usuario.
+* Ahora en la apk tiene el nombre correcto y un icono personalizado.
+
+### Corregido
+* Ahora se muestran los platos en la pantalla de carta y de cuenta.
+* Se ha arreglado el conflicto con SQLite.
+* Todos los iconos ahora son de color negro.
+* Se ha corregido el modo oscuro en su totalidad.
+  
 ## Versión 0.7.0 (9-2-2026)
 
 ### Añadido

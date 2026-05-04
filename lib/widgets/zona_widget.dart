@@ -175,6 +175,14 @@ class _ZoneWidgetState extends State<ZoneWidget> {
   }
 
   @override
+  void didUpdateWidget(covariant ZoneWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.zona.nombre != widget.zona.nombre) {
+      _cargarMesasDeZona();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final settings = Provider.of<VisualSettingsProvider>(context);
 
@@ -261,8 +269,7 @@ class _ZoneWidgetState extends State<ZoneWidget> {
             ),
           ),
           if (_isExpanded)
-            if (_isExpanded)
-              Container(
+            Container(
                 constraints: const BoxConstraints(maxHeight: 400),
                 margin: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
@@ -437,7 +444,7 @@ class _ZoneWidgetState extends State<ZoneWidget> {
                                       IconButton(
                                         icon: const Icon(
                                           Icons.delete_outline,
-                                          color: Colors.red,
+                                          color: Colors.black,
                                         ),
                                         onPressed: () {
                                           showDialog(

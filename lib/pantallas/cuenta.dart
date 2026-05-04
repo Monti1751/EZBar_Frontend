@@ -159,245 +159,17 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
       body: Column(
         children: [
           // === BARRA SUPERIOR ===
-          Container(
-            height: AppConstants.appBarHeight,
-            color: barraSuperior,
-            padding: const EdgeInsets.symmetric(
-                horizontal: AppConstants.paddingSmall),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  icon: Icon(Icons.arrow_back,
-                      color: textoGeneral, size: AppConstants.defaultIconSize),
-                  onPressed: () => Navigator.pop(context),
-                ),
-                IconButton(
-                  icon: Icon(Icons.menu,
-                      color: textoGeneral, size: AppConstants.defaultIconSize),
-                  onPressed: () {
-                    _scaffoldKey.currentState?.openDrawer();
-                  },
-                ),
-              ],
-            ),
-          ),
+          _buildTopBar(barraSuperior, textoGeneral),
 
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  // === CUADRO PARA EL NOMBRE DE LA MESA ===
-                  Card(
-                    color: settings.darkMode
-                        ? const Color(0xFF2C2C2C)
-                        : Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                          AppConstants.borderRadiusMedium),
-                    ),
-                    elevation: 4,
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Center(
-                        child: Text(
-                          widget.nombreMesa,
-                          style: TextStyle(
-                            fontSize: fontSize,
-                            fontWeight: FontWeight.bold,
-                            color: textoGeneral,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: AppConstants.paddingSmall),
-
-                  // === LISTA DE DETALLES ===
-                  Expanded(
-                    child: Card(
-                      color: settings.darkMode
-                          ? const Color(0xFF2C2C2C)
-                          : Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                            AppConstants.borderRadiusMedium),
-                      ),
-                      elevation: 4,
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          vertical: MediaQuery.of(context).size.height * 0.05,
-                          horizontal: MediaQuery.of(context).size.width * 0.05,
-                        ),
-                        child: _detalles.isEmpty
-                            ? Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.receipt_long,
-                                        size: 64,
-                                        color: Colors.grey.withOpacity(0.5)),
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      'No hay productos en esta cuenta',
-                                      style: TextStyle(
-                                          color: Colors.grey,
-                                          fontSize: fontSize),
-                                    ),
-                                    const SizedBox(height: 20),
-                                    ElevatedButton(
-                                      onPressed: _abrirCarta,
-                                      style: ElevatedButton.styleFrom(
-                                          backgroundColor: barraSuperior),
-                                      child: const Text('Ver Carta',
-                                          style:
-                                              TextStyle(color: Colors.white)),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : Column(
-                                children: [
-                                  Expanded(
-                                    child: ListView.builder(
-                                      itemCount: _detalles.length,
-                                      itemBuilder: (ctx, i) {
-                                        final item = _detalles[i];
-                                        final nombre = item.nombreProducto;
-                                        final int cantidad = item.cantidad;
-                                        final double precioUnitario =
-                                            item.precioUnitario;
-                                        final double subtotalLinea =
-                                            item.totalLinea ?? item.subtotal;
-
-                                        return ListTile(
-                                          contentPadding: EdgeInsets.zero,
-                                          leading: CircleAvatar(
-                                            backgroundColor:
-                                                barraSuperior.withOpacity(0.2),
-                                            child: Text(
-                                              "${cantidad}x",
-                                              style: TextStyle(
-                                                color: textoGeneral,
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: fontSize * 0.8,
-                                              ),
-                                            ),
-                                          ),
-                                          title: Text(
-                                            nombre,
-                                            style: TextStyle(
-                                              color: textoGeneral,
-                                              fontSize: fontSize * 0.9,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                          subtitle: Text(
-                                            "${precioUnitario.toStringAsFixed(2)} €/ud",
-                                            style: TextStyle(
-                                                fontSize: fontSize * 0.7),
-                                          ),
-                                          trailing: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Text(
-                                                "${subtotalLinea.toStringAsFixed(2)} €",
-                                                style: TextStyle(
-                                                  color: textoGeneral,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: fontSize * 0.9,
-                                                ),
-                                              ),
-                                              IconButton(
-                                                icon: Icon(
-                                                  cantidad > 1
-                                                      ? Icons
-                                                          .remove_circle_outline
-                                                      : Icons.delete_outline,
-                                                  color: Colors.black,
-                                                  size: 20,
-                                                ),
-                                                onPressed: () async {
-                                                  final id = item.id;
-                                                  if (id != null) {
-                                                    await _dataService
-                                                        .eliminarDetallePedido(
-                                                            id);
-                                                    _cargarCuenta();
-                                                  }
-                                                },
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  const Divider(),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 8.0),
-                                    child: ElevatedButton(
-                                      onPressed: _abrirCarta,
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: barraSuperior,
-                                        minimumSize:
-                                            const Size(double.infinity, 50),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                              AppConstants.borderRadiusMedium),
-                                        ),
-                                      ),
-                                      child: Text(
-                                        'Carta +',
-                                        style: TextStyle(
-                                            fontSize: fontSize,
-                                            color: Colors.white),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: AppConstants.paddingLarge),
-
-                  // === TOTAL ===
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Total: ${total.toStringAsFixed(2)} €',
-                        style: TextStyle(
-                          fontSize: settings.currentFontSize,
-                          fontWeight: FontWeight.bold,
-                          color: textoGeneral,
-                        ),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => _mostrarConfirmacionFinalizar(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: barraSuperior,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                                AppConstants.borderRadiusMedium),
-                          ),
-                          elevation: 2,
-                        ),
-                        child: const Text('Finalizar',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            )),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+            child: OrientationBuilder(
+              builder: (context, orientation) {
+                if (orientation == Orientation.portrait) {
+                  return _buildPortraitLayout(fontSize, textoGeneral, settings, barraSuperior);
+                } else {
+                  return _buildLandscapeLayout(fontSize, textoGeneral, settings, barraSuperior);
+                }
+              },
             ),
           ),
         ],
@@ -405,29 +177,287 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
     );
   }
 
+  Widget _buildTopBar(Color barraSuperior, Color textoGeneral) {
+    return Container(
+      height: AppConstants.appBarHeight,
+      color: barraSuperior,
+      padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingSmall),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(
+            icon: Icon(Icons.arrow_back,
+                color: textoGeneral, size: AppConstants.defaultIconSize),
+            onPressed: () => Navigator.pop(context),
+          ),
+          IconButton(
+            icon: Icon(Icons.menu,
+                color: textoGeneral, size: AppConstants.defaultIconSize),
+            onPressed: () {
+              _scaffoldKey.currentState?.openDrawer();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPortraitLayout(double fontSize, Color textoGeneral, VisualSettingsProvider settings, Color barraSuperior) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        children: [
+          _buildMesaNameCard(fontSize, textoGeneral, settings),
+          const SizedBox(height: AppConstants.paddingSmall),
+          Expanded(child: _buildDetallesCard(fontSize, textoGeneral, settings, barraSuperior)),
+          const SizedBox(height: AppConstants.paddingLarge),
+          _buildTotalSection(textoGeneral, settings, barraSuperior),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLandscapeLayout(double fontSize, Color textoGeneral, VisualSettingsProvider settings, Color barraSuperior) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Columna izquierda: Info y Acciones
+          Expanded(
+            flex: 2,
+            child: Column(
+              children: [
+                _buildMesaNameCard(fontSize, textoGeneral, settings),
+                const Spacer(),
+                _buildTotalSection(textoGeneral, settings, barraSuperior),
+                const SizedBox(height: 10),
+              ],
+            ),
+          ),
+          const SizedBox(width: 20),
+          // Columna derecha: Lista de productos
+          Expanded(
+            flex: 3,
+            child: _buildDetallesCard(fontSize, textoGeneral, settings, barraSuperior),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMesaNameCard(double fontSize, Color textoGeneral, VisualSettingsProvider settings) {
+    return Card(
+      color: settings.darkMode ? const Color(0xFF2C2C2C) : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+      ),
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Center(
+          child: Text(
+            widget.nombreMesa,
+            style: TextStyle(
+              fontSize: fontSize,
+              fontWeight: FontWeight.bold,
+              color: textoGeneral,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetallesCard(double fontSize, Color textoGeneral, VisualSettingsProvider settings, Color barraSuperior) {
+    return Card(
+      color: settings.darkMode ? const Color(0xFF2C2C2C) : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+      ),
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: _detalles.isEmpty
+            ? _buildEmptyState(fontSize, barraSuperior)
+            : Column(
+                children: [
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: _detalles.length,
+                      itemBuilder: (ctx, i) {
+                        final item = _detalles[i];
+                        final nombre = item.nombreProducto;
+                        final int cantidad = item.cantidad;
+                        final double precioUnitario = item.precioUnitario;
+                        final double subtotalLinea = item.totalLinea ?? item.subtotal;
+
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: CircleAvatar(
+                            backgroundColor: barraSuperior.withOpacity(0.2),
+                            child: Text(
+                              "${cantidad}x",
+                              style: TextStyle(
+                                color: textoGeneral,
+                                fontWeight: FontWeight.bold,
+                                fontSize: fontSize * 0.8,
+                              ),
+                            ),
+                          ),
+                          title: Text(
+                            nombre,
+                            style: TextStyle(
+                              color: textoGeneral,
+                              fontSize: fontSize * 0.9,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          subtitle: Text(
+                            "${precioUnitario.toStringAsFixed(2)} €/ud",
+                            style: TextStyle(fontSize: fontSize * 0.7),
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                "${subtotalLinea.toStringAsFixed(2)} €",
+                                style: TextStyle(
+                                  color: textoGeneral,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: fontSize * 0.9,
+                                ),
+                              ),
+                              IconButton(
+                                icon: Icon(
+                                  cantidad > 1 ? Icons.remove_circle_outline : Icons.delete_outline,
+                                  color: settings.darkMode ? Colors.white70 : Colors.black,
+                                  size: 20,
+                                ),
+                                onPressed: () async {
+                                  final id = item.id;
+                                  if (id != null) {
+                                    await _dataService.eliminarDetallePedido(id);
+                                    _cargarCuenta();
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const Divider(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                    child: ElevatedButton(
+                      onPressed: _abrirCarta,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: barraSuperior,
+                        minimumSize: const Size(double.infinity, 45),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                        ),
+                      ),
+                      child: Text(
+                        'Carta +',
+                        style: TextStyle(fontSize: fontSize * 0.9, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(double fontSize, Color barraSuperior) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.receipt_long, size: 64, color: Colors.grey.withOpacity(0.5)),
+          const SizedBox(height: 16),
+          Text(
+            'No hay productos',
+            style: TextStyle(color: Colors.grey, fontSize: fontSize),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: _abrirCarta,
+            style: ElevatedButton.styleFrom(backgroundColor: barraSuperior),
+            child: const Text('Ver Carta', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTotalSection(Color textoGeneral, VisualSettingsProvider settings, Color barraSuperior) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: settings.darkMode ? Colors.white10 : Colors.black.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Text(
+              'Total: ${total.toStringAsFixed(2)} €',
+              style: TextStyle(
+                fontSize: settings.currentFontSize,
+                fontWeight: FontWeight.bold,
+                color: textoGeneral,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => _mostrarConfirmacionFinalizar(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: barraSuperior,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+              ),
+              elevation: 2,
+            ),
+            child: const Text('Finalizar',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                )),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _mostrarConfirmacionFinalizar(BuildContext context) {
+    if (_detalles.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No hay productos en la cuenta')),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('¿Finalizar cuenta?'),
         content: const Text(
-            'Esta acción marcará el pedido como pagado y liberará la mesa. ¿Estás seguro?'),
+            'Esta acción marcará el pedido como "listo" y liberará la mesa para nuevos clientes. ¿Estás seguro?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            onPressed: _mesaId != null
-                ? () async {
-                    // Código corregido
-                    await _dataService.finalizarPedido(_mesaId!);
-                    if (mounted) {
-                      Navigator.of(ctx).pop();
-                      _cargarCuenta();
-                    }
-                  }
-                : null,
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              await _finalizarCuenta();
+            },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child:
                 const Text('Finalizar', style: TextStyle(color: Colors.white)),
@@ -438,24 +468,21 @@ class _CuentaMesaPageState extends State<CuentaMesaPage> {
   }
 
   Future<void> _finalizarCuenta() async {
-    if (_detalles.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No hay productos en la cuenta')),
-        );
-      }
-      return;
-    }
+    if (_detalles.isEmpty) return;
 
     final pedidoId = _detalles[0].pedidoId;
     if (pedidoId != null) {
       try {
         await _dataService.finalizarPedido(pedidoId);
-        await _cargarCuenta();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Cuenta finalizada correctamente')),
+            const SnackBar(
+              content: Text('Cuenta finalizada correctamente. Mesa libre.'),
+              backgroundColor: Colors.green,
+            ),
           );
+          // Volver a la pantalla principal para que se vea la mesa libre
+          Navigator.pop(context);
         }
       } catch (e) {
         if (mounted) {

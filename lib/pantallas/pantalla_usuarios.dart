@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/visual_settings_provider.dart';
 import '../config/app_constants.dart';
 import '../services/api_service.dart';
+import '../l10n/app_localizations.dart';
 import 'settings_menu.dart';
 
 class PantallaUsuarios extends StatefulWidget {
@@ -52,7 +53,7 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('${AppLocalizations.of(context).translate('error')}: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -84,13 +85,13 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Eliminar usuario'),
-        content: const Text('¿Estás seguro de que quieres eliminar este usuario?'),
+        title: Text(AppLocalizations.of(context).translate('delete_user_title')),
+        content: Text(AppLocalizations.of(context).translate('delete_user_confirm')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(AppLocalizations.of(context).translate('cancel'))),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+            child: Text(AppLocalizations.of(context).translate('delete'), style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -101,11 +102,11 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
         await _apiService.eliminarUsuario(id);
         _cargarUsuarios();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Usuario eliminado')),
+          SnackBar(content: Text(AppLocalizations.of(context).translate('user_deleted'))),
         );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('${AppLocalizations.of(context).translate('error')}: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -127,18 +128,18 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
         if (_editingUserId != null) {
           await _apiService.actualizarUsuario(_editingUserId!, datos);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Usuario actualizado correctamente')),
+            SnackBar(content: Text(AppLocalizations.of(context).translate('user_updated_success'))),
           );
         } else {
           if (_passwordController.text.isEmpty) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('La contraseña es obligatoria para nuevos usuarios'), backgroundColor: Colors.orange),
+              SnackBar(content: Text(AppLocalizations.of(context).translate('password_required_new')), backgroundColor: Colors.orange),
             );
             return;
           }
           await _apiService.crearUsuario(datos);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Usuario creado correctamente')),
+            SnackBar(content: Text(AppLocalizations.of(context).translate('user_created_success'))),
           );
         }
         
@@ -146,7 +147,7 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
         _cargarUsuarios();
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('${AppLocalizations.of(context).translate('error')}: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -185,6 +186,9 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
         settings.colorBlindMode ? Colors.blue : AppConstants.primaryGreen;
     final Color textoGeneral =
         settings.darkMode ? Colors.white : AppConstants.darkBrown;
+    final Color cardColor = settings.darkMode 
+        ? const Color(0xFF2C2C2C) 
+        : Colors.white;
 
     final double fontSize = settings.currentFontSize;
 
@@ -203,12 +207,12 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 IconButton(
-                  icon: Icon(Icons.arrow_back, color: Colors.white, size: AppConstants.defaultIconSize),
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
                   onPressed: () => Navigator.pop(context),
                 ),
                 const Spacer(),
                 IconButton(
-                  icon: Icon(Icons.menu, color: Colors.white, size: AppConstants.defaultIconSize),
+                  icon: const Icon(Icons.menu, color: Colors.white),
                   onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                 ),
               ],
@@ -223,16 +227,19 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                   // Formulario en ExpansionTile
                   Card(
                     elevation: 2,
+                    color: cardColor,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium)),
                     child: Theme(
                       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
                       child: ExpansionTile(
                         initiallyExpanded: _editingUserId != null,
                         maintainState: true,
-                        key: ValueKey('user_form_$_isFormExpanded'), // Ayuda a forzar el estado si es necesario
+                        key: ValueKey('user_form_$_editingUserId'),
                         title: Text(
-                          _editingUserId != null ? 'Editar: ${_usernameController.text}' : 'Crear Nuevo Usuario',
-                          style: TextStyle(fontWeight: FontWeight.bold, color: barraSuperior),
+                          _editingUserId != null 
+                            ? '${AppLocalizations.of(context).translate('edit_user_prefix')}${_usernameController.text}' 
+                            : AppLocalizations.of(context).translate('create_new_user'),
+                          style: TextStyle(fontWeight: FontWeight.bold, color: barraSuperior, fontSize: fontSize),
                         ),
                         leading: Icon(_editingUserId != null ? Icons.edit : Icons.person_add, color: barraSuperior),
                         children: [
@@ -301,9 +308,15 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: barraSuperior,
                                             padding: const EdgeInsets.symmetric(vertical: 12),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                           ),
                                           onPressed: _saveUser,
-                                          child: Text(_editingUserId != null ? 'Actualizar' : 'Guardar Usuario', style: const TextStyle(color: Colors.white)),
+                                          child: Text(
+                                            _editingUserId != null 
+                                              ? AppLocalizations.of(context).translate('update_button') 
+                                              : AppLocalizations.of(context).translate('save_user_button'), 
+                                            style: const TextStyle(color: Colors.white)
+                                          ),
                                         ),
                                       ),
                                     ],
