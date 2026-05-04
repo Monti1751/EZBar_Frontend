@@ -165,6 +165,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
   final HybridDataService _dataService =
       HybridDataService(); // Servicio híbrido (API + SQLite)
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -349,8 +350,8 @@ class _LoginPageState extends State<LoginPage> {
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscurePassword
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined,
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
                               color: AppConstants.darkBrown,
                             ),
                             onPressed: () {

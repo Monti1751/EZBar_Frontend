@@ -70,7 +70,19 @@ class _MainMenuState extends State<MainMenu> {
   }
 
   Future<void> _crearZona(String nombre) async {
-    if (nombre.trim().isEmpty) return;
+    nombre = nombre.trim();
+    if (nombre.isEmpty) return;
+
+    final existe = zones.any((z) => z.nombre.toLowerCase() == nombre.toLowerCase());
+    if (existe) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ya existe una zona con este nombre'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     try {
       final response = await _dataService.crearZona({'nombre': nombre});
@@ -181,7 +193,9 @@ class _MainMenuState extends State<MainMenu> {
                               );
                             },
                             itemBuilder: (context, index, z) {
-                              return LayoutBuilder(builder: (ctx, constraints) {
+                              return LayoutBuilder(
+                                key: ValueKey(z.nombre),
+                                builder: (ctx, constraints) {
                                 double maxWidth =
                                     MediaQuery.of(context).size.width -
                                         24; // considering padding

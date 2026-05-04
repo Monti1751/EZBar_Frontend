@@ -252,22 +252,16 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                                   TextFormField(
                                     controller: _usernameController,
                                     style: TextStyle(color: textoGeneral, fontSize: fontSize),
-                                    decoration: _inputDecoration(AppLocalizations.of(context).translate('username_label'), Icons.person, settings.darkMode),
-                                    validator: (value) => value!.isEmpty ? AppLocalizations.of(context).translate('required_field') : null,
+                                    decoration: _inputDecoration('Nombre de usuario', Icons.person, settings.darkMode),
+                                    validator: (value) => value!.isEmpty ? 'Requerido' : null,
                                   ),
                                   const SizedBox(height: 12),
                                   TextFormField(
                                     controller: _passwordController,
                                     obscureText: true,
                                     style: TextStyle(color: textoGeneral, fontSize: fontSize),
-                                    decoration: _inputDecoration(
-                                      _editingUserId != null 
-                                        ? AppLocalizations.of(context).translate('new_password_optional') 
-                                        : AppLocalizations.of(context).translate('password_label'), 
-                                      Icons.lock, 
-                                      settings.darkMode
-                                    ),
-                                    validator: (value) => (_editingUserId == null && value!.isEmpty) ? AppLocalizations.of(context).translate('required_field') : null,
+                                    decoration: _inputDecoration(_editingUserId != null ? 'Nueva contraseña (opcional)' : 'Contraseña', Icons.lock, settings.darkMode),
+                                    validator: (value) => (_editingUserId == null && value!.isEmpty) ? 'Requerido' : null,
                                   ),
                                   const SizedBox(height: 12),
                                   Row(
@@ -275,12 +269,12 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                                       Expanded(
                                         child: DropdownButtonFormField<String>(
                                           value: _selectedRole,
-                                          dropdownColor: cardColor,
                                           style: TextStyle(color: textoGeneral, fontSize: fontSize),
-                                          decoration: _inputDecoration(AppLocalizations.of(context).translate('role_label'), Icons.badge, settings.darkMode),
-                                          items: [
-                                            DropdownMenuItem(value: 'admin', child: Text(AppLocalizations.of(context).translate('admin_role'))),
-                                            DropdownMenuItem(value: 'usuario', child: Text(AppLocalizations.of(context).translate('user_role'))),
+                                          dropdownColor: fondo,
+                                          decoration: _inputDecoration('Rol', Icons.badge, settings.darkMode),
+                                          items: const [
+                                            DropdownMenuItem(value: 'admin', child: Text('Admin')),
+                                            DropdownMenuItem(value: 'usuario', child: Text('Usuario')),
                                           ],
                                           onChanged: (v) => setState(() => _selectedRole = v!),
                                         ),
@@ -288,7 +282,7 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                                       const SizedBox(width: 12),
                                       Column(
                                         children: [
-                                          Text(AppLocalizations.of(context).translate('active_label'), style: TextStyle(fontSize: fontSize * 0.8, color: textoGeneral)),
+                                          Text('Activo', style: TextStyle(fontSize: fontSize - 2, color: textoGeneral)),
                                           Switch(
                                             value: _isActive,
                                             onChanged: (v) => setState(() => _isActive = v),
@@ -305,7 +299,7 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                                         Expanded(
                                           child: TextButton(
                                             onPressed: _resetForm,
-                                            child: Text(AppLocalizations.of(context).translate('cancel'), style: TextStyle(color: barraSuperior, fontSize: fontSize)),
+                                            child: Text('Cancelar', style: TextStyle(color: textoGeneral)),
                                           ),
                                         ),
                                       Expanded(
@@ -334,18 +328,16 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                         ],
                       ),
                     ),
-                  ),
-
-                  const SizedBox(height: 20),
-                  Text(
-                    AppLocalizations.of(context).translate('system_users_title'),
-                    style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: textoGeneral),
-                  ),
-                  const SizedBox(height: 12),
+                  ), // ¡Aquí faltaba cerrar el Card!
+                  const SizedBox(height: AppConstants.paddingLarge),
+                  
+                  // Lista de Usuarios
+                  Text('Usuarios Registrados', style: TextStyle(fontSize: fontSize + 2, fontWeight: FontWeight.bold, color: textoGeneral)),
+                  const SizedBox(height: AppConstants.paddingMedium),
                   if (_isLoading)
-                    const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator()))
+                    const Center(child: CircularProgressIndicator())
                   else if (_usuarios.isEmpty)
-                    Padding(padding: const EdgeInsets.all(40), child: Center(child: Text(AppLocalizations.of(context).translate('no_users_found'))))
+                    Center(child: Text('No hay usuarios registrados', style: TextStyle(color: textoGeneral)))
                   else
                     ListView.builder(
                       shrinkWrap: true,
@@ -353,36 +345,29 @@ class _PantallaUsuariosState extends State<PantallaUsuarios> {
                       itemCount: _usuarios.length,
                       itemBuilder: (context, index) {
                         final user = _usuarios[index];
-                        final bool active = user['activo'] == 1 || user['activo'] == true;
-                        final bool isAdmin = user['rol'] == 'admin';
-
+                        final bool userIsActive = user['activo'] == 1 || user['activo'] == true;
                         return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 6),
-                          color: cardColor,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          elevation: 1,
+                          margin: const EdgeInsets.only(bottom: AppConstants.paddingSmall),
+                          color: settings.darkMode ? Colors.grey[850] : Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium)),
                           child: ListTile(
                             leading: CircleAvatar(
-                              backgroundColor: active ? (isAdmin ? Colors.orange : barraSuperior) : Colors.grey,
-                              child: Icon(isAdmin ? Icons.security : Icons.person, color: Colors.white, size: 20),
+                              backgroundColor: userIsActive ? barraSuperior : Colors.grey,
+                              child: Icon(Icons.person, color: Colors.white),
                             ),
-                            title: Text(
-                              user['username'], 
-                              style: TextStyle(fontWeight: FontWeight.bold, color: textoGeneral, fontSize: fontSize),
-                            ),
-                            subtitle: Text(
-                              '${AppLocalizations.of(context).translate('id_label')}: ${user['id']} | ${AppLocalizations.of(context).translate('role_label')}: ${user['rol'] == 'admin' ? AppLocalizations.of(context).translate('admin_role') : AppLocalizations.of(context).translate('user_role')}',
-                              style: TextStyle(color: textoGeneral.withOpacity(0.7), fontSize: fontSize * 0.8),
-                            ),
+                            title: Text(user['username'] ?? '', style: TextStyle(color: textoGeneral, fontSize: fontSize, fontWeight: FontWeight.bold)),
+                            subtitle: Text('Rol: ${user['rol']}', style: TextStyle(color: textoGeneral.withOpacity(0.7), fontSize: fontSize - 2)),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.edit, color: Colors.black, size: 22), 
-                                  onPressed: () => _editUser(user)
+                                  icon: const Icon(Icons.edit, color: Colors.blue),
+                                  onPressed: () => _editUser(user),
                                 ),
                                 IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.black, size: 22), 
-                                  onPressed: () => _deleteUser(user['id'])
+                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  onPressed: () => _deleteUser(user['id']),
                                 ),
                               ],
                             ),

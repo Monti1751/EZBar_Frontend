@@ -92,11 +92,23 @@ class _ZoneWidgetState extends State<ZoneWidget> {
   }
 
   Future<void> _agregarMesa() async {
-    if (_tableController.text.isEmpty) return;
+    final nombreMesa = _tableController.text.trim();
+    if (nombreMesa.isEmpty) return;
+
+    final existe = _mesas.any((m) => m.name.toLowerCase() == nombreMesa.toLowerCase());
+    if (existe) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ya existe una mesa con este nombre en esta zona'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     final nuevaMesa = Mesa(
       id: '',
-      name: _tableController.text,
+      name: nombreMesa,
       ubicacion: widget.zona.nombre,
       numeroMesa: _tableCounter++,
       capacidad: 4,

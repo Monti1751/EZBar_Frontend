@@ -74,6 +74,7 @@ class _CartaPageState extends State<CartaPage> {
   int _apiProdsCount = 0;
   List<dynamic> _lastRawProds = [];
   String _diagError = "";
+  String _searchQuery = "";
 
   @override
   void initState() {
@@ -348,10 +349,25 @@ class _CartaPageState extends State<CartaPage> {
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: TextField(
-              controller: _searchController,
               onChanged: (value) {
                 setState(() {
-                  _searchQuery = value;
+                  _searchQuery = value.toLowerCase();
+                  if (_searchQuery.isNotEmpty) {
+                    for (var s in secciones) {
+                      final matchSeccion = s.nombre.toLowerCase().contains(_searchQuery);
+                      final matchPlato = s.platos.any((p) => p.nombre.toLowerCase().contains(_searchQuery));
+                      if (matchSeccion || matchPlato) {
+                        s.isOpen = true;
+                      } else {
+                        s.isOpen = false;
+                      }
+                    }
+                  } else {
+                    // Al vaciar la búsqueda, cerrar todos los contenedores
+                    for (var s in secciones) {
+                      s.isOpen = false;
+                    }
+                  }
                 });
               },
               decoration: loginInputDecoration(
@@ -364,37 +380,32 @@ class _CartaPageState extends State<CartaPage> {
 
           // Lista de secciones
           Expanded(
-            child: ReorderableListView.builder(
-              buildDefaultDragHandles: _searchQuery.isEmpty,
-              itemCount: seccionesMostrar.length,
-              onReorder: (oldIndex, newIndex) {
-                if (_searchQuery.isNotEmpty) return;
-                setState(() {
-                  if (oldIndex < newIndex) {
-                    newIndex -= 1;
-                  }
-                  final item = secciones.removeAt(oldIndex);
-                  secciones.insert(newIndex, item);
-                });
-                _localStorage.saveSecciones(secciones);
-              },
-              itemBuilder: (context, index) {
-                final seccion = seccionesMostrar[index];
+            child: Builder(
+              builder: (context) {
+                final List<Seccion> displayedSecciones = _searchQuery.isEmpty 
+                    ? secciones 
+                    : secciones.where((s) {
+                        final matchSeccion = s.nombre.toLowerCase().contains(_searchQuery);
+                        final hasMatchPlato = s.platos.any((p) => p.nombre.toLowerCase().contains(_searchQuery));
+                        return matchSeccion || hasMatchPlato;
+                      }).toList();
 
-                List<Plato> platosMostrar = seccion.platos;
-                if (_searchQuery.isNotEmpty) {
-                  final queryLower = _searchQuery.toLowerCase();
-                  final matchesSeccion =
-                      seccion.nombre.toLowerCase().contains(queryLower);
-                  if (!matchesSeccion) {
-                    platosMostrar = seccion.platos
-                        .where(
-                            (p) => p.nombre.toLowerCase().contains(queryLower))
-                        .toList();
-                  }
-                }
-
-                return Container(
+                return ReorderableListView.builder(
+                  itemCount: displayedSecciones.length,
+                  onReorder: (oldIndex, newIndex) {
+                    if (_searchQuery.isNotEmpty) return;
+                    setState(() {
+                      if (oldIndex < newIndex) {
+                        newIndex -= 1;
+                      }
+                      final item = secciones.removeAt(oldIndex);
+                      secciones.insert(newIndex, item);
+                    });
+                    _localStorage.saveSecciones(secciones);
+                  },
+                  itemBuilder: (context, index) {
+                    final seccion = displayedSecciones[index];
+                    return Container(
                   key: ValueKey('seccion_${seccion.id ?? seccion.nombre}'),
                   margin: const EdgeInsets.symmetric(
                     horizontal: AppConstants.paddingLarge,
@@ -409,19 +420,13 @@ class _CartaPageState extends State<CartaPage> {
                   child: Column(
                     children: [
                       ListTile(
-                        title: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                seccion.nombre,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: fontSize,
-                                  color: textoGeneral,
-                                ),
-                              ),
-                            ),
-                          ],
+                        title: Text(
+                          seccion.nombre,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: fontSize,
+                            color: textoGeneral,
+                          ),
                         ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -615,38 +620,32 @@ class _CartaPageState extends State<CartaPage> {
 
                                 // Lista de platos (Lazy Loading)
                                 Expanded(
-                                  child: NotificationListener<ScrollNotification>(
-                                    onNotification: (ScrollNotification scrollInfo) {
-                                      if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
-                                        // Llegó al final de la lista visible de esta sección
-                                        if (seccion.visibleCount < platosMostrar.length) {
+                                  child: Builder(
+                                    builder: (context) {
+                                      final List<Plato> displayedPlatos = _searchQuery.isEmpty 
+                                          ? seccion.platos 
+                                          : seccion.platos.where((p) => 
+                                              seccion.nombre.toLowerCase().contains(_searchQuery) || 
+                                              p.nombre.toLowerCase().contains(_searchQuery)
+                                            ).toList();
+
+                                      return ReorderableListView.builder(
+                                        itemCount: displayedPlatos.length,
+                                        onReorder: (oldIndex, newIndex) {
+                                          if (_searchQuery.isNotEmpty) return;
                                           setState(() {
-                                            seccion.visibleCount += 5; // Cargar 5 más
+                                            if (oldIndex < newIndex) {
+                                              newIndex -= 1;
+                                            }
+                                            final item =
+                                                seccion.platos.removeAt(oldIndex);
+                                            seccion.platos.insert(newIndex, item);
                                           });
-                                        }
-                                      }
-                                      return true;
-                                    },
-                                    child: ReorderableListView.builder(
-                                      buildDefaultDragHandles: _searchQuery.isEmpty,
-                                      itemCount: platosMostrar.length > seccion.visibleCount 
-                                          ? seccion.visibleCount 
-                                          : platosMostrar.length,
-                                      onReorder: (oldIndex, newIndex) {
-                                        if (_searchQuery.isNotEmpty) return;
-                                        setState(() {
-                                          if (oldIndex < newIndex) {
-                                            newIndex -= 1;
-                                          }
-                                          final item =
-                                              seccion.platos.removeAt(oldIndex);
-                                          seccion.platos.insert(newIndex, item);
-                                        });
-                                        _localStorage.saveSecciones(secciones);
-                                      },
-                                    itemBuilder: (context, platoIndex) {
-                                      final plato = platosMostrar[platoIndex];
-                                      return Container(
+                                          _localStorage.saveSecciones(secciones);
+                                        },
+                                        itemBuilder: (context, platoIndex) {
+                                          final plato = displayedPlatos[platoIndex];
+                                          return Container(
                                         key: ValueKey(
                                             'plato_${plato.id ?? plato.nombre}_${plato.hashCode}'),
                                         margin: const EdgeInsets.symmetric(
@@ -859,9 +858,10 @@ class _CartaPageState extends State<CartaPage> {
                                         ),
                                       );
                                     },
-                                  ),
-                                ),
+                                  );
+                                },
                               ),
+                            ),
                               ],
                             ),
                           ),
@@ -870,8 +870,10 @@ class _CartaPageState extends State<CartaPage> {
                   ),
                 );
               },
-            ),
+            );
+           },
           ),
+        ),
 
           // Botón para agregar sección
           if (!secciones.any((s) => s.isOpen))
