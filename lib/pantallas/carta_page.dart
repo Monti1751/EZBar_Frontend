@@ -74,7 +74,6 @@ class _CartaPageState extends State<CartaPage> {
   int _apiProdsCount = 0;
   List<dynamic> _lastRawProds = [];
   String _diagError = "";
-  String _searchQuery = "";
 
   @override
   void initState() {

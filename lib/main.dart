@@ -165,7 +165,6 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
   final HybridDataService _dataService =
       HybridDataService(); // Servicio híbrido (API + SQLite)
-  bool _obscurePassword = true;
 
   @override
   void dispose() {
