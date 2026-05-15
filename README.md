@@ -110,7 +110,7 @@ La aplicación sustituye el método tradicional de libreta y bolígrafo por una 
          │
 ┌────────▼────────┐
 │  Base de Datos  │
-│   PostgreSQL    │
+│   MariaDB       │
 └─────────────────┘
 ```
 
@@ -255,42 +255,87 @@ flutter run --verbose
 ```
 EZBar_Frontend/
 ├── lib/
-│   ├── main.dart                 # Punto de entrada de la app
-│   ├── config/                   # Configuración y constantes
-│   │   └── app_constants.dart
-│   ├── l10n/                     # Localización (JSON)
-│   │   ├── es.json               # Español
-│   │   ├── en.json               # Inglés
-│   │   └── fr.json               # Francés
-│   ├── models/                   # Modelos de datos
-│   ├── pantallas/                # Pantallas/Páginas
+│   ├── main.dart                      # Punto de entrada de la app
+│   ├── config/                        # Configuración y constantes
+│   │   ├── app_constants.dart
+│   │   └── api_config.dart
+│   ├── l10n/                          # Localización (JSON)
+│   │   ├── app_localizations.dart
+│   │   ├── es.json                    # Español
+│   │   ├── en.json                    # Inglés
+│   │   ├── fr.json                    # Francés
+│   │   ├── ar.json                    # Árabe
+│   │   ├── ca.json                    # Catalán
+│   │   └── zh.json                    # Chino
+│   ├── models/                        # Modelos de datos
+│   │   ├── categoria.dart
+│   │   ├── mesa.dart
+│   │   ├── pedido.dart
+│   │   ├── plato.dart
+│   │   └── zona.dart
+│   ├── pantallas/                     # Pantallas/Páginas
 │   │   ├── pantalla_principal.dart
 │   │   ├── settings_menu.dart
 │   │   ├── carta_page.dart
-│   │   └── ...
-│   ├── providers/                # State Management (Provider)
+│   │   ├── pantalla_usuarios.dart
+│   │   ├── ver_plato.dart
+│   │   └── cuenta.dart
+│   ├── providers/                     # State Management (Provider)
 │   │   ├── auth_provider.dart
 │   │   ├── visual_settings_provider.dart
 │   │   ├── localization_provider.dart
-│   │   └── ...
-│   ├── services/                 # Servicios (API, BD, etc)
+│   │   ├── sync_provider.dart
+│   │   └── ajustes_visuales.dart
+│   ├── services/                      # Servicios (API, BD, etc)
+│   │   ├── api_service.dart
+│   │   ├── database_service.dart
 │   │   ├── hybrid_data_service.dart
 │   │   ├── localization_service.dart
+│   │   ├── local_storage_service.dart
 │   │   ├── logger_service.dart
-│   │   └── ...
-│   └── widgets/                  # Componentes reutilizables
+│   │   ├── sync_service.dart
+│   │   ├── token_manager.dart
+│   │   └── discovery/                 # Servicio de descubrimiento
+│   │       ├── discovery_service.dart
+│   │       ├── discovery_io.dart
+│   │       ├── discovery_web.dart
+│   │       └── discovery_stub.dart
+│   └── widgets/                       # Componentes reutilizables
 │       ├── language_selector.dart
-│       └── ...
-├── android/                      # Configuración Android
-├── ios/                          # Configuración iOS
-├── web/                          # Configuración Web
-├── windows/                      # Configuración Windows
-├── linux/                        # Configuración Linux
-├── macos/                        # Configuración macOS
-├── test/                         # Tests
-├── pubspec.yaml                  # Dependencias y configuración
-├── analysis_options.yaml         # Análisis estático
-└── README.md                     # Este archivo
+│       ├── language_settings_tile.dart
+│       ├── add_zone_button.dart
+│       ├── add_zone_field.dart
+│       ├── zona_widget.dart
+│       ├── top_bar.dart
+│       └── reorderable_responsive_grid.dart
+├── android/                           # Configuración Android
+│   ├── app/
+│   ├── build.gradle
+│   ├── gradle.properties
+│   └── local.properties
+├── ios/                               # Configuración iOS
+│   ├── Runner/
+│   └── Runner.xcworkspace/
+├── web/                               # Configuración Web
+├── windows/                           # Configuración Windows
+├── linux/                             # Configuración Linux
+├── macos/                             # Configuración macOS
+├── test/                              # Tests
+│   └── widget_test.dart
+├── manual/                            # Documentación del usuario
+│   ├── MANUAL_USUARIO.md
+│   ├── MANUAL_USUARIO.html
+│   └── assets/
+├── notas_desarrollo/                  # Notas internas de desarrollo
+│   └── botones_ocultos_settings.md
+├── pubspec.yaml                       # Dependencias y configuración
+├── analysis_options.yaml              # Análisis estático
+├── CHANGELOG.md                       # Historial de cambios
+├── LOCALIZATION_GUIDE.md              # Guía de localización
+├── INTEGRATION_GUIDE.md               # Guía de integración
+├── IMPLEMENTATION_SUMMARY.md          # Resumen de implementación
+├── GUIA_TESTEO.md                     # Guía de testing
+└── README.md                          # Este archivo
 ```
 
 ---
