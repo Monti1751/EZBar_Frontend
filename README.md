@@ -1,103 +1,422 @@
-# EZBar Frontend
+# 📱 EZBar Frontend
 
-## Índice
-1. [Arquitectura del Frontend](#1-arquitectura-del-frontend)  
-2. [Instalación y Configuración](#2-instalación-y-configuración)  
-3. [Funcionamiento de la Aplicación](#3-funcionamiento-de-la-aplicación)  
-4. [Estado del Proyecto](#4-estado-del-proyecto)  
-5. [Autores](#5-autores)  
+<div align="center">
+  <strong>Sistema de gestión digital para hostelería</strong>
+  
+  [![Flutter](https://img.shields.io/badge/Flutter-3.0+-02569B?logo=flutter)](https://flutter.dev)
+  [![Dart](https://img.shields.io/badge/Dart-3.0+-0175C2?logo=dart)](https://dart.dev)
+  [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+</div>
 
 ---
 
-## 1. Arquitectura del Frontend
+## 📋 Tabla de Contenidos
 
-El **Frontend** de EZBar está desarrollado en **Flutter**, orientado a dispositivos móviles Android e iOS.  
-Su función principal es proporcionar una interfaz rápida, intuitiva y optimizada para el trabajo diario en hostelería.
+1. [Descripción General](#descripción-general)
+2. [Características Principales](#características-principales)
+3. [Arquitectura del Proyecto](#arquitectura-del-proyecto)
+4. [Tecnologías Utilizadas](#tecnologías-utilizadas)
+5. [Requisitos Previos](#requisitos-previos)
+6. [Instalación y Configuración](#instalación-y-configuración)
+7. [Ejecución de la Aplicación](#ejecución-de-la-aplicación)
+8. [Estructura del Proyecto](#estructura-del-proyecto)
+9. [Funcionalidades Implementadas](#funcionalidades-implementadas)
+10. [Guías de Desarrollo](#guías-de-desarrollo)
+11. [Testing](#testing)
+12. [Documentación Adicional](#documentación-adicional)
+13. [Autores](#autores)
 
-El Frontend se comunica con el sistema mediante:
+---
 
-- **API Node.js:** Recibe y envía las peticiones realizadas por la aplicación.  
-- **Backend Java:** Procesa la lógica de negocio y gestiona la base de datos.  
+## 📖 Descripción General
 
-### Componentes principales del Frontend
+**EZBar Frontend** es una aplicación móvil desarrollada en **Flutter** que permite a camareros y personal de hostelería gestionar pedidos y mesas de forma digital desde sus dispositivos móviles (Android e iOS).
 
-- **Pantalla de Login:** Autenticación del usuario.  
-- **Selector de Zonas:** Permite elegir entre Terraza, Barra, Comedor, etc.  
-- **Mapa de Mesas:** Vista principal con el estado de cada mesa.  
-- **Gestión de Pedidos:** Añadir productos, modificar cantidades, enviar a cocina/barra.  
-- **Cierre de Mesa:** Finalización del servicio y liberación de la mesa.
+La aplicación sustituye el método tradicional de libreta y bolígrafo por una solución digital que:
+- ✅ Reduce tiempos de espera
+- ✅ Minimiza errores en pedidos
+- ✅ Facilita la gestión de zonas y mesas
+- ✅ Mejora la comunicación entre salón y cocina/barra
+- ✅ Ofrece una interfaz intuitiva y rápida
 
-La arquitectura está diseñada para ser **modular**, **escalable** y fácil de mantener, permitiendo añadir nuevas funcionalidades sin afectar al núcleo de la aplicación.
+**Estado**: 🚀 Versión 1.0.0 (Alpha)  
+**Plataformas**: Android, iOS, Web, Windows, Linux, macOS
 
-## 2. Instalación y Configuración
+---
 
-### Requisitos Previos
+## ✨ Características Principales
+
+### 🔐 Autenticación y Sesiones
+- Inicio de sesión con credenciales
+- Gestión de tokens JWT
+- Persistencia de sesión
+- Cierre de sesión seguro
+
+### 🗺️ Gestión de Zonas y Mesas
+- Selector de zonas (Terraza, Barra, Comedor, etc.)
+- Mapa visual de mesas
+- Estados de mesa (Libre, Ocupada, Pendiente de pago)
+- Actualización en tiempo real
+
+### 🛒 Gestión de Pedidos
+- Visualización de carta de productos
+- Añadir/eliminar productos al pedido
+- Modificar cantidades
+- Añadir notas especiales
+- Enviar pedidos a cocina/barra
+- Historial de pedidos
+
+### 💳 Cierre de Mesa
+- Cálculo de totales
+- Gestión de pagos
+- Liberación de mesa
+
+### 🌍 Localización Multiidioma
+- Soporte para Español, Inglés y Francés
+- Cambio dinámico de idioma
+- Persistencia de preferencia de idioma
+
+### 🎨 Personalización Visual
+- Selector de temas (Light/Dark)
+- Configuración de UI
+- Persistencia de preferencias
+
+### 📱 Almacenamiento Local
+- Base de datos SQLite
+- Sincronización offline
+- Caché de datos
+
+---
+
+## 🏗️ Arquitectura del Proyecto
+
+### Comunicación del Sistema
+
+```
+┌─────────────────┐
+│  EZBar Frontend │ (Flutter)
+│   (Este Repo)   │
+└────────┬────────┘
+         │
+    ┌────▼────┐
+    │ API     │
+    │Node.js  │
+    └────┬────┘
+         │
+┌────────▼────────┐
+│ Backend Java    │
+│ (Lógica Negocio)│
+└────────┬────────┘
+         │
+┌────────▼────────┐
+│  Base de Datos  │
+│   PostgreSQL    │
+└─────────────────┘
+```
+
+### Estructura en Capas
+
+- **Presentación (UI)**: Pantallas y widgets
+- **Estado**: Providers (Pattern state management)
+- **Servicios**: Lógica de negocio y comunicación
+- **Modelos**: Estructuras de datos
+- **Configuración**: Constantes y settings
+
+---
+
+## 🛠️ Tecnologías Utilizadas
+
+| Categoría | Tecnología | Versión |
+|-----------|-----------|---------|
+| **Framework** | Flutter | 3.0+ |
+| **Lenguaje** | Dart | 3.0+ |
+| **State Management** | Provider | 6.1.1 |
+| **HTTP Client** | http | 1.1.0 |
+| **Base de Datos Local** | SQLite | 2.3.0 |
+| **Almacenamiento** | SharedPreferences | 2.3.2 |
+| **Galería de Imágenes** | image_picker | 1.0.7 |
+| **Logging** | logger | 2.4.0 |
+| **Localización** | flutter_localizations | 3.0+ |
+| **Icons** | Cupertino Icons | 1.0.8 |
+
+---
+
+## 📋 Requisitos Previos
 
 Antes de ejecutar el Frontend, asegúrate de tener instalado:
 
-- Flutter 3.x o superior  
-- Dart SDK (incluido con Flutter)  
-- Android Studio o VS Code con extensiones de Flutter  
-- Dispositivo físico o emulador Android/iOS  
-- Conexión activa con la API Node.js y el Backend Java  
+- **Flutter 3.0+** ([Descargar](https://flutter.dev/docs/get-started/install))
+- **Dart SDK** (incluido con Flutter)
+- **Git** para clonar el repositorio
+- **Android Studio** o **VS Code** con extensión de Flutter
+- **Emulador Android/iOS** o dispositivo físico
+- **Node.js** (para ejecutar la API)
+- **Java** (para ejecutar el Backend)
+
+### Verificar Instalación
+
+```bash
+flutter --version
+dart --version
+```
 
 ---
 
-### Clonar el Repositorio
+## 🚀 Instalación y Configuración
+
+### 1. Clonar el Repositorio
 
 ```bash
 git clone https://github.com/Monti1751/EZBar_Frontend.git
 cd EZBar_Frontend
 ```
-## 3. Funcionamiento de la Aplicación
 
-El Frontend de EZBar está diseñado para ofrecer una experiencia rápida, intuitiva y adaptada al flujo de trabajo real en hostelería. La aplicación permite gestionar mesas, zonas y pedidos de forma visual y eficiente.
+### 2. Instalar Dependencias
 
----
+```bash
+flutter pub get
+```
 
-### Flujo General de Uso
+### 3. Generar Archivos de Localización (Opcional)
 
-1. **Inicio de sesión**  
-   El usuario introduce sus credenciales y accede según su rol.
+Si modificas los archivos de traducción, regenera los archivos:
 
-2. **Selección de zona**  
-   El camarero elige la zona del local (Terraza, Barra, Comedor, etc.).
+```bash
+flutter gen-l10n
+```
 
-3. **Mapa de mesas**  
-   Se muestra una vista visual con el estado de cada mesa:  
-   - Libre  
-   - Ocupada  
-   - Pendiente de pago  
+### 4. Configurar Conexión a API
 
-4. **Gestión del pedido**  
-   Al seleccionar una mesa, el usuario puede:  
-   - Añadir productos  
-   - Modificar cantidades  
-   - Añadir notas  
-   - Enviar el pedido a cocina/barra  
+Abre [lib/config/app_constants.dart](lib/config/app_constants.dart) y configura:
 
-5. **Cierre de mesa**  
-   Una vez finalizado el servicio, se procede al cobro y la mesa vuelve a estado libre.
+```dart
+static const String apiUrl = 'http://tu-api.com';
+static const String apiPort = '3000';
+```
 
----
+### 5. (Opcional) Generar Iconos
 
-### Comunicación con el Sistema
+Si necesitas regenerar los iconos:
 
-- El Frontend envía las acciones del usuario a la **API Node.js**.  
-- La API procesa la petición y la envía al **Backend Java**, que ejecuta la lógica de negocio.  
-- La respuesta vuelve al Frontend, actualizando el estado de la aplicación.
-
-Este flujo garantiza una experiencia fluida y coherente entre todos los módulos del sistema.
+```bash
+flutter pub run flutter_launcher_icons
+```
 
 ---
 
-### Objetivo del Funcionamiento
+## ▶️ Ejecución de la Aplicación
 
-El Frontend está diseñado para:
+### Listar Dispositivos Disponibles
 
-- Reducir tiempos de espera.  
-- Minimizar errores en pedidos.  
-- Facilitar la gestión de zonas y mesas.  
+```bash
+flutter devices
+```
+
+### Ejecutar en Android
+
+```bash
+flutter run -d android
+```
+
+### Ejecutar en iOS
+
+```bash
+flutter run -d ios
+```
+
+### Ejecutar en Web
+
+```bash
+flutter run -d web
+```
+
+### Ejecutar en Windows
+
+```bash
+flutter run -d windows
+```
+
+### Ejecutar en Modo Release
+
+```bash
+flutter run --release
+```
+
+### Ejecutar con Logs
+
+```bash
+flutter run --verbose
+```
+
+---
+
+## 📁 Estructura del Proyecto
+
+```
+EZBar_Frontend/
+├── lib/
+│   ├── main.dart                 # Punto de entrada de la app
+│   ├── config/                   # Configuración y constantes
+│   │   └── app_constants.dart
+│   ├── l10n/                     # Localización (JSON)
+│   │   ├── es.json               # Español
+│   │   ├── en.json               # Inglés
+│   │   └── fr.json               # Francés
+│   ├── models/                   # Modelos de datos
+│   ├── pantallas/                # Pantallas/Páginas
+│   │   ├── pantalla_principal.dart
+│   │   ├── settings_menu.dart
+│   │   ├── carta_page.dart
+│   │   └── ...
+│   ├── providers/                # State Management (Provider)
+│   │   ├── auth_provider.dart
+│   │   ├── visual_settings_provider.dart
+│   │   ├── localization_provider.dart
+│   │   └── ...
+│   ├── services/                 # Servicios (API, BD, etc)
+│   │   ├── hybrid_data_service.dart
+│   │   ├── localization_service.dart
+│   │   ├── logger_service.dart
+│   │   └── ...
+│   └── widgets/                  # Componentes reutilizables
+│       ├── language_selector.dart
+│       └── ...
+├── android/                      # Configuración Android
+├── ios/                          # Configuración iOS
+├── web/                          # Configuración Web
+├── windows/                      # Configuración Windows
+├── linux/                        # Configuración Linux
+├── macos/                        # Configuración macOS
+├── test/                         # Tests
+├── pubspec.yaml                  # Dependencias y configuración
+├── analysis_options.yaml         # Análisis estático
+└── README.md                     # Este archivo
+```
+
+---
+
+## 🎯 Funcionalidades Implementadas
+
+### ✅ Completadas
+
+- [x] Sistema de autenticación (Login)
+- [x] Selector de zonas
+- [x] Mapa de mesas
+- [x] Gestión de pedidos
+- [x] Cierre de mesa
+- [x] Localización multiidioma (ES, EN, FR)
+- [x] Temas visuales (Light/Dark)
+- [x] Almacenamiento local (SQLite)
+- [x] Sincronización offline
+- [x] Logging avanzado
+- [x] Gestión de sesiones/tokens
+
+### 🔄 En Progreso
+
+- [ ] Optimizaciones de rendimiento
+- [ ] Nuevas pantallas de administración
+- [ ] Reportes y estadísticas
+
+### 📋 Pendiente
+
+- [ ] Notificaciones push
+- [ ] QR codes para mesas
+- [ ] Integración con impresoras
+
+---
+
+## 📚 Guías de Desarrollo
+
+### Guía de Localización
+
+Para añadir nuevos idiomas o traducir cadenas, consulta:
+📖 [LOCALIZATION_GUIDE.md](LOCALIZATION_GUIDE.md)
+
+### Guía de Integración
+
+Para integrar nuevas funcionalidades o módulos:
+📖 [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md)
+
+### Manual del Usuario
+
+Para documentación del usuario final:
+📖 [manual/MANUAL_USUARIO.md](manual/MANUAL_USUARIO.md)
+
+### Resumen de Implementación
+
+Detalles técnicos de características implementadas:
+📖 [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)
+
+---
+
+## 🧪 Testing
+
+### Ejecutar Todos los Tests
+
+```bash
+flutter test
+```
+
+### Ejecutar Tests con Coverage
+
+```bash
+flutter test --coverage
+```
+
+En Windows, ejecuta:
+
+```bash
+./run_tests_with_coverage.bat
+```
+
+### Guía de Testing
+
+Para instrucciones detalladas sobre testing:
+📖 [GUIA_TESTEO.md](GUIA_TESTEO.md)
+
+---
+
+## 📄 Documentación Adicional
+
+- 🔍 [analysis_options.yaml](analysis_options.yaml) - Configuración de análisis estático
+- 📝 [CHANGELOG.md](CHANGELOG.md) - Historial de cambios
+- 🚀 [Manual del Usuario](manual/MANUAL_USUARIO.md) - Guía para usuarios finales
+
+---
+
+## 🤝 Contribución
+
+Las contribuciones son bienvenidas. Para mantener la calidad del código:
+
+1. Crea una rama para tu feature: `git checkout -b feature/nombre-feature`
+2. Realiza commits descriptivos
+3. Asegúrate de que los tests pasen
+4. Abre un Pull Request
+
+---
+
+## 👨‍💻 Autores
+
+- **Monti** - Desarrollador Frontend
+- Equipo de Desarrollo de EZBar
+
+---
+
+## 📞 Soporte y Contacto
+
+Para reportar bugs o sugerencias:
+- 📧 Email: [contacto@ezbar.com]
+- 🐛 Issues: [GitHub Issues](https://github.com/Monti1751/EZBar_Frontend/issues)
+
+---
+
+## 📄 Licencia
+
+Este proyecto está bajo licencia MIT. Ver [LICENSE](LICENSE) para más detalles.
+
+---
+
+**Última actualización**: 15 de mayo de 2026  
 - Mejorar la coordinación entre camareros y cocina/barra.  
 - Ofrecer una interfaz clara y fácil de usar incluso en momentos de alta carga de trabajo.
   
